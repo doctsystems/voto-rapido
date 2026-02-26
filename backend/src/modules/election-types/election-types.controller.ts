@@ -1,0 +1,32 @@
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { Role } from '../../common/enums/role.enum';
+import { ElectionTypesService, CreateElectionTypeDto } from './election-types.service';
+
+@ApiTags('election-types')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('election-types')
+export class ElectionTypesController {
+  constructor(private readonly service: ElectionTypesService) {}
+
+  @Get()
+  findAll() { return this.service.findAll(); }
+
+  @Post()
+  @Roles(Role.ADMIN)
+  create(@Body() dto: CreateElectionTypeDto) { return this.service.create(dto); }
+
+  @Put(':id')
+  @Roles(Role.ADMIN)
+  update(@Param('id') id: string, @Body() dto: Partial<CreateElectionTypeDto>) {
+    return this.service.update(id, dto);
+  }
+
+  @Delete(':id')
+  @Roles(Role.ADMIN)
+  remove(@Param('id') id: string) { return this.service.remove(id); }
+}

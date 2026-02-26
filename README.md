@@ -14,7 +14,8 @@ voto-rapido/
 │   │   │   ├── auth/         # JWT + Passport
 │   │   │   ├── users/        # CRUD usuarios con roles
 │   │   │   ├── parties/      # Partidos políticos
-│   │   │   ├── tables/       # Mesas de votación
+│   │   │   ├── schools/      # Unidades educativas (recintos)
+│   │   │   ├── tables/       # Mesas de votación (dependen de schools)
 │   │   │   ├── election-types/ # Tipos: Gobernador, Alcalde, etc.
 │   │   │   ├── votes/        # Reportes y entradas de voto
 │   │   │   ├── reports/      # Exportación PDF/Excel
@@ -55,7 +56,6 @@ La aplicación estará disponible en `http://localhost`
 **Requisitos:** Node.js 20+, PostgreSQL 15+
 
 #### Backend
-
 ```bash
 cd backend
 npm install
@@ -73,7 +73,6 @@ npm run seed
 ```
 
 #### Frontend
-
 ```bash
 cd frontend
 npm install
@@ -82,11 +81,11 @@ npm run dev
 
 ## 👤 Credenciales de Prueba
 
-| Rol                   | Usuario             | Contraseña    |
-| --------------------- | ------------------- | ------------- |
-| Administrador         | `admin`             | `admin123`    |
-| Jefe Campaña MPU      | `jefe_mpu`          | `jefe123`     |
-| Jefe Campaña ADN      | `jefe_adn`          | `jefe123`     |
+| Rol | Usuario | Contraseña |
+|-----|---------|------------|
+| Administrador | `admin` | `admin123` |
+| Jefe Campaña MPU | `jefe_mpu` | `jefe123` |
+| Jefe Campaña ADN | `jefe_adn` | `jefe123` |
 | Delegado MPU Mesa 001 | `delegado_mpu_M001` | `delegado123` |
 | Delegado ADN Mesa 001 | `delegado_adn_M001` | `delegado123` |
 
@@ -97,20 +96,21 @@ npm run dev
 
 ### Endpoints principales
 
-| Método              | Ruta                        | Descripción            | Roles       |
-| ------------------- | --------------------------- | ---------------------- | ----------- |
-| POST                | `/auth/login`               | Iniciar sesión         | Público     |
-| GET                 | `/votes/metrics`            | Métricas del dashboard | Todos       |
-| GET                 | `/votes/reports`            | Listar reportes        | Todos       |
-| POST                | `/votes/reports`            | Crear reporte          | DELEGADO    |
-| PATCH               | `/votes/reports/:id/submit` | Enviar reporte         | DELEGADO    |
-| PATCH               | `/votes/reports/:id/verify` | Verificar reporte      | ADMIN, JEFE |
-| GET                 | `/reports/export/excel`     | Exportar Excel         | Todos       |
-| GET                 | `/reports/export/pdf`       | Exportar PDF           | Todos       |
-| GET/POST/PUT/DELETE | `/users`                    | CRUD usuarios          | ADMIN, JEFE |
-| GET/POST/PUT/DELETE | `/parties`                  | CRUD partidos          | ADMIN       |
-| GET/POST/PUT/DELETE | `/tables`                   | CRUD mesas             | ADMIN       |
-| GET/POST/PUT/DELETE | `/election-types`           | CRUD tipos elección    | ADMIN       |
+| Método | Ruta | Descripción | Roles |
+|--------|------|-------------|-------|
+| POST | `/auth/login` | Iniciar sesión | Público |
+| GET | `/votes/metrics` | Métricas del dashboard | Todos |
+| GET | `/votes/reports` | Listar reportes | Todos |
+| POST | `/votes/reports` | Crear reporte | DELEGADO |
+| PATCH | `/votes/reports/:id/submit` | Enviar reporte | DELEGADO |
+| PATCH | `/votes/reports/:id/verify` | Verificar reporte | ADMIN, JEFE |
+| GET | `/reports/export/excel` | Exportar Excel | Todos |
+| GET | `/reports/export/pdf` | Exportar PDF | Todos |
+| GET/POST/PUT/DELETE | `/users` | CRUD usuarios | ADMIN, JEFE |
+| GET/POST/PUT/DELETE | `/parties` | CRUD partidos | ADMIN |
+| GET/POST/PUT/DELETE | `/schools` | CRUD unidades educativas | ADMIN |
+| GET/POST/PUT/DELETE | `/tables` | CRUD mesas (asociadas a schools) | ADMIN |
+| GET/POST/PUT/DELETE | `/election-types` | CRUD tipos elección | ADMIN |
 
 ## 🔐 Seguridad y Roles
 
@@ -138,6 +138,9 @@ DELEGADO (por mesa)
 User (ADMIN | JEFE_CAMPANA | DELEGADO)
   ├── Party (partido político)
   └── VotingTable (mesa asignada)
+
+School (Unidad Educativa / recinto electoral)
+  └── VotingTable[] (mesas instaladas en esa escuela)
 
 VoteReport (reporte por delegado/mesa)
   └── VoteEntry[] (votos por partido × tipo de elección)
@@ -168,7 +171,7 @@ NODE_ENV=development
 ## 🔮 Extensiones Futuras
 
 - **OCR de actas**: módulo para leer actas físicas con computer vision
-- **WhatsApp Bot**: envío de resultados vía API de WhatsApp Business
+- **WhatsApp Bot**: envío de resultados vía API de WhatsApp Business  
 - **WebSockets**: actualizaciones en tiempo real del dashboard
 - **2FA**: autenticación de dos factores para delegados
 - **Multi-elección**: soporte para múltiples procesos electorales paralelos
