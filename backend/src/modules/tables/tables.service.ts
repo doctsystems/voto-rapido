@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { VotingTable } from './voting-table.entity';
-import { School } from '../schools/school.entity';
-import { IsString, IsOptional, IsNumber, IsUUID } from 'class-validator';
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { VotingTable } from "./voting-table.entity";
+import { School } from "../schools/school.entity";
+import { IsString, IsOptional, IsNumber, IsUUID } from "class-validator";
 
 export class CreateTableDto {
   @IsString() tableNumber: string;
@@ -14,23 +14,24 @@ export class CreateTableDto {
 @Injectable()
 export class TablesService {
   constructor(
-    @InjectRepository(VotingTable) private readonly repo: Repository<VotingTable>,
+    @InjectRepository(VotingTable)
+    private readonly repo: Repository<VotingTable>,
     @InjectRepository(School) private readonly schoolRepo: Repository<School>,
   ) {}
 
   findAll() {
     return this.repo.find({
-      relations: ['school', 'delegates'],
-      order: { tableNumber: 'ASC' },
+      relations: ["school", "delegates"],
+      order: { tableNumber: "ASC" },
     });
   }
 
   async findOne(id: string) {
     const table = await this.repo.findOne({
       where: { id },
-      relations: ['school', 'delegates'],
+      relations: ["school", "delegates"],
     });
-    if (!table) throw new NotFoundException('Mesa no encontrada');
+    if (!table) throw new NotFoundException("Mesa no encontrada");
     return table;
   }
 
@@ -41,8 +42,11 @@ export class TablesService {
     });
 
     if (dto.schoolId) {
-      const school = await this.schoolRepo.findOne({ where: { id: dto.schoolId } });
-      if (!school) throw new NotFoundException('Unidad educativa no encontrada');
+      const school = await this.schoolRepo.findOne({
+        where: { id: dto.schoolId },
+      });
+      if (!school)
+        throw new NotFoundException("Unidad educativa no encontrada");
       table.school = school;
     }
 
@@ -56,12 +60,15 @@ export class TablesService {
     if (dto.totalVoters !== undefined) table.totalVoters = dto.totalVoters;
 
     if (dto.schoolId !== undefined) {
-      if (!dto.schoolId) {
-        table.school = null;
-      } else {
-        const school = await this.schoolRepo.findOne({ where: { id: dto.schoolId } });
-        if (!school) throw new NotFoundException('Unidad educativa no encontrada');
+      if (dto.schoolId) {
+        const school = await this.schoolRepo.findOne({
+          where: { id: dto.schoolId },
+        });
+        if (!school)
+          throw new NotFoundException("Unidad educativa no encontrada");
         table.school = school;
+      } else {
+        table.school = null;
       }
     }
 
@@ -77,8 +84,8 @@ export class TablesService {
   findBySchool(schoolId: string) {
     return this.repo.find({
       where: { school: { id: schoolId } },
-      relations: ['school', 'delegates'],
-      order: { tableNumber: 'ASC' },
+      relations: ["school", "delegates"],
+      order: { tableNumber: "ASC" },
     });
   }
 }

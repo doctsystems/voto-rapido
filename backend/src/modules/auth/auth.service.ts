@@ -51,7 +51,7 @@ export class AuthService {
         email: user.email,
         role: user.role,
         party: user.party ? { id: user.party.id, name: user.party.name, acronym: user.party.acronym, color: user.party.color } : null,
-        table: user.table ? { id: user.table.id, tableNumber: user.table.tableNumber, location: user.table.location } : null,
+        table: user.table ? { id: user.table.id, tableNumber: user.table.tableNumber } : null,
       },
     };
   }

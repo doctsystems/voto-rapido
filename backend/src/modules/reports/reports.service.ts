@@ -121,7 +121,7 @@ export class ReportsService {
     // Table of reports
     reports.forEach((r, i) => {
       if (i > 0) doc.moveDown();
-      doc.fontSize(12).fillColor('#1B4F72').text(`Mesa ${r.table?.tableNumber} - ${r.table?.location}`);
+      doc.fontSize(12).fillColor('#1B4F72').text(`Mesa ${r.table?.tableNumber} - ${r.table?.school?.name ?? r.table?.school?.address ?? ''}`);
       doc.fontSize(10).fillColor('#333');
       doc.text(`Delegado: ${r.delegate?.fullName} | Estado: ${r.status} | Total votos: ${r.totalVotes}`);
       doc.text(`Nulos: ${r.nullVotes} | Blancos: ${r.blankVotes}`);

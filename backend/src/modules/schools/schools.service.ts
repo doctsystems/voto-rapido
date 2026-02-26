@@ -1,14 +1,17 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { School } from './school.entity';
-import { IsString, IsOptional } from 'class-validator';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { School } from "./school.entity";
+import { IsString, IsOptional } from "class-validator";
 
 export class CreateSchoolDto {
   @IsString() name: string;
   @IsOptional() @IsString() code?: string;
   @IsOptional() @IsString() address?: string;
-  @IsOptional() @IsString() parish?: string;
   @IsOptional() @IsString() municipality?: string;
   @IsOptional() @IsString() province?: string;
   @IsOptional() @IsString() phone?: string;
@@ -23,27 +26,33 @@ export class SchoolsService {
 
   findAll() {
     return this.repo.find({
-      relations: ['tables'],
-      order: { name: 'ASC' },
+      relations: ["tables"],
+      order: { name: "ASC" },
     });
   }
 
   async findOne(id: string) {
     const school = await this.repo.findOne({
       where: { id },
-      relations: ['tables', 'tables.delegates'],
+      relations: ["tables", "tables.delegates"],
     });
-    if (!school) throw new NotFoundException('Unidad educativa no encontrada');
+    if (!school) throw new NotFoundException("Unidad educativa no encontrada");
     return school;
   }
 
   async create(dto: CreateSchoolDto) {
     if (dto.code) {
       const existing = await this.repo.findOne({ where: { code: dto.code } });
-      if (existing) throw new ConflictException('Ya existe una unidad educativa con ese código');
+      if (existing)
+        throw new ConflictException(
+          "Ya existe una unidad educativa con ese código",
+        );
     }
     const existing = await this.repo.findOne({ where: { name: dto.name } });
-    if (existing) throw new ConflictException('Ya existe una unidad educativa con ese nombre');
+    if (existing)
+      throw new ConflictException(
+        "Ya existe una unidad educativa con ese nombre",
+      );
 
     return this.repo.save(this.repo.create(dto));
   }
