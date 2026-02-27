@@ -16,34 +16,24 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @Roles(Role.ADMIN, Role.JEFE_CAMPANA)
-  @ApiOperation({ summary: 'Listar usuarios' })
-  findAll(@CurrentUser() user: any) {
-    return this.usersService.findAll(user);
-  }
+  @Roles(Role.ADMIN, Role.JEFE_CAMPANA, Role.JEFE_RECINTO)
+  findAll(@CurrentUser() user: any) { return this.usersService.findAll(user); }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.JEFE_CAMPANA)
-  findOne(@Param('id') id: string) {
-    return this.usersService.findOne(id);
-  }
+  @Roles(Role.ADMIN, Role.JEFE_CAMPANA, Role.JEFE_RECINTO)
+  findOne(@Param('id') id: string) { return this.usersService.findOne(id); }
 
   @Post()
-  @Roles(Role.ADMIN, Role.JEFE_CAMPANA)
-  @ApiOperation({ summary: 'Crear usuario' })
-  create(@Body() dto: CreateUserDto, @CurrentUser() user: any) {
-    return this.usersService.create(dto, user);
-  }
+  @Roles(Role.ADMIN, Role.JEFE_CAMPANA, Role.JEFE_RECINTO)
+  create(@Body() dto: CreateUserDto, @CurrentUser() user: any) { return this.usersService.create(dto, user); }
 
   @Put(':id')
-  @Roles(Role.ADMIN, Role.JEFE_CAMPANA)
+  @Roles(Role.ADMIN, Role.JEFE_CAMPANA, Role.JEFE_RECINTO)
   update(@Param('id') id: string, @Body() dto: UpdateUserDto, @CurrentUser() user: any) {
     return this.usersService.update(id, dto, user);
   }
 
   @Delete(':id')
   @Roles(Role.ADMIN)
-  remove(@Param('id') id: string) {
-    return this.usersService.remove(id);
-  }
+  remove(@Param('id') id: string, @CurrentUser() user: any) { return this.usersService.remove(id, user); }
 }

@@ -9,25 +9,23 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
+    @InjectRepository(User) private readonly userRepo: Repository<User>,
     private readonly jwtService: JwtService,
   ) {}
 
   async login(username: string, password: string) {
     const user = await this.userRepo.findOne({
       where: [{ username }, { email: username }],
-      relations: ['party', 'table'],
+      relations: ['party', 'table', 'table.school', 'school'],
     });
 
     if (!user || !user.isActive) {
-      this.logger.warn(`Login fallido para usuario: ${username}`);
+      this.logger.warn(`Login fallido: ${username}`);
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    const isValid = await user.validatePassword(password);
-    if (!isValid) {
-      this.logger.warn(`Contraseña incorrecta para usuario: ${username}`);
+    if (!await user.validatePassword(password)) {
+      this.logger.warn(`Contraseña incorrecta: ${username}`);
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
@@ -37,10 +35,12 @@ export class AuthService {
       role: user.role,
       partyId: user.party?.id,
       tableId: user.table?.id,
+      /** For JEFE_RECINTO: the recinto they manage */
+      schoolId: user.school?.id ?? user.table?.school?.id,
     };
 
     const token = this.jwtService.sign(payload);
-    this.logger.log(`Login exitoso: ${user.username} (${user.role})`);
+    this.logger.log(`Login: ${user.username} (${user.role})`);
 
     return {
       accessToken: token,
@@ -51,7 +51,8 @@ export class AuthService {
         email: user.email,
         role: user.role,
         party: user.party ? { id: user.party.id, name: user.party.name, acronym: user.party.acronym, color: user.party.color } : null,
-        table: user.table ? { id: user.table.id, tableNumber: user.table.tableNumber } : null,
+        table: user.table ? { id: user.table.id, tableNumber: user.table.tableNumber, school: user.table.school ?? null } : null,
+        school: user.school ? { id: user.school.id, recintoElectoral: user.school.recintoElectoral, codigoRecinto: user.school.codigoRecinto } : null,
       },
     };
   }
@@ -59,7 +60,7 @@ export class AuthService {
   async getProfile(userId: string) {
     return this.userRepo.findOne({
       where: { id: userId },
-      relations: ['party', 'table'],
+      relations: ['party', 'table', 'table.school', 'school'],
     });
   }
 }

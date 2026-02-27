@@ -23,8 +23,8 @@ export class VoteReport extends BaseEntity {
   @Column({ type: 'enum', enum: ReportStatus, default: ReportStatus.DRAFT })
   status: ReportStatus;
 
-  @Column({ nullable: true, name: 'submitted_at' })
-  submittedAt: Date;
+  @Column({ type: 'timestamptz', nullable: true, name: 'submitted_at' })
+  submittedAt: Date | null;
 
   @Column({ nullable: true })
   notes: string;

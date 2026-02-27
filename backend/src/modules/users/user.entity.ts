@@ -5,6 +5,7 @@ import { BaseEntity } from '../../common/entities/base.entity';
 import { Role } from '../../common/enums/role.enum';
 import { Party } from '../parties/party.entity';
 import { VotingTable } from '../tables/voting-table.entity';
+import { School } from '../schools/school.entity';
 import { VoteReport } from '../votes/vote-report.entity';
 
 @Entity('users')
@@ -32,9 +33,15 @@ export class User extends BaseEntity {
   @JoinColumn({ name: 'party_id' })
   party: Party;
 
+  /** Mesa asignada (aplica a DELEGADO) */
   @ManyToOne(() => VotingTable, (table) => table.delegates, { nullable: true, eager: false })
   @JoinColumn({ name: 'table_id' })
   table: VotingTable;
+
+  /** Recinto asignado (aplica a JEFE_RECINTO) */
+  @ManyToOne(() => School, { nullable: true, eager: false })
+  @JoinColumn({ name: 'school_id' })
+  school: School;
 
   @OneToMany(() => VoteReport, (report) => report.delegate)
   reports: VoteReport[];

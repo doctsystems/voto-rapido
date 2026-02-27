@@ -1,31 +1,35 @@
-import { Entity, Column, OneToMany } from "typeorm";
-import { BaseEntity } from "../../common/entities/base.entity";
-import { VotingTable } from "../tables/voting-table.entity";
+import { Entity, Column, OneToMany } from 'typeorm';
+import { BaseEntity } from '../../common/entities/base.entity';
+import { VotingTable } from '../tables/voting-table.entity';
 
-@Entity("schools")
+@Entity('schools')
 export class School extends BaseEntity {
-  @Column({ unique: true })
-  name: string;
+  /** Nombre del recinto electoral */
+  @Column({ unique: true, name: 'recinto_electoral' })
+  recintoElectoral: string;
 
-  @Column({ name: "code", unique: true, nullable: true })
-  code: string;
-
-  @Column({ nullable: true })
-  address: string;
+  @Column({ name: 'codigo_recinto', unique: true, nullable: true })
+  codigoRecinto: string;
 
   @Column({ nullable: true })
-  municipality: string;
+  departamento: string;
 
   @Column({ nullable: true })
-  province: string;
+  provincia: string;
 
   @Column({ nullable: true })
-  phone: string;
+  municipio: string;
 
-  @Column({ nullable: true, name: "principal_name" })
-  principalName: string;
+  @Column({ nullable: true, name: 'asiento_electoral' })
+  asientoElectoral: string;
 
-  @Column({ default: true, name: "is_active" })
+  @Column({ nullable: true })
+  localidad: string;
+
+  @Column({ nullable: true, type: 'int' })
+  circunscripcion: number;
+
+  @Column({ default: true, name: 'is_active' })
   isActive: boolean;
 
   @OneToMany(() => VotingTable, (table) => table.school)

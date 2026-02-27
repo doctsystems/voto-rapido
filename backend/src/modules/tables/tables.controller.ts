@@ -3,6 +3,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Role } from '../../common/enums/role.enum';
 import { TablesService, CreateTableDto } from './tables.service';
 
@@ -27,20 +28,19 @@ export class TablesController {
 
   @Post()
   @Roles(Role.ADMIN)
-  @ApiOperation({ summary: 'Crear mesa (asociar a una unidad educativa via schoolId)' })
-  create(@Body() dto: CreateTableDto) {
-    return this.service.create(dto);
+  create(@Body() dto: CreateTableDto, @CurrentUser() u: any) {
+    return this.service.create(dto, u.sub);
   }
 
   @Put(':id')
   @Roles(Role.ADMIN)
-  update(@Param('id') id: string, @Body() dto: Partial<CreateTableDto>) {
-    return this.service.update(id, dto);
+  update(@Param('id') id: string, @Body() dto: Partial<CreateTableDto>, @CurrentUser() u: any) {
+    return this.service.update(id, dto, u.sub);
   }
 
   @Delete(':id')
   @Roles(Role.ADMIN)
-  remove(@Param('id') id: string) {
-    return this.service.remove(id);
+  remove(@Param('id') id: string, @CurrentUser() u: any) {
+    return this.service.remove(id, u.sub);
   }
 }

@@ -1,6 +1,7 @@
 import { Entity, Column, OneToMany } from 'typeorm';
 import { BaseEntity } from '../../common/entities/base.entity';
 import { VoteEntry } from '../votes/vote-entry.entity';
+import { PartyElectionType } from '../parties/party-election-type.entity';
 
 @Entity('election_types')
 export class ElectionType extends BaseEntity {
@@ -18,4 +19,7 @@ export class ElectionType extends BaseEntity {
 
   @OneToMany(() => VoteEntry, (entry) => entry.electionType)
   voteEntries: VoteEntry[];
+
+  @OneToMany(() => PartyElectionType, (pet) => pet.electionType)
+  partyElectionTypes: PartyElectionType[];
 }

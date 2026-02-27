@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import { VotingTable } from "./voting-table.entity";
-import { School } from "../schools/school.entity";
-import { IsString, IsOptional, IsNumber, IsUUID } from "class-validator";
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { VotingTable } from './voting-table.entity';
+import { School } from '../schools/school.entity';
+import { IsString, IsOptional, IsNumber, IsUUID } from 'class-validator';
 
 export class CreateTableDto {
   @IsString() tableNumber: string;
@@ -14,69 +14,83 @@ export class CreateTableDto {
 @Injectable()
 export class TablesService {
   constructor(
-    @InjectRepository(VotingTable)
-    private readonly repo: Repository<VotingTable>,
+    @InjectRepository(VotingTable) private readonly repo: Repository<VotingTable>,
     @InjectRepository(School) private readonly schoolRepo: Repository<School>,
   ) {}
 
   findAll() {
     return this.repo.find({
-      relations: ["school", "delegates"],
-      order: { tableNumber: "ASC" },
+      relations: ['school', 'delegates'],
+      order: { school_id: 'ASC', tableNumber: 'ASC' },
     });
   }
 
   async findOne(id: string) {
     const table = await this.repo.findOne({
       where: { id },
-      relations: ["school", "delegates"],
+      relations: ['school', 'delegates'],
     });
-    if (!table) throw new NotFoundException("Mesa no encontrada");
+    if (!table) throw new NotFoundException('Mesa no encontrada');
     return table;
   }
 
-  async create(dto: CreateTableDto) {
+  private async resolveSchool(schoolId: string | undefined) {
+    if (!schoolId) return undefined;
+    const school = await this.schoolRepo.findOne({ where: { id: schoolId } });
+    if (!school) throw new NotFoundException('Recinto electoral no encontrado');
+    return school;
+  }
+
+  async create(dto: CreateTableDto, actorId?: string) {
+    // Pre-validate composite uniqueness with a clear error
+    const school = await this.resolveSchool(dto.schoolId);
+
+    const existing = await this.repo.findOne({
+      where: {
+        tableNumber: dto.tableNumber,
+        ...(school ? { school: { id: school.id } } : {}),
+      },
+    });
+    if (existing) {
+      throw new ConflictException(
+        `Ya existe la mesa "${dto.tableNumber}" en el recinto "${school?.recintoElectoral ?? '(sin recinto)'}"`
+      );
+    }
+
     const table = this.repo.create({
       tableNumber: dto.tableNumber,
       totalVoters: dto.totalVoters,
+      createdBy: actorId,
+      updatedBy: actorId,
     });
-
-    if (dto.schoolId) {
-      const school = await this.schoolRepo.findOne({
-        where: { id: dto.schoolId },
-      });
-      if (!school)
-        throw new NotFoundException("Unidad educativa no encontrada");
-      table.school = school;
-    }
+    if (school) table.school = school;
 
     return this.repo.save(table);
   }
 
-  async update(id: string, dto: Partial<CreateTableDto>) {
+  async update(id: string, dto: Partial<CreateTableDto>, actorId?: string) {
     const table = await this.findOne(id);
 
     if (dto.tableNumber !== undefined) table.tableNumber = dto.tableNumber;
     if (dto.totalVoters !== undefined) table.totalVoters = dto.totalVoters;
 
     if (dto.schoolId !== undefined) {
-      if (dto.schoolId) {
-        const school = await this.schoolRepo.findOne({
-          where: { id: dto.schoolId },
-        });
-        if (!school)
-          throw new NotFoundException("Unidad educativa no encontrada");
-        table.school = school;
-      } else {
+      if (!dto.schoolId) {
         table.school = null;
+        table.school_id = null;
+      } else {
+        const school = await this.resolveSchool(dto.schoolId);
+        table.school = school;
       }
     }
 
+    table.updatedBy = actorId ?? table.updatedBy;
     return this.repo.save(table);
   }
 
-  async remove(id: string) {
+  async remove(id: string, actorId?: string) {
     const table = await this.findOne(id);
+    await this.repo.update(id, { deletedBy: actorId });
     await this.repo.softDelete(id);
     return { message: `Mesa ${table.tableNumber} eliminada` };
   }
@@ -84,8 +98,8 @@ export class TablesService {
   findBySchool(schoolId: string) {
     return this.repo.find({
       where: { school: { id: schoolId } },
-      relations: ["school", "delegates"],
-      order: { tableNumber: "ASC" },
+      relations: ['school', 'delegates'],
+      order: { tableNumber: 'ASC' },
     });
   }
 }
