@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type UserRole = 'ADMIN' | 'JEFE_CAMPANA' | 'DELEGADO';
+export type UserRole = 'ADMIN' | 'JEFE_CAMPANA' | 'JEFE_RECINTO' | 'DELEGADO';
 
 export interface AuthUser {
   id: string;
@@ -10,7 +10,8 @@ export interface AuthUser {
   email: string;
   role: UserRole;
   party?: { id: string; name: string; acronym: string; color: string } | null;
-  table?: { id: string; tableNumber: string; location: string } | null;
+  table?: { id: string; tableNumber: string; totalVoters?: number; school?: { id: string; recintoElectoral: string; codigoRecinto?: string } | null } | null;
+  school?: { id: string; recintoElectoral: string; codigoRecinto?: string } | null;
 }
 
 interface AuthState {

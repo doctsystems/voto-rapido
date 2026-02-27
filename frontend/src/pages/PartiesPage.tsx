@@ -1,38 +1,232 @@
-import CrudPage from '../components/CrudPage';
-import { partiesApi } from '../lib/api';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
+import { partiesApi, electionTypesApi } from '../lib/api';
 
 export default function PartiesPage() {
+  const qc = useQueryClient();
+  const { data: parties = [], isLoading } = useQuery({ queryKey: ['parties'], queryFn: partiesApi.getAll });
+  const { data: electionTypes = [] } = useQuery({ queryKey: ['election-types'], queryFn: electionTypesApi.getAll });
+
+  const [modal, setModal] = useState<'create' | 'edit' | 'assign' | null>(null);
+  const [selected, setSelected] = useState<any>(null);
+  const [form, setForm] = useState<any>({});
+  const [assignForm, setAssignForm] = useState({ electionTypeId: '', candidateName: '' });
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: ['parties'] });
+
+  const createMutation = useMutation({
+    mutationFn: partiesApi.create,
+    onSuccess: () => { toast.success('Partido creado'); invalidate(); setModal(null); },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Error'),
+  });
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: any) => partiesApi.update(id, data),
+    onSuccess: () => { toast.success('Partido actualizado'); invalidate(); setModal(null); },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Error'),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: partiesApi.remove,
+    onSuccess: () => { toast.success('Partido eliminado'); invalidate(); },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Error'),
+  });
+  const assignMutation = useMutation({
+    mutationFn: ({ partyId, data }: any) => partiesApi.assignElectionType(partyId, data),
+    onSuccess: () => { toast.success('Tipo de elección asignado'); invalidate(); setAssignForm({ electionTypeId: '', candidateName: '' }); },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Error'),
+  });
+  const unassignMutation = useMutation({
+    mutationFn: ({ partyId, etId }: any) => partiesApi.removeElectionType(partyId, etId),
+    onSuccess: () => { toast.success('Tipo de elección removido'); invalidate(); },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Error'),
+  });
+
+  const openCreate = () => { setForm({}); setModal('create'); };
+  const openEdit = (p: any) => { setForm({ name: p.name, acronym: p.acronym, color: p.color || '' }); setSelected(p); setModal('edit'); };
+  const openAssign = (p: any) => { setSelected(p); setAssignForm({ electionTypeId: '', candidateName: '' }); setModal('assign'); };
+
+  const assignedIds = (selected?.electionTypes || []).map((pet: any) => pet.electionType?.id);
+  const availableEts = (electionTypes as any[]).filter(et => !assignedIds.includes(et.id));
+
   return (
-    <CrudPage
-      title="Partidos Políticos"
-      description="Gestión de partidos participantes en las elecciones"
-      queryKey="parties"
-      fetchFn={partiesApi.getAll}
-      createFn={partiesApi.create}
-      updateFn={partiesApi.update}
-      deleteFn={partiesApi.remove}
-      fields={[
-        { key: 'name', label: 'Nombre del partido', required: true },
-        { key: 'acronym', label: 'Siglas', required: true },
-        { key: 'color', label: 'Color (hex)', type: 'color' },
-      ]}
-      columns={[
-        { key: 'acronym', label: 'Siglas', render: (v, row) => (
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded" style={{ backgroundColor: row.color || '#999' }} />
-            <span className="font-mono font-bold">{v}</span>
+    <div>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="font-display font-bold text-2xl text-brand-800">Partidos Políticos</h1>
+          <p className="text-slate-500 text-sm mt-0.5">Gestión de partidos y sus tipos de elección asignados</p>
+        </div>
+        <button onClick={openCreate} className="btn-primary">✚ Nuevo Partido</button>
+      </div>
+
+      {isLoading ? (
+        <div className="card p-10 text-center text-slate-400">Cargando...</div>
+      ) : (
+        <div className="space-y-3">
+          {(parties as any[]).map((party: any) => (
+            <div key={party.id} className="card p-5">
+              <div className="flex items-start justify-between">
+                {/* Party info */}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-display font-bold text-sm"
+                    style={{ backgroundColor: party.color || '#1a3a6b' }}>
+                    {party.acronym?.slice(0, 2)}
+                  </div>
+                  <div>
+                    <div className="font-semibold text-slate-800">{party.name}</div>
+                    <div className="text-xs font-mono text-slate-400">{party.acronym}</div>
+                  </div>
+                </div>
+                {/* Actions */}
+                <div className="flex items-center gap-2">
+                  <button onClick={() => openAssign(party)} className="btn-secondary btn-sm text-xs">
+                    🗳 Tipos de elección
+                  </button>
+                  <button onClick={() => openEdit(party)} className="btn-secondary btn-sm text-xs">Editar</button>
+                  <button onClick={() => { if (confirm('¿Eliminar?')) deleteMutation.mutate(party.id); }}
+                    className="text-red-500 hover:text-red-700 text-xs font-medium px-2">Eliminar</button>
+                </div>
+              </div>
+
+              {/* Assigned election types */}
+              {(party.electionTypes || []).length > 0 && (
+                <div className="mt-3 pt-3 border-t border-slate-100">
+                  <p className="text-xs text-slate-400 mb-2 font-medium">Tipos de elección con candidato:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(party.electionTypes as any[]).map((pet: any) => (
+                      <div key={pet.id} className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5">
+                        <span className="text-xs font-medium text-slate-700">{pet.electionType?.name}</span>
+                        {pet.candidateName && (
+                          <span className="text-xs text-slate-400">— {pet.candidateName}</span>
+                        )}
+                        <button onClick={() => unassignMutation.mutate({ partyId: party.id, etId: pet.electionType?.id })}
+                          className="text-red-400 hover:text-red-600 ml-1 text-xs leading-none">✕</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {(party.electionTypes || []).length === 0 && (
+                <div className="mt-3 pt-3 border-t border-slate-100">
+                  <p className="text-xs text-amber-500 italic">Sin tipos de elección asignados — los delegados no podrán registrar votos para este partido.</p>
+                </div>
+              )}
+            </div>
+          ))}
+          {(parties as any[]).length === 0 && (
+            <div className="card p-10 text-center text-slate-400">No hay partidos registrados.</div>
+          )}
+        </div>
+      )}
+
+      {/* Create / Edit modal */}
+      {(modal === 'create' || modal === 'edit') && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+              <h2 className="font-display font-bold text-lg text-brand-800">
+                {modal === 'create' ? 'Nuevo Partido' : 'Editar Partido'}
+              </h2>
+              <button onClick={() => setModal(null)} className="text-slate-400 hover:text-slate-600 text-xl">✕</button>
+            </div>
+            <div className="p-6 space-y-4">
+              {[
+                { key: 'name', label: 'Nombre del partido' },
+                { key: 'acronym', label: 'Siglas' },
+                { key: 'color', label: 'Color (hex)', type: 'color' },
+              ].map(f => (
+                <div key={f.key}>
+                  <label className="label">{f.label}</label>
+                  <input type={f.type || 'text'} value={form[f.key] || ''} className="input"
+                    onChange={e => setForm({ ...form, [f.key]: e.target.value })} />
+                </div>
+              ))}
+            </div>
+            <div className="px-6 pb-6 flex justify-end gap-3">
+              <button onClick={() => setModal(null)} className="btn-secondary">Cancelar</button>
+              <button onClick={() => modal === 'create' ? createMutation.mutate(form) : updateMutation.mutate({ id: selected.id, data: form })}
+                disabled={createMutation.isPending || updateMutation.isPending} className="btn-primary">
+                Guardar
+              </button>
+            </div>
           </div>
-        )},
-        { key: 'name', label: 'Nombre' },
-        { key: 'color', label: 'Color', render: (v) => v ? (
-          <span className="font-mono text-xs">{v}</span>
-        ) : '—'},
-        { key: 'isActive', label: 'Estado', render: (v) => (
-          <span className={`text-xs px-2 py-0.5 rounded-full ${v ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-            {v ? 'Activo' : 'Inactivo'}
-          </span>
-        )},
-      ]}
-    />
+        </div>
+      )}
+
+      {/* Assign election types modal */}
+      {modal === 'assign' && selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+              <div>
+                <h2 className="font-display font-bold text-lg text-brand-800">
+                  Tipos de elección — {selected.name}
+                </h2>
+                <p className="text-slate-400 text-sm mt-0.5">Define en qué elecciones participa este partido</p>
+              </div>
+              <button onClick={() => setModal(null)} className="text-slate-400 hover:text-slate-600 text-xl">✕</button>
+            </div>
+            <div className="p-6">
+              {/* Current assignments */}
+              <div className="mb-5">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Asignados actualmente</p>
+                {(selected.electionTypes || []).length === 0 ? (
+                  <p className="text-slate-400 text-sm italic">Ninguno asignado.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {(selected.electionTypes as any[]).map((pet: any) => (
+                      <div key={pet.id} className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
+                        <div>
+                          <span className="text-sm font-medium text-slate-800">{pet.electionType?.name}</span>
+                          {pet.candidateName && <span className="text-xs text-slate-400 ml-2">{pet.candidateName}</span>}
+                        </div>
+                        <button onClick={() => unassignMutation.mutate({ partyId: selected.id, etId: pet.electionType?.id })}
+                          className="text-red-400 hover:text-red-600 text-xs font-medium">Quitar</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Add new */}
+              {availableEts.length > 0 && (
+                <div className="border-t border-slate-100 pt-4">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Agregar tipo de elección</p>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="label">Tipo de elección</label>
+                      <select value={assignForm.electionTypeId} className="input"
+                        onChange={e => setAssignForm({ ...assignForm, electionTypeId: e.target.value })}>
+                        <option value="">Seleccionar...</option>
+                        {availableEts.map((et: any) => (
+                          <option key={et.id} value={et.id}>{et.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="label">Nombre del candidato (opcional)</label>
+                      <input type="text" value={assignForm.candidateName} className="input"
+                        placeholder="Ej: Juan Pérez"
+                        onChange={e => setAssignForm({ ...assignForm, candidateName: e.target.value })} />
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (!assignForm.electionTypeId) return toast.error('Selecciona un tipo de elección');
+                        assignMutation.mutate({ partyId: selected.id, data: { electionTypeId: assignForm.electionTypeId, candidateName: assignForm.candidateName || undefined } });
+                      }}
+                      disabled={assignMutation.isPending}
+                      className="btn-primary btn-sm w-full">
+                      {assignMutation.isPending ? 'Asignando...' : '✚ Agregar'}
+                    </button>
+                  </div>
+                </div>
+              )}
+              {availableEts.length === 0 && (selected.electionTypes || []).length > 0 && (
+                <p className="text-xs text-green-600 font-medium mt-3">✓ Este partido tiene todos los tipos de elección asignados.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

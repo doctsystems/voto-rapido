@@ -5,7 +5,15 @@ import { useAuthStore } from '../store/auth.store';
 const roleLabel: Record<string, string> = {
   ADMIN: 'Administrador',
   JEFE_CAMPANA: 'Jefe de Campaña',
+  JEFE_RECINTO: 'Jefe de Recinto',
   DELEGADO: 'Delegado',
+};
+
+const roleBadge: Record<string, string> = {
+  ADMIN: 'text-purple-300',
+  JEFE_CAMPANA: 'text-blue-300',
+  JEFE_RECINTO: 'text-teal-300',
+  DELEGADO: 'text-green-300',
 };
 
 export default function Layout() {
@@ -13,21 +21,20 @@ export default function Layout() {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const handleLogout = () => { logout(); navigate('/login'); };
+
+  const role = user?.role || '';
 
   const navItems = [
-    { to: '/', label: 'Dashboard', icon: '⬡', roles: ['ADMIN', 'JEFE_CAMPANA', 'DELEGADO'] },
-    { to: '/reports', label: 'Reportes', icon: '📋', roles: ['ADMIN', 'JEFE_CAMPANA', 'DELEGADO'] },
-    { to: '/reports/new', label: 'Nuevo Reporte', icon: '✚', roles: ['DELEGADO'] },
-    { to: '/users', label: 'Usuarios', icon: '👥', roles: ['ADMIN', 'JEFE_CAMPANA'] },
-    { to: '/parties', label: 'Partidos', icon: '🏛', roles: ['ADMIN'] },
-    { to: '/schools', label: 'Unidades Educativas', icon: '🏫', roles: ['ADMIN'] },
-    { to: '/tables', label: 'Mesas', icon: '🗳', roles: ['ADMIN'] },
-    { to: '/election-types', label: 'Tipos de Elección', icon: '📌', roles: ['ADMIN'] },
-  ].filter(item => item.roles.includes(user?.role || ''));
+    { to: '/',              label: 'Dashboard',          icon: '⬡',  roles: ['ADMIN','JEFE_CAMPANA','JEFE_RECINTO','DELEGADO'] },
+    { to: '/reports',       label: 'Reportes',           icon: '📋', roles: ['ADMIN','JEFE_CAMPANA','JEFE_RECINTO','DELEGADO'] },
+    { to: '/reports/new',   label: 'Nuevo Reporte',      icon: '✚',  roles: ['DELEGADO','JEFE_RECINTO'] },
+    { to: '/users',         label: 'Usuarios',           icon: '👥', roles: ['ADMIN','JEFE_CAMPANA','JEFE_RECINTO'] },
+    { to: '/parties',       label: 'Partidos',           icon: '🏛', roles: ['ADMIN'] },
+    { to: '/schools',       label: 'Recintos',           icon: '📍', roles: ['ADMIN'] },
+    { to: '/tables',        label: 'Mesas',              icon: '🗳', roles: ['ADMIN'] },
+    { to: '/election-types',label: 'Tipos de Elección',  icon: '📌', roles: ['ADMIN'] },
+  ].filter(item => item.roles.includes(role));
 
   const Sidebar = () => (
     <aside className="w-64 bg-brand-800 min-h-screen flex flex-col">
@@ -43,17 +50,22 @@ export default function Layout() {
       </div>
 
       {/* User info */}
-      <div className="px-5 py-4 border-b border-brand-700">
+      <div className="px-5 py-4 border-b border-brand-700 space-y-0.5">
         <div className="text-white font-medium text-sm truncate">{user?.fullName}</div>
-        <div className="text-accent-400 text-xs font-mono mt-0.5">{roleLabel[user?.role || '']}</div>
+        <div className={`text-xs font-mono ${roleBadge[role] || 'text-brand-100'}`}>
+          {roleLabel[role] || role}
+        </div>
         {user?.party && (
-          <div className="mt-1 flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 pt-0.5">
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: user.party.color }} />
             <span className="text-brand-100 text-xs opacity-80">{user.party.acronym}</span>
           </div>
         )}
         {user?.table && (
-          <div className="text-brand-100 text-xs opacity-70 mt-0.5">Mesa {user.table.tableNumber}</div>
+          <div className="text-brand-100 text-xs opacity-70">🗳 Mesa {user.table.tableNumber}</div>
+        )}
+        {user?.school && (
+          <div className="text-brand-100 text-xs opacity-70 truncate">📍 {user.school.recintoElectoral}</div>
         )}
       </div>
 
@@ -93,32 +105,21 @@ export default function Layout() {
 
   return (
     <div className="flex min-h-screen bg-slate-50">
-      {/* Desktop sidebar */}
-      <div className="hidden lg:block">
-        <Sidebar />
-      </div>
+      <div className="hidden lg:block"><Sidebar /></div>
 
-      {/* Mobile overlay */}
       {mobileOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
-          <div className="absolute left-0 top-0 h-full">
-            <Sidebar />
-          </div>
+          <div className="absolute left-0 top-0 h-full"><Sidebar /></div>
         </div>
       )}
 
-      {/* Main content */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile header */}
         <header className="lg:hidden bg-brand-800 text-white px-4 py-3 flex items-center gap-3">
           <button onClick={() => setMobileOpen(true)} className="text-xl">☰</button>
           <span className="font-display font-bold">VotoRápido</span>
         </header>
-
-        <main className="flex-1 p-6">
-          <Outlet />
-        </main>
+        <main className="flex-1 p-6"><Outlet /></main>
       </div>
     </div>
   );
