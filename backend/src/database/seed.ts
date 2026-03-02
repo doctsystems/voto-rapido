@@ -103,7 +103,7 @@ async function seed() {
 
   // --- Admin ---
   await userRepo.save(userRepo.create({
-    username: 'admin', email: 'admin@votorapido.bo',
+    username: 'admin', email: 'admin@votorapido.bo', phone: '60000000',
     password: await bcrypt.hash('admin123', 10),
     fullName: 'Administrador del Sistema', role: Role.ADMIN,
   }));
@@ -114,6 +114,7 @@ async function seed() {
       username: `jefe_${parties[i].acronym.toLowerCase()}`,
       email: `jefe@${parties[i].acronym.toLowerCase()}.bo`,
       password: await bcrypt.hash('jefe123', 10),
+      phone: `600000${10 + i}`,
       fullName: `Jefe de Campaña ${parties[i].name}`,
       role: Role.JEFE_CAMPANA, party: parties[i],
     }));
@@ -125,6 +126,7 @@ async function seed() {
       username: `jrecinto_mpu_${s + 1}`,
       email: `jrecinto.mpu.${s + 1}@votorapido.bo`,
       password: await bcrypt.hash('jrecinto123', 10),
+      phone: `601000${s + 1}`,
       fullName: `Jefe Recinto MPU — ${schools[s].recintoElectoral}`,
       role: Role.JEFE_RECINTO, party: parties[0], school: schools[s],
     }));
@@ -138,6 +140,7 @@ async function seed() {
         username: `delegado_${parties[p].acronym.toLowerCase()}_${table.tableNumber}`,
         email: `del.${parties[p].acronym.toLowerCase()}.${table.tableNumber}@votorapido.bo`,
         password: delegadoPwd,
+        phone: '60000000',
         fullName: `Delegado ${parties[p].acronym} Mesa ${table.tableNumber}`,
         role: Role.DELEGADO, party: parties[p], table,
       }));

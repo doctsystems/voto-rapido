@@ -23,11 +23,15 @@ export class VotesController {
   }
 
   @Get('reports/:id')
-  findOne(@Param('id') id: string, @CurrentUser() user: any) { return this.svc.findOne(id, user); }
+  findOne(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.svc.findOne(id, user);
+  }
 
   @Post('reports')
   @Roles(Role.DELEGADO, Role.JEFE_RECINTO)
-  create(@Body() dto: CreateReportDto, @CurrentUser() user: any) { return this.svc.create(dto, user); }
+  create(@Body() dto: CreateReportDto, @CurrentUser() user: any) {
+    return this.svc.create(dto, user);
+  }
 
   @Put('reports/:id')
   @Roles(Role.DELEGADO, Role.JEFE_RECINTO)
@@ -37,13 +41,21 @@ export class VotesController {
 
   @Patch('reports/:id/submit')
   @Roles(Role.DELEGADO, Role.JEFE_RECINTO)
-  submit(@Param('id') id: string, @CurrentUser() user: any) { return this.svc.submit(id, user); }
+  submit(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.svc.submit(id, user);
+  }
 
+  /** Verificar: solo JEFE_CAMPANA y JEFE_RECINTO (no ADMIN) */
   @Patch('reports/:id/verify')
-  @Roles(Role.ADMIN, Role.JEFE_CAMPANA, Role.JEFE_RECINTO)
-  verify(@Param('id') id: string, @CurrentUser() user: any) { return this.svc.verify(id, user); }
+  @Roles(Role.JEFE_CAMPANA, Role.JEFE_RECINTO)
+  verify(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.svc.verify(id, user);
+  }
 
+  /** Eliminar: solo JEFE_CAMPANA y JEFE_RECINTO (no ADMIN) */
   @Delete('reports/:id')
-  @Roles(Role.ADMIN, Role.JEFE_CAMPANA, Role.JEFE_RECINTO)
-  remove(@Param('id') id: string, @CurrentUser() user: any) { return this.svc.remove(id, user); }
+  @Roles(Role.JEFE_CAMPANA, Role.JEFE_RECINTO)
+  remove(@Param('id') id: string, @CurrentUser() user: any) {
+    return this.svc.remove(id, user);
+  }
 }

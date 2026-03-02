@@ -71,9 +71,9 @@ export class UsersService {
       dto.partyId = currentUser.partyId;
     }
 
-    const existing = await this.userRepo.findOne({
-      where: [{ username: dto.username }, { email: dto.email }],
-    });
+    const conditions: any[] = [{ username: dto.username }];
+    if (dto.email) conditions.push({ email: dto.email });
+    const existing = await this.userRepo.findOne({ where: conditions });
     if (existing) throw new ConflictException('Usuario o email ya existe');
 
     const user = this.userRepo.create({ ...dto, createdBy: currentUser.sub, updatedBy: currentUser.sub });

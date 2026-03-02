@@ -20,4 +20,12 @@ export class VoteEntry extends BaseEntity {
 
   @Column({ default: 0 })
   votes: number;
+
+  /** Votos nulos de este tipo de elección */
+  @Column({ name: 'null_votes', default: 0 })
+  nullVotes: number;
+
+  /** Votos en blanco de este tipo de elección */
+  @Column({ name: 'blank_votes', default: 0 })
+  blankVotes: number;
 }

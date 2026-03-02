@@ -3,7 +3,8 @@ import { Role } from '../../../common/enums/role.enum';
 
 export class CreateUserDto {
   @IsString() username: string;
-  @IsEmail() email: string;
+  @IsOptional() @IsEmail() email?: string;
+  @IsString() phone: string;
   @IsString() password: string;
   @IsString() fullName: string;
   @IsOptional() @IsEnum(Role) role?: Role;
@@ -15,6 +16,7 @@ export class CreateUserDto {
 export class UpdateUserDto {
   @IsOptional() @IsString() username?: string;
   @IsOptional() @IsEmail() email?: string;
+  @IsOptional() @IsString() phone?: string;
   @IsOptional() @IsString() password?: string;
   @IsOptional() @IsString() fullName?: string;
   @IsOptional() @IsEnum(Role) role?: Role;

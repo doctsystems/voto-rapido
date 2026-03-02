@@ -20,15 +20,21 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
-    const user = await this.userRepo.findOne({ where: { id: payload.sub } });
+    // Always load fresh user data from DB to avoid stale JWT claims
+    const user = await this.userRepo.findOne({
+      where: { id: payload.sub },
+      relations: ['party', 'table', 'table.school', 'school'],
+    });
     if (!user || !user.isActive) throw new UnauthorizedException('Usuario no encontrado o inactivo');
+
     return {
-      sub: payload.sub,
-      username: payload.username,
-      role: payload.role,
-      partyId: payload.partyId,
-      tableId: payload.tableId,
-      schoolId: payload.schoolId,  // ← for JEFE_RECINTO
+      sub:      user.id,
+      username: user.username,
+      role:     user.role,
+      partyId:  user.party?.id,
+      tableId:  user.table?.id,
+      // JEFE_RECINTO uses school; fallback to table's school for DELEGADO
+      schoolId: user.school?.id ?? user.table?.school?.id,
     };
   }
 }
