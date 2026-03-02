@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+import { toast } from '../lib/toast';
 import { tablesApi, schoolsApi } from '../lib/api';
 
 export default function TablesPage() {
@@ -79,62 +79,62 @@ export default function TablesPage() {
     <div>
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="font-display font-bold text-2xl text-brand-800">Mesas de Votación</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Mesas electorales agrupadas por recinto electoral</p>
+          <h1 className="text-2xl font-bold text-black">Mesas de Votación</h1>
+          <p className="text-sm text-body mt-0.5">Mesas electorales agrupadas por recinto electoral</p>
         </div>
         <button onClick={openCreate} className="btn-primary">✚ Nueva Mesa</button>
       </div>
 
       {isLoading ? (
-        <div className="card p-10 text-center text-slate-400">Cargando...</div>
+        <div className="card p-10 text-center text-bodydark">Cargando...</div>
       ) : (tables as any[]).length === 0 ? (
         <div className="card p-10 text-center text-slate-500">Sin mesas registradas</div>
       ) : (
         <div className="card overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
+            <thead className="bg-whiten border-b border-stroke">
               <tr>
-                <th className="text-left px-4 py-3 font-semibold text-slate-600">Mesa</th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-600">Recinto Electoral</th>
-                <th className="text-right px-4 py-3 font-semibold text-slate-600">Padrón</th>
-                <th className="text-right px-4 py-3 font-semibold text-slate-600">Delegados</th>
+                <th className="text-left px-4 py-3 font-semibold text-body">Mesa</th>
+                <th className="text-left px-4 py-3 font-semibold text-body">Recinto Electoral</th>
+                <th className="text-right px-4 py-3 font-semibold text-body">Padrón</th>
+                <th className="text-right px-4 py-3 font-semibold text-body">Delegados</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {(tables as any[]).map((row: any) => (
-                <tr key={row.id} className="hover:bg-slate-50 transition-colors">
+                <tr key={row.id} className="hover:bg-whiten transition-colors">
                   <td className="px-4 py-3">
-                    <span className="font-mono font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded">
+                    <span className="font-mono font-bold text-primary bg-whiten px-2 py-0.5 rounded">
                       {row.tableNumber}
                     </span>
                   </td>
                   <td className="px-4 py-3">
                     {row.school ? (
                       <div>
-                        <div className="font-medium text-slate-800">{row.school.recintoElectoral}</div>
+                        <div className="font-medium text-black">{row.school.recintoElectoral}</div>
                         {row.school.codigoRecinto && (
-                          <div className="text-xs font-mono text-slate-400">#{row.school.codigoRecinto}</div>
+                          <div className="text-xs font-mono text-bodydark">#{row.school.codigoRecinto}</div>
                         )}
                       </div>
                     ) : (
-                      <span className="text-slate-400 italic text-sm">Sin asignar</span>
+                      <span className="text-bodydark italic text-sm">Sin asignar</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
                     {row.totalVoters != null
-                      ? <span className="font-mono font-semibold text-brand-700">{row.totalVoters.toLocaleString()}</span>
-                      : <span className="text-slate-400">—</span>}
+                      ? <span className="font-mono font-semibold text-primary">{row.totalVoters.toLocaleString()}</span>
+                      : <span className="text-bodydark">—</span>}
                   </td>
                   <td className="px-4 py-3 text-right font-mono text-sm">
                     {Array.isArray(row.delegates) ? row.delegates.length : 0}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-3">
-                      <button onClick={() => openEdit(row)} className="text-brand-500 hover:text-brand-700 text-xs font-medium">Editar</button>
+                      <button onClick={() => openEdit(row)} className="text-primary hover:text-primary-700 text-xs font-semibold">Editar</button>
                       <button
                         onClick={() => { if (confirm(`¿Eliminar mesa ${row.tableNumber}?`)) deleteMutation.mutate(row.id); }}
-                        className="text-red-400 hover:text-red-600 text-xs font-medium"
+                        className="text-meta-1 hover:text-red-700 text-xs font-semibold"
                       >Eliminar</button>
                     </div>
                   </td>
@@ -147,13 +147,13 @@ export default function TablesPage() {
 
       {/* Modal crear/editar */}
       {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="font-display font-bold text-lg text-brand-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-sm shadow-default border border-stroke w-full max-w-md">
+            <div className="p-6 border-b border-stroke flex justify-between items-center">
+              <h2 className="text-lg font-bold text-black">
                 {modal === 'create' ? 'Nueva Mesa' : 'Editar Mesa'}
               </h2>
-              <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 text-xl">✕</button>
+              <button onClick={closeModal} className="text-bodydark hover:text-body text-xl">✕</button>
             </div>
             <div className="p-6 space-y-4">
               <div>

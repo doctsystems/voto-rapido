@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import toast from 'react-hot-toast';
 import { votesApi, reportsApi, schoolsApi } from '../lib/api';
 import { useAuthStore } from '../store/auth.store';
+import { toast } from '../lib/toast';
 
-const statusBadge: Record<string, string> = {
-  DRAFT: 'badge-draft', SUBMITTED: 'badge-submitted', VERIFIED: 'badge-verified',
+const STATUS_BADGE: Record<string, string> = {
+  DRAFT:     'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-meta-2 text-body',
+  SUBMITTED: 'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-700',
+  VERIFIED:  'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-green-100 text-meta-3',
 };
-const statusLabel: Record<string, string> = {
+const STATUS_LABEL: Record<string, string> = {
   DRAFT: 'Borrador', SUBMITTED: 'Enviado', VERIFIED: 'Verificado',
 };
 
@@ -18,7 +20,10 @@ export default function ReportsPage() {
   const [selected, setSelected] = useState<any | null>(null);
   const [filterSchool, setFilterSchool] = useState('');
 
-  const { data: schools = [] } = useQuery({ queryKey: ['schools'], queryFn: () => schoolsApi.getAll() });
+  const { data: schools = [] } = useQuery({
+    queryKey: ['schools'],
+    queryFn: () => schoolsApi.getAll(),
+  });
   const { data: reports = [], isLoading } = useQuery({
     queryKey: ['reports', filterSchool],
     queryFn: () => votesApi.getReports(filterSchool || undefined),
@@ -28,156 +33,200 @@ export default function ReportsPage() {
 
   const submitMutation = useMutation({
     mutationFn: (id: string) => votesApi.submitReport(id),
-    onSuccess: () => { toast.success('Reporte enviado'); invalidate(); },
-    onError: (e: any) => toast.error(e.response?.data?.message || 'Error'),
+    onSuccess: () => { toast.success('Reporte enviado correctamente'); invalidate(); },
+    onError:   (e: any) => toast.error(e.response?.data?.message || 'Error al enviar'),
   });
   const verifyMutation = useMutation({
     mutationFn: (id: string) => votesApi.verifyReport(id),
     onSuccess: () => { toast.success('Reporte verificado'); invalidate(); },
-    onError: (e: any) => toast.error(e.response?.data?.message || 'Error'),
+    onError:   (e: any) => toast.error(e.response?.data?.message || 'Error al verificar'),
   });
   const deleteMutation = useMutation({
     mutationFn: (id: string) => votesApi.deleteReport(id),
-    onSuccess: () => { toast.success('Reporte eliminado. El delegado puede crear uno nuevo.'); invalidate(); setSelected(null); },
-    onError: (e: any) => toast.error(e.response?.data?.message || 'Error'),
+    onSuccess: () => {
+      toast.success('Reporte eliminado. El delegado puede crear uno nuevo.');
+      invalidate();
+      setSelected(null);
+    },
+    onError: (e: any) => toast.error(e.response?.data?.message || 'Error al eliminar'),
   });
 
-  const canDelete = user?.role === 'ADMIN' || user?.role === 'JEFE_CAMPANA' || user?.role === 'JEFE_RECINTO';
-  const canVerify = user?.role === 'ADMIN' || user?.role === 'JEFE_CAMPANA' || user?.role === 'JEFE_RECINTO';
-  const canCreate = user?.role === 'DELEGADO' || user?.role === 'JEFE_RECINTO';
+  // ADMIN can NOT verify or delete — only JEFE_CAMPANA and JEFE_RECINTO
+  const role = user?.role ?? '';
+  const canVerify = role === 'JEFE_CAMPANA' || role === 'JEFE_RECINTO';
+  const canDelete = role === 'JEFE_CAMPANA' || role === 'JEFE_RECINTO';
+  const canCreate = role === 'DELEGADO' || role === 'JEFE_RECINTO';
+  const canSubmit = role === 'DELEGADO' || role === 'JEFE_RECINTO';
+
+  const handleDelete = (id: string, label?: string) => {
+    toast.confirm(
+      `¿Eliminar reporte${label ? ` de ${label}` : ''}? El delegado podrá crear uno nuevo.`,
+      () => deleteMutation.mutate(id),
+      'Eliminar',
+    );
+  };
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      {/* ─── Header ─────────────────────────────────────────────── */}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display font-bold text-2xl text-brand-800">Reportes de Votación</h1>
-          <p className="text-slate-500 text-sm mt-0.5">{(reports as any[]).length} reporte(s) encontrado(s)</p>
+          <h2 className="text-2xl font-bold text-black">Reportes de Votación</h2>
+          <p className="text-body text-sm mt-0.5">
+            {(reports as any[]).length} reporte(s) encontrado(s)
+          </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button onClick={reportsApi.exportExcel} className="btn-secondary btn-sm">📊 Excel</button>
-          <button onClick={reportsApi.exportPdf} className="btn-secondary btn-sm">📄 PDF</button>
+          <button onClick={reportsApi.exportPdf}   className="btn-secondary btn-sm">📄 PDF</button>
           {canCreate && (
-            <Link to="/reports/new" className="btn-primary btn-sm">✚ Nuevo Reporte</Link>
+            <Link to="/reports/new" className="btn-primary btn-sm">+ Nuevo Reporte</Link>
           )}
         </div>
       </div>
 
-      {/* Filter bar */}
-      <div className="flex items-center gap-3 mb-4">
+      {/* ─── Filter ─────────────────────────────────────────────── */}
+      <div className="mb-4 flex items-center gap-3 flex-wrap">
         <select
           value={filterSchool}
           onChange={e => setFilterSchool(e.target.value)}
-          className="input max-w-xs text-sm"
+          className="rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all max-w-xs"
         >
-          <option value="">🔍 Todos los recintos</option>
+          <option value="">Todos los recintos</option>
           {(schools as any[]).map((s: any) => (
-            <option key={s.id} value={s.id}>{s.codigoRecinto ? `[${s.codigoRecinto}] ` : ''}{s.recintoElectoral}</option>
+            <option key={s.id} value={s.id}>
+              {s.codigoRecinto ? `[${s.codigoRecinto}] ` : ''}{s.recintoElectoral}
+            </option>
           ))}
         </select>
         {filterSchool && (
-          <button onClick={() => setFilterSchool('')} className="text-xs text-slate-400 hover:text-slate-600">✕ Limpiar filtro</button>
+          <button onClick={() => setFilterSchool('')}
+            className="text-xs text-body hover:text-meta-1 transition-colors">
+            ✕ Limpiar
+          </button>
         )}
       </div>
 
+      {/* ─── Table ──────────────────────────────────────────────── */}
       {isLoading ? (
-        <div className="card p-10 text-center text-slate-400">Cargando...</div>
+        <div className="card p-10 text-center text-body">Cargando...</div>
       ) : (reports as any[]).length === 0 ? (
         <div className="card p-10 text-center">
           <div className="text-4xl mb-3">📋</div>
-          <p className="text-slate-500">No hay reportes aún</p>
-          {canCreate && <Link to="/reports/new" className="btn-primary btn-sm mt-4 inline-block">Crear primer reporte</Link>}
+          <p className="text-body">No hay reportes{filterSchool ? ' para este recinto' : ' aún'}</p>
+          {canCreate && (
+            <Link to="/reports/new" className="btn-primary btn-sm mt-4 inline-flex">
+              Crear primer reporte
+            </Link>
+          )}
         </div>
       ) : (
-        <div className="card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="text-left px-4 py-3 font-semibold text-slate-600">Recinto</th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-600">Mesa</th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-600">Delegado</th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-600">Estado</th>
-                <th className="text-right px-4 py-3 font-semibold text-slate-600">Votos</th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-600">Enviado</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {(reports as any[]).map((r: any) => (
-                <tr key={r.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="text-slate-700 font-medium text-xs">{r.table?.school?.recintoElectoral || '—'}</div>
-                    {r.table?.school?.codigoRecinto && (
-                      <div className="text-xs font-mono text-slate-400">#{r.table.school.codigoRecinto}</div>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 font-mono font-bold text-brand-700">{r.table?.tableNumber}</td>
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-slate-800">{r.delegate?.fullName}</div>
-                    {r.delegate?.party && <div className="text-xs text-slate-400">{r.delegate.party.acronym}</div>}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={statusBadge[r.status]}>{statusLabel[r.status]}</span>
-                  </td>
-                  <td className="px-4 py-3 text-right font-mono font-semibold text-slate-700">{r.totalVotes.toLocaleString()}</td>
-                  <td className="px-4 py-3 text-slate-400 text-xs">
-                    {r.submittedAt ? new Date(r.submittedAt).toLocaleString('es-BO') : '—'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => setSelected(r)} className="text-brand-500 hover:text-brand-700 text-xs font-medium">Ver</button>
-                      {user?.role === 'DELEGADO' && r.status === 'DRAFT' && (
-                        <button onClick={() => submitMutation.mutate(r.id)} className="btn-primary btn-sm text-xs">Enviar</button>
-                      )}
-                      {canVerify && r.status === 'SUBMITTED' && (
-                        <button onClick={() => verifyMutation.mutate(r.id)} className="btn-primary btn-sm text-xs bg-green-600 hover:bg-green-700">Verificar</button>
-                      )}
-                      {canDelete && (
-                        <button
-                          onClick={() => { if (confirm('¿Eliminar este reporte? El delegado podrá crear uno nuevo.')) deleteMutation.mutate(r.id); }}
-                          className="text-red-400 hover:text-red-600 text-xs font-medium"
-                        >
-                          Eliminar
-                        </button>
-                      )}
-                    </div>
-                  </td>
+        <div className="rounded-2xl bg-white border border-black/[.06] shadow-[0_2px_16px_rgba(0,0,0,.06)] overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="ta-table">
+              <thead>
+                <tr>
+                  <th>Recinto</th>
+                  <th>Mesa</th>
+                  <th>Delegado</th>
+                  <th>Estado</th>
+                  <th>Enviado</th>
+                  <th className="text-right">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {(reports as any[]).map((r: any) => (
+                  <tr key={r.id}>
+                    <td>
+                      <div className="text-xs font-medium text-black leading-tight">
+                        {r.table?.school?.recintoElectoral || <span className="text-body italic">—</span>}
+                      </div>
+                      {r.table?.school?.codigoRecinto && (
+                        <div className="text-xs font-mono text-body">#{r.table.school.codigoRecinto}</div>
+                      )}
+                    </td>
+                    <td>
+                      <span className="font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-sm text-xs">
+                        {r.table?.tableNumber}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="font-medium text-black text-sm">{r.delegate?.fullName}</div>
+                      {r.delegate?.party && (
+                        <div className="text-xs text-body">{r.delegate.party.acronym}</div>
+                      )}
+                    </td>
+                    <td><span className={STATUS_BADGE[r.status]}>{STATUS_LABEL[r.status]}</span></td>
+                    <td className="text-xs text-body">
+                      {r.submittedAt ? new Date(r.submittedAt).toLocaleString('es-BO') : '—'}
+                    </td>
+                    <td>
+                      <div className="flex items-center justify-end gap-2">
+                        <button onClick={() => setSelected(r)}
+                          className="text-xs font-medium text-primary hover:text-primary-700 transition-colors">
+                          Ver
+                        </button>
+                        {canSubmit && r.status === 'DRAFT' && (user?.role === 'JEFE_RECINTO' || r.delegate?.id === user?.id) && (
+                          <button onClick={() => submitMutation.mutate(r.id)}
+                            className="btn-primary btn-xs">
+                            Enviar
+                          </button>
+                        )}
+                        {canVerify && r.status === 'SUBMITTED' && (
+                          <button onClick={() => verifyMutation.mutate(r.id)}
+                            className="btn-success btn-xs">
+                            Verificar
+                          </button>
+                        )}
+                        {canDelete && (
+                          <button onClick={() => handleDelete(r.id, r.table?.tableNumber)}
+                            className="text-xs font-medium text-meta-1 hover:text-red-700 transition-colors">
+                            Eliminar
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
-      {/* Detail modal */}
+      {/* ─── Detail Modal ────────────────────────────────────────── */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={e => e.target === e.currentTarget && setSelected(null)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-auto">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-start">
+            {/* Modal header */}
+            <div className="px-6 py-4 border-b border-stroke flex items-start justify-between gap-4">
               <div>
-                <h2 className="font-display font-bold text-xl text-brand-800">
+                <h3 className="font-bold text-lg text-black">
                   Reporte — Mesa {selected.table?.tableNumber}
-                </h2>
-                <p className="text-slate-500 text-sm mt-0.5">
-                  {selected.table?.school?.recintoElectoral
-                    ? `📍 ${selected.table.school.recintoElectoral}${selected.table.school.codigoRecinto ? ` (Cód. ${selected.table.school.codigoRecinto})` : ''}`
-                    : ''}
+                </h3>
+                {selected.table?.school?.recintoElectoral && (
+                  <p className="text-sm text-body mt-0.5">
+                    📍 {selected.table.school.recintoElectoral}
+                    {selected.table.school.codigoRecinto && ` (Cód. ${selected.table.school.codigoRecinto})`}
+                  </p>
+                )}
+                <p className="text-xs text-body mt-0.5">
+                  {selected.delegate?.fullName} · {selected.delegate?.party?.name}
                 </p>
-                <p className="text-slate-400 text-xs mt-0.5">{selected.delegate?.fullName} — {selected.delegate?.party?.name}</p>
               </div>
-              <div className="flex items-center gap-2">
-                <span className={statusBadge[selected.status]}>{statusLabel[selected.status]}</span>
-                <button onClick={() => setSelected(null)} className="text-slate-400 hover:text-slate-600 text-xl ml-2">✕</button>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className={STATUS_BADGE[selected.status]}>{STATUS_LABEL[selected.status]}</span>
+                <button onClick={() => setSelected(null)}
+                  className="text-body hover:text-black text-lg w-8 h-8 flex items-center justify-center rounded transition-colors">
+                  ✕
+                </button>
               </div>
             </div>
+
+            {/* Modal body */}
             <div className="p-6">
-              <div className="grid grid-cols-3 gap-4 mb-6">
-                {[['Total votos', selected.totalVotes], ['Nulos', selected.nullVotes], ['Blancos', selected.blankVotes]].map(([l, v]) => (
-                  <div key={l} className="text-center p-3 bg-slate-50 rounded-lg">
-                    <div className="font-mono font-bold text-2xl text-brand-800">{v}</div>
-                    <div className="text-xs text-slate-500">{l}</div>
-                  </div>
-                ))}
-              </div>
+              {/* Entries grouped by election type */}
               {(() => {
                 const byType: Record<string, any[]> = {};
                 (selected.entries || []).forEach((e: any) => {
@@ -185,47 +234,88 @@ export default function ReportsPage() {
                   if (!byType[key]) byType[key] = [];
                   byType[key].push(e);
                 });
-                return Object.entries(byType).map(([type, entries]) => (
-                  <div key={type} className="mb-4">
-                    <h3 className="font-semibold text-brand-700 text-sm mb-2 flex items-center gap-2">
-                      <span className="w-2 h-2 bg-accent-500 rounded-full" />{type}
-                    </h3>
-                    <div className="space-y-1">
-                      {entries.map((e: any) => (
-                        <div key={e.id} className="flex justify-between text-sm py-1.5 px-3 bg-slate-50 rounded-lg">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: e.party?.color }} />
-                            <span className="text-slate-600">{e.party?.acronym} — {e.party?.name}</span>
+                return Object.entries(byType).map(([type, entries]) => {
+                  const validVotes  = entries.reduce((s: number, e: any) => s + (e.votes || 0), 0);
+                  const nullVotes   = entries.reduce((s: number, e: any) => s + (e.nullVotes || 0), 0);
+                  const blankVotes  = entries.reduce((s: number, e: any) => s + (e.blankVotes || 0), 0);
+                  const emitidos    = validVotes + nullVotes + blankVotes;
+                  const tableVoters = selected.table?.totalVoters;
+
+                  return (
+                    <div key={type} className="mb-5">
+                      {/* Election type header */}
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-1 h-5 bg-primary rounded-full" />
+                        <h4 className="font-semibold text-black text-sm">{type}</h4>
+                      </div>
+
+                      {/* All rows: parties + blank + null as unified list */}
+                      <div className="space-y-1">
+                        {entries.map((e: any) => (
+                          <div key={e.id}
+                            className="flex items-center justify-between px-3 py-2 bg-whiter rounded-xl border border-black/[.06]">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2.5 h-2.5 rounded-md flex-shrink-0"
+                                style={{ backgroundColor: e.party?.color || '#94a3b8' }} />
+                              <span className="text-sm text-black font-medium">{e.party?.acronym}</span>
+                              <span className="text-xs text-body hidden sm:inline">{e.party?.name}</span>
+                            </div>
+                            <span className="font-mono font-bold text-primary text-sm">
+                              {(e.votes || 0).toLocaleString()}
+                            </span>
                           </div>
-                          <span className="font-mono font-semibold text-brand-800">{e.votes}</span>
+                        ))}
+                        {nullVotes > 0 && (
+                          <div className="flex items-center justify-between px-3 py-2 bg-whiter rounded-xl border border-black/[.06]">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2.5 h-2.5 rounded-md flex-shrink-0 bg-meta-8" />
+                              <span className="text-sm text-black font-medium">Nulos</span>
+                            </div>
+                            <span className="font-mono font-bold text-meta-8 text-sm">{nullVotes.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {blankVotes > 0 && (
+                          <div className="flex items-center justify-between px-3 py-2 bg-whiter rounded-xl border border-black/[.06]">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2.5 h-2.5 rounded-md flex-shrink-0 bg-bodydark" />
+                              <span className="text-sm text-black font-medium">Blancos</span>
+                            </div>
+                            <span className="font-mono font-bold text-bodydark text-sm">{blankVotes.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {/* Total row */}
+                        <div className="flex items-center justify-between px-3 py-2 rounded-xl border border-black/[.06] bg-boxdark">
+                          <span className="text-sm font-semibold text-white">Total emitidos</span>
+                          <span className="font-mono font-bold text-white text-sm">{emitidos.toLocaleString()}</span>
                         </div>
-                      ))}
+                      </div>
                     </div>
-                  </div>
-                ));
+                  );
+                });
               })()}
+
               {selected.notes && (
-                <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <p className="text-xs text-amber-700 font-medium mb-1">Notas:</p>
+                <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                  <p className="text-xs font-semibold text-amber-700 mb-1">Notas:</p>
                   <p className="text-sm text-amber-800">{selected.notes}</p>
                 </div>
               )}
-              {/* Actions inside modal */}
-              <div className="mt-5 flex gap-2 justify-end border-t border-slate-100 pt-4">
-                {user?.role === 'DELEGADO' && selected.status === 'DRAFT' && (
-                  <button onClick={() => { submitMutation.mutate(selected.id); setSelected(null); }} className="btn-primary btn-sm">Enviar</button>
+
+              {/* Modal actions */}
+              <div className="mt-5 pt-4 border-t border-stroke flex gap-2 justify-end">
+                {canSubmit && selected.status === 'DRAFT' && (user?.role === 'JEFE_RECINTO' || selected.delegate?.id === user?.id) && (
+                  <button onClick={() => { submitMutation.mutate(selected.id); setSelected(null); }}
+                    className="btn-primary btn-sm">Enviar</button>
                 )}
                 {canVerify && selected.status === 'SUBMITTED' && (
-                  <button onClick={() => { verifyMutation.mutate(selected.id); setSelected(null); }} className="btn-primary btn-sm bg-green-600 hover:bg-green-700">Verificar</button>
+                  <button onClick={() => { verifyMutation.mutate(selected.id); setSelected(null); }}
+                    className="btn-success btn-sm">Verificar</button>
                 )}
                 {canDelete && (
-                  <button
-                    onClick={() => { if (confirm('¿Eliminar este reporte?')) deleteMutation.mutate(selected.id); }}
-                    className="btn-secondary btn-sm text-red-500 border-red-200 hover:bg-red-50"
-                  >
-                    Eliminar
-                  </button>
+                  <button onClick={() => handleDelete(selected.id, selected.table?.tableNumber)}
+                    className="btn-danger btn-sm">Eliminar</button>
                 )}
+                <button onClick={() => setSelected(null)} className="btn-secondary btn-sm">Cerrar</button>
               </div>
             </div>
           </div>

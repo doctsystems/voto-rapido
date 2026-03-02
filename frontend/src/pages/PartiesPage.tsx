@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+import { toast } from '../lib/toast';
 import { partiesApi, electionTypesApi } from '../lib/api';
 
 export default function PartiesPage() {
@@ -52,14 +52,14 @@ export default function PartiesPage() {
     <div>
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="font-display font-bold text-2xl text-brand-800">Partidos Políticos</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Gestión de partidos y sus tipos de elección asignados</p>
+          <h1 className="text-2xl font-bold text-black">Partidos Políticos</h1>
+          <p className="text-sm text-body mt-0.5">Gestión de partidos y sus tipos de elección asignados</p>
         </div>
         <button onClick={openCreate} className="btn-primary">✚ Nuevo Partido</button>
       </div>
 
       {isLoading ? (
-        <div className="card p-10 text-center text-slate-400">Cargando...</div>
+        <div className="card p-10 text-center text-bodydark">Cargando...</div>
       ) : (
         <div className="space-y-3">
           {(parties as any[]).map((party: any) => (
@@ -72,8 +72,8 @@ export default function PartiesPage() {
                     {party.acronym?.slice(0, 2)}
                   </div>
                   <div>
-                    <div className="font-semibold text-slate-800">{party.name}</div>
-                    <div className="text-xs font-mono text-slate-400">{party.acronym}</div>
+                    <div className="font-semibold text-black">{party.name}</div>
+                    <div className="text-xs font-mono text-bodydark">{party.acronym}</div>
                   </div>
                 </div>
                 {/* Actions */}
@@ -89,14 +89,14 @@ export default function PartiesPage() {
 
               {/* Assigned election types */}
               {(party.electionTypes || []).length > 0 && (
-                <div className="mt-3 pt-3 border-t border-slate-100">
-                  <p className="text-xs text-slate-400 mb-2 font-medium">Tipos de elección con candidato:</p>
+                <div className="mt-3 pt-3 border-t border-stroke">
+                  <p className="text-xs text-bodydark mb-2 font-medium">Tipos de elección con candidato:</p>
                   <div className="flex flex-wrap gap-2">
                     {(party.electionTypes as any[]).map((pet: any) => (
-                      <div key={pet.id} className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5">
-                        <span className="text-xs font-medium text-slate-700">{pet.electionType?.name}</span>
+                      <div key={pet.id} className="flex items-center gap-1.5 bg-whiten border border-stroke rounded-lg px-3 py-1.5">
+                        <span className="text-xs font-medium text-black">{pet.electionType?.name}</span>
                         {pet.candidateName && (
-                          <span className="text-xs text-slate-400">— {pet.candidateName}</span>
+                          <span className="text-xs text-bodydark">— {pet.candidateName}</span>
                         )}
                         <button onClick={() => unassignMutation.mutate({ partyId: party.id, etId: pet.electionType?.id })}
                           className="text-red-400 hover:text-red-600 ml-1 text-xs leading-none">✕</button>
@@ -106,27 +106,27 @@ export default function PartiesPage() {
                 </div>
               )}
               {(party.electionTypes || []).length === 0 && (
-                <div className="mt-3 pt-3 border-t border-slate-100">
+                <div className="mt-3 pt-3 border-t border-stroke">
                   <p className="text-xs text-amber-500 italic">Sin tipos de elección asignados — los delegados no podrán registrar votos para este partido.</p>
                 </div>
               )}
             </div>
           ))}
           {(parties as any[]).length === 0 && (
-            <div className="card p-10 text-center text-slate-400">No hay partidos registrados.</div>
+            <div className="card p-10 text-center text-bodydark">No hay partidos registrados.</div>
           )}
         </div>
       )}
 
       {/* Create / Edit modal */}
       {(modal === 'create' || modal === 'edit') && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="font-display font-bold text-lg text-brand-800">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-sm shadow-default border border-stroke w-full max-w-md">
+            <div className="p-6 border-b border-stroke flex justify-between items-center">
+              <h2 className="text-lg font-bold text-black">
                 {modal === 'create' ? 'Nuevo Partido' : 'Editar Partido'}
               </h2>
-              <button onClick={() => setModal(null)} className="text-slate-400 hover:text-slate-600 text-xl">✕</button>
+              <button onClick={() => setModal(null)} className="text-bodydark hover:text-body text-xl">✕</button>
             </div>
             <div className="p-6 space-y-4">
               {[
@@ -154,33 +154,33 @@ export default function PartiesPage() {
 
       {/* Assign election types modal */}
       {modal === 'assign' && selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-sm shadow-default border border-stroke w-full max-w-lg">
+            <div className="p-6 border-b border-stroke flex justify-between items-center">
               <div>
-                <h2 className="font-display font-bold text-lg text-brand-800">
+                <h2 className="text-lg font-bold text-black">
                   Tipos de elección — {selected.name}
                 </h2>
-                <p className="text-slate-400 text-sm mt-0.5">Define en qué elecciones participa este partido</p>
+                <p className="text-bodydark text-sm mt-0.5">Define en qué elecciones participa este partido</p>
               </div>
-              <button onClick={() => setModal(null)} className="text-slate-400 hover:text-slate-600 text-xl">✕</button>
+              <button onClick={() => setModal(null)} className="text-bodydark hover:text-body text-xl">✕</button>
             </div>
             <div className="p-6">
               {/* Current assignments */}
               <div className="mb-5">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Asignados actualmente</p>
+                <p className="text-xs font-semibold text-body uppercase tracking-wide mb-2">Asignados actualmente</p>
                 {(selected.electionTypes || []).length === 0 ? (
-                  <p className="text-slate-400 text-sm italic">Ninguno asignado.</p>
+                  <p className="text-bodydark text-sm italic">Ninguno asignado.</p>
                 ) : (
                   <div className="space-y-2">
                     {(selected.electionTypes as any[]).map((pet: any) => (
-                      <div key={pet.id} className="flex items-center justify-between bg-slate-50 rounded-lg px-3 py-2">
+                      <div key={pet.id} className="flex items-center justify-between bg-whiten rounded-lg px-3 py-2">
                         <div>
-                          <span className="text-sm font-medium text-slate-800">{pet.electionType?.name}</span>
-                          {pet.candidateName && <span className="text-xs text-slate-400 ml-2">{pet.candidateName}</span>}
+                          <span className="text-sm font-medium text-black">{pet.electionType?.name}</span>
+                          {pet.candidateName && <span className="text-xs text-bodydark ml-2">{pet.candidateName}</span>}
                         </div>
                         <button onClick={() => unassignMutation.mutate({ partyId: selected.id, etId: pet.electionType?.id })}
-                          className="text-red-400 hover:text-red-600 text-xs font-medium">Quitar</button>
+                          className="text-meta-1 hover:text-red-700 text-xs font-semibold">Quitar</button>
                       </div>
                     ))}
                   </div>
@@ -189,8 +189,8 @@ export default function PartiesPage() {
 
               {/* Add new */}
               {availableEts.length > 0 && (
-                <div className="border-t border-slate-100 pt-4">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Agregar tipo de elección</p>
+                <div className="border-t border-stroke pt-4">
+                  <p className="text-xs font-semibold text-body uppercase tracking-wide mb-3">Agregar tipo de elección</p>
                   <div className="space-y-3">
                     <div>
                       <label className="label">Tipo de elección</label>

@@ -1,55 +1,168 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════════
+   VotoRápido Design System — rounded & friendly UI
+   All interactive surfaces use rounded-2xl (border-radius: 16px)
+   Buttons use rounded-xl (12px), small controls rounded-lg (8px)
+   ═══════════════════════════════════════════════════════════════════ */
+
 @layer base {
-  body {
-    font-family: 'IBM Plex Sans', system-ui, sans-serif;
-    @apply text-slate-900 antialiased;
+  * {
+    box-sizing: border-box;
   }
-  h1, h2, h3 {
-    font-family: 'Syne', sans-serif;
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: "Satoshi", "Inter", system-ui, sans-serif;
+    @apply bg-[#EFF2F7] text-black antialiased;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-bodydark/40 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-bodydark/70;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
   }
 }
 
 @layer components {
+  /* ─── Buttons ─────────────────────────────────────────────────── */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5
+           text-sm font-semibold transition-all duration-150 select-none
+           disabled:opacity-50 disabled:cursor-not-allowed
+           focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30;
+  }
   .btn-primary {
-    @apply bg-brand-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply btn bg-primary text-white shadow-sm
+           hover:bg-[#3346c8] active:scale-[.97];
   }
   .btn-secondary {
-    @apply bg-white text-brand-500 border border-brand-500 px-4 py-2 rounded-lg font-medium hover:bg-brand-50 transition-colors;
+    @apply btn bg-white text-black border border-stroke shadow-sm
+           hover:bg-whiten active:scale-[.97];
   }
   .btn-danger {
-    @apply bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors;
+    @apply btn bg-meta-1 text-white hover:bg-red-700 active:scale-[.97];
+  }
+  .btn-success {
+    @apply btn bg-meta-3 text-white hover:bg-green-600 active:scale-[.97];
   }
   .btn-sm {
-    @apply px-3 py-1.5 text-sm;
+    @apply !rounded-lg !px-3 !py-1.5 !text-xs;
   }
+  .btn-xs {
+    @apply !rounded-md !px-2 !py-1  !text-xs;
+  }
+
+  /* ─── Cards ───────────────────────────────────────────────────── */
   .card {
-    @apply bg-white rounded-xl border border-slate-200 shadow-sm;
+    @apply bg-white rounded-2xl border border-black/[.06]
+           shadow-[0_2px_16px_rgba(0,0,0,.06)];
   }
+  .card-header {
+    @apply px-6 py-4 border-b border-black/[.06]
+           flex items-center justify-between rounded-t-2xl;
+  }
+  .card-body {
+    @apply p-6;
+  }
+
+  /* ─── Inputs & selects ────────────────────────────────────────── */
   .input {
-    @apply w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all;
+    @apply w-full rounded-xl border border-stroke bg-white px-4 py-2.5
+           text-sm text-black outline-none transition-all
+           focus:border-primary focus:ring-2 focus:ring-primary/10
+           placeholder:text-body/50;
+  }
+  select.input,
+  select.input-base {
+    @apply appearance-none rounded-xl border border-stroke bg-white px-4 py-2.5
+           text-sm text-black outline-none
+           focus:border-primary focus:ring-2 focus:ring-primary/10;
   }
   .label {
-    @apply block text-sm font-medium text-slate-700 mb-1;
+    @apply mb-1.5 block text-sm font-semibold text-black;
+  }
+
+  /* ─── Status badges ───────────────────────────────────────────── */
+  .badge {
+    @apply inline-flex items-center rounded-full px-3 py-0.5 text-xs font-semibold;
   }
   .badge-draft {
-    @apply bg-slate-100 text-slate-600 text-xs font-medium px-2 py-0.5 rounded-full;
+    @apply badge bg-slate-100 text-slate-500;
   }
   .badge-submitted {
-    @apply bg-blue-100 text-blue-700 text-xs font-medium px-2 py-0.5 rounded-full;
+    @apply badge bg-blue-50 text-blue-600 ring-1 ring-blue-100;
   }
   .badge-verified {
-    @apply bg-green-100 text-green-700 text-xs font-medium px-2 py-0.5 rounded-full;
+    @apply badge bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100;
   }
-}
 
-/* Sidebar transition */
-.sidebar-enter {
-  transform: translateX(-100%);
-}
-.sidebar-enter-active {
-  transform: translateX(0);
-  transition: transform 200ms ease;
+  /* ─── Data table ──────────────────────────────────────────────── */
+  .ta-table {
+    @apply w-full text-sm;
+  }
+  .ta-table thead tr {
+    @apply bg-slate-50;
+  }
+  .ta-table thead th {
+    @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-body
+           first:rounded-tl-xl last:rounded-tr-xl;
+  }
+  .ta-table tbody tr {
+    @apply border-t border-black/[.05] transition-colors hover:bg-slate-50/70;
+  }
+  .ta-table tbody td {
+    @apply px-4 py-3 text-black;
+  }
+
+  /* ─── Sidebar nav items ───────────────────────────────────────── */
+  .nav-item {
+    @apply relative flex items-center gap-3 rounded-xl px-4 py-2.5
+           text-sm font-medium text-bodydark2 transition-all duration-150
+           hover:bg-white/10 hover:text-white;
+  }
+  .nav-item.active {
+    @apply bg-white/15 text-white;
+  }
+  .nav-section {
+    @apply mb-1 mt-5 px-4 text-xs font-semibold uppercase tracking-widest text-bodydark/70;
+  }
+
+  /* ─── Page titles ─────────────────────────────────────────────── */
+  .page-title {
+    @apply text-2xl font-bold text-black;
+  }
+  .page-subtitle {
+    @apply text-sm text-body mt-0.5;
+  }
+
+  /* ─── Stat cards (dashboard) ──────────────────────────────────── */
+  .stat-card {
+    @apply bg-white rounded-2xl border border-black/[.06]
+           shadow-[0_2px_16px_rgba(0,0,0,.06)] p-6 flex items-center gap-4;
+  }
+
+  /* ─── Section panel for collapsible dashboard blocks ─────────── */
+  .section-panel {
+    @apply bg-white rounded-2xl border border-black/[.06]
+           shadow-[0_2px_16px_rgba(0,0,0,.06)] overflow-hidden;
+  }
 }

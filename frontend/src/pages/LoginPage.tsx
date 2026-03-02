@@ -1,89 +1,114 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import toast from 'react-hot-toast';
+import { toast } from '../lib/toast';
 import { authApi } from '../lib/api';
 import { useAuthStore } from '../store/auth.store';
 
-interface LoginForm {
-  username: string;
-  password: string;
-}
-
 export default function LoginPage() {
-  const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>();
-  const [loading, setLoading] = useState(false);
-  const { setAuth } = useAuthStore();
   const navigate = useNavigate();
+  const { setAuth } = useAuthStore();
+  const [form, setForm] = useState({ username: '', password: '' });
+  const [loading, setLoading] = useState(false);
 
-  const onSubmit = async (data: LoginForm) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.username || !form.password) return toast.error('Completa todos los campos');
     setLoading(true);
     try {
-      const result = await authApi.login(data.username, data.password);
-      setAuth(result.accessToken, result.user);
-      toast.success(`Bienvenido, ${result.user.fullName}`);
+      const data = await authApi.login(form.username, form.password);
+      setAuth(data.accessToken, data.user);
       navigate('/');
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Credenciales inválidas');
+      toast.error(err.response?.data?.message || 'Credenciales incorrectas');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-brand-800 flex items-center justify-center p-4">
-      {/* Background pattern */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-brand-700 opacity-50" />
-        <div className="absolute -bottom-20 -left-20 w-72 h-72 rounded-full bg-accent-500 opacity-10" />
+    <div className="flex min-h-screen">
+      {/* Left branding panel */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col items-center justify-center bg-boxdark p-12 relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 right-0 w-96 h-96 rounded-full bg-primary translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute bottom-0 left-0 w-80 h-80 rounded-full bg-primary -translate-x-1/2 translate-y-1/2" />
+        </div>
+        <div className="relative z-10 text-center">
+          <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary mx-auto shadow-lg">
+            <span className="text-white font-bold text-4xl">V</span>
+          </div>
+          <h1 className="text-4xl font-bold text-white mb-4">VotoRápido</h1>
+          <p className="text-bodydark text-lg max-w-sm mx-auto leading-relaxed">
+            Sistema de Conteo Rápido Electoral para Bermejo, Tarija
+          </p>
+          <div className="mt-12 grid grid-cols-3 gap-6">
+            {[
+              { icon: '🗳', label: 'Recintos', value: 'Múltiples' },
+              { icon: '👥', label: 'Partidos', value: 'Todos' },
+              { icon: '📊', label: 'En vivo', value: 'Real-time' },
+            ].map(s => (
+              <div key={s.label} className="text-center">
+                <div className="text-2xl mb-1">{s.icon}</div>
+                <div className="text-white font-semibold text-sm">{s.value}</div>
+                <div className="text-bodydark text-xs">{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      <div className="relative w-full max-w-sm">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-accent-400 rounded-2xl mb-4">
-            <span className="text-brand-800 font-bold text-3xl font-display">V</span>
+      {/* Right login form */}
+      <div className="flex flex-1 items-center justify-center bg-whiter px-6 py-12">
+        <div className="w-full max-w-md">
+          {/* Mobile logo */}
+          <div className="lg:hidden flex items-center gap-3 mb-10">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
+              <span className="text-white font-bold text-lg">V</span>
+            </div>
+            <span className="text-xl font-bold text-black">VotoRápido</span>
           </div>
-          <h1 className="text-white font-display font-bold text-3xl">VotoRápido</h1>
-          <p className="text-brand-100 text-sm mt-1 opacity-80">Sistema de Conteo Electoral</p>
-        </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl p-8 shadow-2xl">
-          <h2 className="font-display font-bold text-xl text-brand-800 mb-6">Iniciar Sesión</h2>
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold text-black">Iniciar sesión</h2>
+            <p className="text-body mt-2">Ingresa tus credenciales para acceder al sistema</p>
+          </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="label">Usuario o Email</label>
               <input
+                type="text"
+                autoComplete="username"
+                value={form.username}
+                onChange={e => setForm({ ...form, username: e.target.value })}
                 className="input"
-                placeholder="ingresa tu usuario"
-                {...register('username', { required: 'Requerido' })}
+                placeholder="tu.usuario"
+                disabled={loading}
               />
-              {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username.message}</p>}
             </div>
-
             <div>
               <label className="label">Contraseña</label>
               <input
                 type="password"
+                autoComplete="current-password"
+                value={form.password}
+                onChange={e => setForm({ ...form, password: e.target.value })}
                 className="input"
                 placeholder="••••••••"
-                {...register('password', { required: 'Requerido' })}
+                disabled={loading}
               />
-              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
             </div>
-
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full py-3 mt-2 font-semibold"
+              className="btn-primary w-full py-3 text-base"
             >
               {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                <span className="flex items-center gap-2 justify-center">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                   </svg>
                   Ingresando...
                 </span>
@@ -91,21 +116,9 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-slate-100">
-            <p className="text-xs text-slate-400 text-center">
-              Acceso exclusivo para personal electoral autorizado
-            </p>
-          </div>
-        </div>
-
-        {/* Demo credentials */}
-        <div className="mt-4 bg-white/10 rounded-xl p-4">
-          <p className="text-white/70 text-xs font-mono mb-2">Demo:</p>
-          <div className="space-y-1 text-xs font-mono text-white/80">
-            <div>admin / admin123 (Admin)</div>
-            <div>jefe_mpu / jefe123 (Jefe Campaña)</div>
-            <div>delegado_mpu_M001 / delegado123 (Delegado)</div>
-          </div>
+          <p className="mt-8 text-center text-xs text-body">
+            Elecciones Municipales y Departamentales — Bermejo, Tarija 2025
+          </p>
         </div>
       </div>
     </div>
