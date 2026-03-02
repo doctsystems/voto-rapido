@@ -44,8 +44,8 @@ export class CreateReportDto {
 
 function aggregateReports(reports: VoteReport[]) {
   const submitted = reports.filter(r => r.status === ReportStatus.SUBMITTED).length;
-  const verified  = reports.filter(r => r.status === ReportStatus.VERIFIED).length;
-  const draft     = reports.filter(r => r.status === ReportStatus.DRAFT).length;
+  const verified = reports.filter(r => r.status === ReportStatus.VERIFIED).length;
+  const draft = reports.filter(r => r.status === ReportStatus.DRAFT).length;
 
   const etMap: Record<string, {
     id: string; name: string; order: number;
@@ -81,20 +81,20 @@ function aggregateReports(reports: VoteReport[]) {
       if (!seenEtPerReport.has(key)) {
         seenEtPerReport.add(key);
         if (etMap[et.id]) {
-          etMap[et.id].nullVotes  += (entry.nullVotes  || 0);
+          etMap[et.id].nullVotes += (entry.nullVotes || 0);
           etMap[et.id].blankVotes += (entry.blankVotes || 0);
+          // Accumulate totalVoters once per election type per report
+          etMap[et.id].totalVoters += (report.table?.totalVoters || 0);
         }
       }
-      // Accumulate totalVoters
-      if (etMap[et.id]) etMap[et.id].totalVoters += (report.table?.totalVoters || 0) / ((new Set((report.entries || []).map(e => e.electionType?.id).filter(Boolean))).size || 1);
     }
   }
 
   const byElectionType = Object.values(etMap).sort((a, b) => a.order - b.order).map(et => {
-    const parties    = Object.values(et.parties).sort((a, b) => b.votes - a.votes);
+    const parties = Object.values(et.parties).sort((a, b) => b.votes - a.votes);
     const validVotes = parties.reduce((s, p) => s + p.votes, 0);
-    const emitidos   = validVotes + et.nullVotes + et.blankVotes;
-    const total      = Math.round(et.totalVoters);
+    const emitidos = validVotes + et.nullVotes + et.blankVotes;
+    const total = Math.round(et.totalVoters);
     return {
       id: et.id, name: et.name, order: et.order,
       validVotes, nullVotes: et.nullVotes, blankVotes: et.blankVotes,
@@ -105,19 +105,21 @@ function aggregateReports(reports: VoteReport[]) {
       })),
       summary: {
         validVotes,
-        validPct:  emitidos > 0 ? +((validVotes     / emitidos) * 100).toFixed(2) : 0,
+        validPct: emitidos > 0 ? +((validVotes / emitidos) * 100).toFixed(2) : 0,
         blankVotes: et.blankVotes,
-        blankPct:  emitidos > 0 ? +((et.blankVotes  / emitidos) * 100).toFixed(2) : 0,
+        blankPct: emitidos > 0 ? +((et.blankVotes / emitidos) * 100).toFixed(2) : 0,
         nullVotes: et.nullVotes,
-        nullPct:   emitidos > 0 ? +((et.nullVotes   / emitidos) * 100).toFixed(2) : 0,
+        nullPct: emitidos > 0 ? +((et.nullVotes / emitidos) * 100).toFixed(2) : 0,
         emitidos, totalVoters: total,
       },
     };
   });
 
-  return { totalReports: reports.length, draft, submitted, verified,
+  return {
+    totalReports: reports.length, draft, submitted, verified,
     votesByParty: Object.values(globalParty).sort((a, b) => b.total - a.total),
-    byElectionType };
+    byElectionType
+  };
 }
 
 // ─── Service ──────────────────────────────────────────────────────────────────
@@ -128,12 +130,12 @@ export class VotesService {
 
   constructor(
     @InjectRepository(VoteReport) private reportRepo: Repository<VoteReport>,
-    @InjectRepository(VoteEntry)  private entryRepo:  Repository<VoteEntry>,
-    @InjectRepository(User)       private userRepo:   Repository<User>,
-    @InjectRepository(VotingTable)private tableRepo:  Repository<VotingTable>,
-    @InjectRepository(Party)      private partyRepo:  Repository<Party>,
-    @InjectRepository(ElectionType) private etRepo:   Repository<ElectionType>,
-  ) {}
+    @InjectRepository(VoteEntry) private entryRepo: Repository<VoteEntry>,
+    @InjectRepository(User) private userRepo: Repository<User>,
+    @InjectRepository(VotingTable) private tableRepo: Repository<VotingTable>,
+    @InjectRepository(Party) private partyRepo: Repository<Party>,
+    @InjectRepository(ElectionType) private etRepo: Repository<ElectionType>,
+  ) { }
 
   private baseQuery() {
     return this.reportRepo.createQueryBuilder('r')
@@ -224,7 +226,7 @@ export class VotesService {
       entries.push(this.entryRepo.create({
         party, electionType,
         votes: ed.votes,
-        nullVotes:  isFirstForType ? (extrasMap[ed.electionTypeId]?.nullVotes  || 0) : 0,
+        nullVotes: isFirstForType ? (extrasMap[ed.electionTypeId]?.nullVotes || 0) : 0,
         blankVotes: isFirstForType ? (extrasMap[ed.electionTypeId]?.blankVotes || 0) : 0,
       }));
       totalVotes += ed.votes;
@@ -241,7 +243,7 @@ export class VotesService {
     const extrasMap: Record<string, { nullVotes: number; blankVotes: number }> = {};
     for (const ex of dto.extras ?? []) {
       extrasMap[ex.electionTypeId] = {
-        nullVotes:  ex.nullVotes  || 0,
+        nullVotes: ex.nullVotes || 0,
         blankVotes: ex.blankVotes || 0,
       };
     }
@@ -256,7 +258,7 @@ export class VotesService {
     // Check each type: valid + null + blank ≤ padrón
     for (const [etId, validVotes] of Object.entries(validPerType)) {
       const extras = extrasMap[etId] ?? { nullVotes: 0, blankVotes: 0 };
-      const total  = validVotes + extras.nullVotes + extras.blankVotes;
+      const total = validVotes + extras.nullVotes + extras.blankVotes;
       if (total > totalVoters) {
         throw new BadRequestException(
           `El total de votos del tipo de elección (válidos ${validVotes} + nulos ${extras.nullVotes} + blancos ${extras.blankVotes} = ${total}) supera el padrón habilitado de la mesa (${totalVoters} votantes).`
@@ -331,14 +333,14 @@ export class VotesService {
     const { entries, totalVotes } = await this.buildEntries(dto);
     await this.entryRepo.delete({ report: { id } });
 
-    report.entries    = entries;
+    report.entries = entries;
     report.totalVotes = totalVotes;
-    report.nullVotes  = 0;
+    report.nullVotes = 0;
     report.blankVotes = 0;
-    report.notes      = dto.notes;
-    report.status     = ReportStatus.DRAFT;
+    report.notes = dto.notes;
+    report.status = ReportStatus.DRAFT;
     report.submittedAt = null;
-    report.updatedBy  = currentUser.sub;
+    report.updatedBy = currentUser.sub;
 
     await this.reportRepo.save(report);
     return this.findOne(id, currentUser);
@@ -359,7 +361,7 @@ export class VotesService {
     }
     if (report.status !== ReportStatus.DRAFT) throw new BadRequestException('Solo borradores pueden enviarse');
 
-    report.status    = ReportStatus.SUBMITTED;
+    report.status = ReportStatus.SUBMITTED;
     report.submittedAt = new Date();
     report.updatedBy = currentUser.sub;
     return this.reportRepo.save(report);
@@ -382,8 +384,6 @@ export class VotesService {
     }
     // JEFE_RECINTO: can verify reports of their recinto AND party
     else if (role === Role.JEFE_RECINTO) {
-      if (report.delegate.party?.id !== currentUser.partyId)
-        throw new ForbiddenException('Solo puede verificar reportes de su partido');
       if (report.table?.school?.id !== currentUser.schoolId)
         throw new ForbiddenException('Solo puede verificar reportes de su recinto');
     }
@@ -391,7 +391,7 @@ export class VotesService {
       throw new ForbiddenException('No tiene permisos para verificar reportes');
     }
 
-    report.status    = ReportStatus.VERIFIED;
+    report.status = ReportStatus.VERIFIED;
     report.updatedBy = currentUser.sub;
     return this.reportRepo.save(report);
   }
@@ -401,7 +401,7 @@ export class VotesService {
     const role = currentUser.role as Role;
 
     if (role === Role.DELEGADO) throw new ForbiddenException('Los delegados no pueden eliminar reportes');
-    if (role === Role.ADMIN)    throw new ForbiddenException('El administrador no puede eliminar reportes.');
+    if (role === Role.ADMIN) throw new ForbiddenException('El administrador no puede eliminar reportes.');
 
     // JEFE_CAMPANA: can delete any report of their party
     if (role === Role.JEFE_CAMPANA) {
@@ -410,8 +410,6 @@ export class VotesService {
     }
     // JEFE_RECINTO: can delete reports of their recinto AND party
     else if (role === Role.JEFE_RECINTO) {
-      if (report.delegate.party?.id !== currentUser.partyId)
-        throw new ForbiddenException('Solo puede eliminar reportes de su partido');
       if (report.table?.school?.id !== currentUser.schoolId)
         throw new ForbiddenException('Solo puede eliminar reportes de su recinto');
     }
@@ -432,11 +430,11 @@ export class VotesService {
   }
 
   private async getAdminMetrics() {
-    const allReports  = await this.baseQuery().getMany();
+    const allReports = await this.baseQuery().getMany();
     const totalReports = allReports.length;
-    const draft     = allReports.filter(r => r.status === ReportStatus.DRAFT).length;
+    const draft = allReports.filter(r => r.status === ReportStatus.DRAFT).length;
     const submitted = allReports.filter(r => r.status === ReportStatus.SUBMITTED).length;
-    const verified  = allReports.filter(r => r.status === ReportStatus.VERIFIED).length;
+    const verified = allReports.filter(r => r.status === ReportStatus.VERIFIED).length;
 
     const byPartyMap: Record<string, { partyName: string; partyAcronym: string; partyColor: string; reports: VoteReport[] }> = {};
     for (const report of allReports) {

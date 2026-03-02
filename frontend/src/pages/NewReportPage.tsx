@@ -135,10 +135,10 @@ export default function NewReportPage() {
   }
   const sections = Object.entries(matrix).sort(([, a], [, b]) => a.order - b.order);
 
-  const tableVoters = tableInfo?.totalVoters ?? null;
   const tableInfo = isJefeRecinto
     ? (recintoTables as any[]).find((t: any) => t.id === selectedTableId)
     : (user as any)?.table;
+  const tableVoters = tableInfo?.totalVoters ?? null;
 
   // Per-type totals for header bar
   // Per type: válidos + nulos + blancos ≤ padrón (mismo criterio que el backend)
