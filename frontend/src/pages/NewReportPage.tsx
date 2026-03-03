@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { partiesApi, votesApi, tablesApi } from '../lib/api';
 import { useAuthStore } from '../store/auth.store';
 import { toast } from '../lib/toast';
@@ -8,6 +8,7 @@ import { toast } from '../lib/toast';
 export default function NewReportPage() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: parties = [], isLoading: loadingParties } = useQuery({
     queryKey: ['parties-with-et'],
@@ -36,25 +37,25 @@ export default function NewReportPage() {
   const isEditing = !!existingReport;
 
   /** votes[etId][partyId] = votos válidos */
-  const [votes,      setVotes]      = useState<Record<string, Record<string, number>>>({});
+  const [votes, setVotes] = useState<Record<string, Record<string, number>>>({});
   /** nulls[etId] = votos nulos de ese tipo */
-  const [nulls,      setNulls]      = useState<Record<string, number>>({});
+  const [nulls, setNulls] = useState<Record<string, number>>({});
   /** blanks[etId] = votos blancos de ese tipo */
-  const [blanks,     setBlanks]     = useState<Record<string, number>>({});
-  const [notes,      setNotes]      = useState('');
+  const [blanks, setBlanks] = useState<Record<string, number>>({});
+  const [notes, setNotes] = useState('');
 
   useEffect(() => {
     if (!existingReport) return;
     const prefillVotes: Record<string, Record<string, number>> = {};
-    const prefillNulls: Record<string, number>  = {};
+    const prefillNulls: Record<string, number> = {};
     const prefillBlanks: Record<string, number> = {};
     for (const entry of existingReport.entries || []) {
       const etId = entry.electionType?.id;
-      const pId  = entry.party?.id;
+      const pId = entry.party?.id;
       if (etId && pId) {
         if (!prefillVotes[etId]) prefillVotes[etId] = {};
         prefillVotes[etId][pId] = entry.votes;
-        prefillNulls[etId]  = (prefillNulls[etId]  || 0) + (entry.nullVotes  || 0);
+        prefillNulls[etId] = (prefillNulls[etId] || 0) + (entry.nullVotes || 0);
         prefillBlanks[etId] = (prefillBlanks[etId] || 0) + (entry.blankVotes || 0);
       }
     }
@@ -64,10 +65,10 @@ export default function NewReportPage() {
     setNotes(existingReport.notes || '');
   }, [existingReport?.id]);
 
-  const setVote   = (etId: string, pId: string, v: number) =>
+  const setVote = (etId: string, pId: string, v: number) =>
     setVotes(prev => ({ ...prev, [etId]: { ...prev[etId], [pId]: Math.max(0, v) } }));
-  const setNull   = (etId: string, v: number) => setNulls(prev  => ({ ...prev, [etId]: Math.max(0, v) }));
-  const setBlank  = (etId: string, v: number) => setBlanks(prev => ({ ...prev, [etId]: Math.max(0, v) }));
+  const setNull = (etId: string, v: number) => setNulls(prev => ({ ...prev, [etId]: Math.max(0, v) }));
+  const setBlank = (etId: string, v: number) => setBlanks(prev => ({ ...prev, [etId]: Math.max(0, v) }));
 
   const buildPayload = () => {
     const entries: any[] = [];
@@ -104,12 +105,22 @@ export default function NewReportPage() {
 
   const createMutation = useMutation({
     mutationFn: votesApi.createReport,
-    onSuccess: () => { toast.success('Reporte guardado como borrador'); navigate('/reports'); },
+    onSuccess: () => {
+      toast.success('Reporte guardado como borrador');
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      queryClient.invalidateQueries({ queryKey: ['metrics'] });
+      navigate('/reports');
+    },
     onError: (e: any) => toast.error(e.response?.data?.message || 'Error al crear reporte'),
   });
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: any) => votesApi.updateReport(id, data),
-    onSuccess: () => { toast.success('Reporte actualizado'); navigate('/reports'); },
+    onSuccess: () => {
+      toast.success('Reporte actualizado');
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      queryClient.invalidateQueries({ queryKey: ['metrics'] });
+      navigate('/reports');
+    },
     onError: (e: any) => toast.error(e.response?.data?.message || 'Error al actualizar'),
   });
   const submitMutation = useMutation({
@@ -121,7 +132,12 @@ export default function NewReportPage() {
         : await votesApi.createReport(payload);
       return votesApi.submitReport(report.id);
     },
-    onSuccess: () => { toast.success('Reporte guardado y enviado'); navigate('/reports'); },
+    onSuccess: () => {
+      toast.success('Reporte guardado y enviado');
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+      queryClient.invalidateQueries({ queryKey: ['metrics'] });
+      navigate('/reports');
+    },
     onError: (e: any) => toast.error(e?.response?.data?.message || e?.message || 'Error'),
   });
 
@@ -175,9 +191,14 @@ export default function NewReportPage() {
           {isEditing ? 'Actualizar Reporte' : 'Nuevo Reporte de Votación'}
         </h2>
         <p className="text-sm text-body mt-1">
-          Mesa <span className="font-mono font-bold text-primary">{tableInfo.tableNumber}</span>
-          {tableInfo.school && <> — {tableInfo.school.recintoElectoral}</>}
-          {tableVoters && <> · Padrón: <span className="font-mono font-semibold">{tableVoters.toLocaleString()}</span> votantes</>}
+          {tableInfo ? (
+            <>Mesa <span className="font-mono font-bold text-primary">{tableInfo.tableNumber}</span>
+              {tableInfo.school && <> — {tableInfo.school.recintoElectoral}</>}
+              {tableVoters && <> · Padrón: <span className="font-mono font-semibold">{tableVoters.toLocaleString()}</span> votantes</>}
+            </>
+          ) : isJefeRecinto ? (
+            <span className="text-body italic">Selecciona una mesa para continuar</span>
+          ) : null}
         </p>
         {isEditing && (
           <span className="inline-flex items-center gap-1.5 mt-2 text-xs bg-warning/10 border border-warning/20 text-warning px-3 py-1 rounded-full">
@@ -227,9 +248,9 @@ export default function NewReportPage() {
       ) : (
         <div className="space-y-5">
           {sections.map(([etId, section]) => {
-            const typeTotal   = perTypeTotal(etId);
-            const overLimit   = tableVoters && typeTotal > tableVoters;
-            const validVotes  = Object.values(votes[etId] || {}).reduce((s, v) => s + (v || 0), 0);
+            const typeTotal = perTypeTotal(etId);
+            const overLimit = tableVoters && typeTotal > tableVoters;
+            const validVotes = Object.values(votes[etId] || {}).reduce((s, v) => s + (v || 0), 0);
 
             return (
               <div key={etId} className="rounded-2xl bg-white border border-black/[.06] shadow-[0_2px_16px_rgba(0,0,0,.06)] overflow-hidden">
@@ -318,7 +339,7 @@ export default function NewReportPage() {
                   {overLimit && (
                     <div className="mt-3 flex items-center gap-2 text-xs text-meta-1 bg-meta-1/5 border border-meta-1/20 rounded px-3 py-2">
                       <span>⚠️</span>
-                      <span>El total de votos para este tipo ({typeTotal.toLocaleString()}) supera el padrón ({tableVoters!.toLocaleString()}) — válidos: {validVotes.toLocaleString()}, nulos: {(nulls[etId]||0).toLocaleString()}, blancos: {(blanks[etId]||0).toLocaleString()}</span>
+                      <span>El total de votos para este tipo ({typeTotal.toLocaleString()}) supera el padrón ({tableVoters!.toLocaleString()}) — válidos: {validVotes.toLocaleString()}, nulos: {(nulls[etId] || 0).toLocaleString()}, blancos: {(blanks[etId] || 0).toLocaleString()}</span>
                     </div>
                   )}
                 </div>

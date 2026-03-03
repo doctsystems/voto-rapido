@@ -10,6 +10,8 @@ export interface Field {
   required?: boolean;
   placeholder?: string;
   colSpan?: boolean; // full width in 2-col grid
+  disabled?: boolean;
+  onChange?: (val: string) => void;
 }
 
 interface CrudPageProps {
@@ -25,11 +27,12 @@ interface CrudPageProps {
   canDelete?: boolean;
   canCreate?: boolean;
   extraActions?: (row: any, invalidate: () => void) => React.ReactNode;
+  defaultValues?: Record<string, any>;
 }
 
 export default function CrudPage({
   title, description, queryKey, fetchFn, createFn, updateFn, deleteFn,
-  fields, columns, canDelete = true, canCreate = true, extraActions,
+  fields, columns, canDelete = true, canCreate = true, extraActions, defaultValues = {},
 }: CrudPageProps) {
   const qc = useQueryClient();
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
@@ -56,7 +59,7 @@ export default function CrudPage({
     onError: (e: any) => toast.error(e.response?.data?.message || 'Error al eliminar'),
   });
 
-  const openCreate = () => { setForm({}); setModal('create'); };
+  const openCreate = () => { setForm({ ...defaultValues }); setModal('create'); };
   const openEdit = (row: any) => {
     const f: any = {};
     fields.forEach(field => {
@@ -81,10 +84,10 @@ export default function CrudPage({
 
   const filtered = search
     ? (data as any[]).filter(row =>
-        Object.values(row).some(v =>
-          typeof v === 'string' && v.toLowerCase().includes(search.toLowerCase())
-        )
+      Object.values(row).some(v =>
+        typeof v === 'string' && v.toLowerCase().includes(search.toLowerCase())
       )
+    )
     : (data as any[]);
 
   const hasGrid = fields.some(f => f.colSpan);
@@ -99,7 +102,7 @@ export default function CrudPage({
         </div>
         {canCreate && (
           <button onClick={openCreate} className="btn-primary self-start sm:self-auto">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M12 4v16m8-8H4"/></svg>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M12 4v16m8-8H4" /></svg>
             Nuevo {title}
           </button>
         )}
@@ -115,18 +118,18 @@ export default function CrudPage({
               value={search} onChange={e => setSearch(e.target.value)}
               className="input h-9 pl-8 text-xs max-w-xs"
             />
-            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-body" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-body" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
           </div>
           <span className="text-xs text-body whitespace-nowrap">{filtered.length} registro(s)</span>
         </div>
 
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <svg className="w-8 h-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+            <svg className="w-8 h-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-body">
-            <svg className="w-12 h-12 text-stroke mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}><path d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+            <svg className="w-12 h-12 text-stroke mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}><path d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
             <p className="text-sm">Sin registros{search ? ` para "${search}"` : ''}</p>
           </div>
         ) : (
@@ -134,7 +137,7 @@ export default function CrudPage({
             <table className="ta-table">
               <thead>
                 <tr>
-                  {columns.map(col => <th key={col.key+col.label}>{col.label}</th>)}
+                  {columns.map(col => <th key={col.key + col.label}>{col.label}</th>)}
                   <th className="text-right">Acciones</th>
                 </tr>
               </thead>
@@ -142,7 +145,7 @@ export default function CrudPage({
                 {filtered.map((row: any) => (
                   <tr key={row.id}>
                     {columns.map(col => (
-                      <td key={col.key+col.label} className="text-black">
+                      <td key={col.key + col.label} className="text-black">
                         {col.render ? col.render(row[col.key], row) : String(row[col.key] ?? '—')}
                       </td>
                     ))}
@@ -179,7 +182,7 @@ export default function CrudPage({
                 {modal === 'create' ? `Nuevo ${title}` : `Editar ${title}`}
               </h3>
               <button onClick={closeModal} className="text-body hover:text-black">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12"/></svg>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
 
@@ -193,8 +196,12 @@ export default function CrudPage({
                   {field.type === 'select' ? (
                     <select
                       value={form[field.key] || ''}
-                      onChange={e => setForm({ ...form, [field.key]: e.target.value })}
+                      onChange={e => {
+                        setForm({ ...form, [field.key]: e.target.value });
+                        field.onChange?.(e.target.value);
+                      }}
                       className="input"
+                      disabled={field.disabled}
                     >
                       <option value="">— Seleccionar —</option>
                       {field.options?.map(opt => (
@@ -229,6 +236,7 @@ export default function CrudPage({
                       value={form[field.key] || ''}
                       onChange={e => setForm({ ...form, [field.key]: e.target.value })}
                       className="input"
+                      disabled={field.disabled}
                       placeholder={field.type === 'password' && modal === 'edit' ? 'Dejar vacío para no cambiar' : field.placeholder}
                     />
                   )}

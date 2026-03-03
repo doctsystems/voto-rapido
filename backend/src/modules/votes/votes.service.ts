@@ -236,10 +236,9 @@ export class VotesService {
 
   // ── Validation: per-type total ≤ totalVoters ────────────────────────────────
 
-  private validatePerTypeLimit(dto: CreateReportDto, totalVoters: number | null) {
+  private async validatePerTypeLimit(dto: CreateReportDto, totalVoters: number | null) {
     if (!totalVoters) return;
     // Per election type: válidos + nulos + blancos ≤ totalVoters de la mesa
-    // extras carries null/blank counts once per type
     const extrasMap: Record<string, { nullVotes: number; blankVotes: number }> = {};
     for (const ex of dto.extras ?? []) {
       extrasMap[ex.electionTypeId] = {
@@ -260,8 +259,10 @@ export class VotesService {
       const extras = extrasMap[etId] ?? { nullVotes: 0, blankVotes: 0 };
       const total = validVotes + extras.nullVotes + extras.blankVotes;
       if (total > totalVoters) {
+        const et = await this.etRepo.findOne({ where: { id: etId } });
+        const etName = et?.name ?? etId;
         throw new BadRequestException(
-          `El total de votos del tipo de elección (válidos ${validVotes} + nulos ${extras.nullVotes} + blancos ${extras.blankVotes} = ${total}) supera el padrón habilitado de la mesa (${totalVoters} votantes).`
+          `Los votos para "${etName}" (válidos: ${validVotes}, nulos: ${extras.nullVotes}, blancos: ${extras.blankVotes} = ${total}) superan el padrón de la mesa (${totalVoters} votantes habilitados).`
         );
       }
     }
@@ -300,7 +301,7 @@ export class VotesService {
     });
     if (existing) throw new ConflictException('Ya existe un reporte para esta mesa. Edítalo en lugar de crear uno nuevo.');
 
-    this.validatePerTypeLimit(dto, table.totalVoters);
+    await this.validatePerTypeLimit(dto, table.totalVoters);
     const { entries, totalVotes } = await this.buildEntries(dto);
 
     const report = this.reportRepo.create({
@@ -329,7 +330,7 @@ export class VotesService {
     if (report.status === ReportStatus.VERIFIED) throw new BadRequestException('No se puede editar un reporte verificado');
 
     const table = await this.tableRepo.findOne({ where: { id: report.table.id } });
-    this.validatePerTypeLimit(dto, table?.totalVoters || null);
+    await this.validatePerTypeLimit(dto, table?.totalVoters || null);
     const { entries, totalVotes } = await this.buildEntries(dto);
     await this.entryRepo.delete({ report: { id } });
 

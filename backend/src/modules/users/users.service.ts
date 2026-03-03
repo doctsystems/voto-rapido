@@ -23,7 +23,7 @@ export class UsersService {
     @InjectRepository(Party) private partyRepo: Repository<Party>,
     @InjectRepository(VotingTable) private tableRepo: Repository<VotingTable>,
     @InjectRepository(School) private schoolRepo: Repository<School>,
-  ) {}
+  ) { }
 
   async findAll(currentUser: any) {
     const query = this.userRepo.createQueryBuilder('user')
@@ -34,16 +34,17 @@ export class UsersService {
       .where('user.deleted_at IS NULL');
 
     if (currentUser.role === Role.JEFE_CAMPANA) {
+      // Jefe de campaña ve todos los usuarios de su mismo partido
       query.andWhere('user.party_id = :partyId AND user.role IN (:...roles)', {
         partyId: currentUser.partyId,
         roles: [Role.DELEGADO, Role.JEFE_RECINTO],
       });
     } else if (currentUser.role === Role.JEFE_RECINTO) {
-      // Jefe de recinto ve los delegados de su recinto y su partido
-      query.andWhere('user.party_id = :partyId AND tableSchool.id = :schoolId AND user.role = :role', {
+      // Jefe de recinto ve los usuarios de su mismo partido y recinto
+      // (recinto puede estar en user.school o en la mesa del usuario)
+      query.andWhere('user.party_id = :partyId AND (school.id = :schoolId OR tableSchool.id = :schoolId)', {
         partyId: currentUser.partyId,
         schoolId: currentUser.schoolId,
-        role: Role.DELEGADO,
       });
     }
 
