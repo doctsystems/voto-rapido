@@ -31,9 +31,14 @@ export default function NewReportPage() {
   });
 
   const targetTableId = isJefeRecinto ? selectedTableId : (user as any)?.table?.id;
-  const existingReport = (existingReports as any[]).find(
-    r => r.table?.id === targetTableId && r.status !== 'VERIFIED'
+
+  // Find if there is any report for this table
+  const tableReport = (existingReports as any[]).find(
+    r => r.table?.id === targetTableId
   );
+  const isVerified = tableReport?.status === 'VERIFIED';
+  // If it's not verified, we can edit it
+  const existingReport = isVerified ? null : tableReport;
   const isEditing = !!existingReport;
 
   /** votes[etId][partyId] = votos válidos */
@@ -168,7 +173,10 @@ export default function NewReportPage() {
   const handleSave = () => {
     const payload = buildPayload();
     if (payload.entries.length === 0) return toast.error('Debes ingresar al menos un voto');
-    if (anyOverLimit) return toast.error('Hay tipos de elección que superan el padrón de la mesa');
+    if (anyOverLimit) {
+      const names = overLimitEt.map(([, s]) => s.etName).join(', ');
+      return toast.error(`Error: Los votos para "${names}" superan el padrón habilitado para la mesa.`);
+    }
     if (isEditing) updateMutation.mutate({ id: existingReport.id, data: payload });
     else createMutation.mutate(payload);
   };
@@ -243,6 +251,18 @@ export default function NewReportPage() {
       {/* Block form if JEFE_RECINTO hasn't selected a table */}
       {isJefeRecinto && !selectedTableId ? null : loadingParties ? (
         <div className="card p-10 text-center text-body">Cargando...</div>
+      ) : isVerified ? (
+        <div className="rounded-xl border border-stroke bg-white p-10 text-center shadow-card">
+          <div className="text-5xl mb-4">✅</div>
+          <p className="font-semibold text-black">El reporte de esta mesa ya ha sido verificado</p>
+          <p className="text-body text-sm mt-2">
+            No es posible crear ni editar un reporte sobre una mesa verificada.<br />
+            Si necesitas realizar una corrección, solicita al Jefe de Recinto que elimine el reporte actual.
+          </p>
+          <button onClick={() => navigate('/reports')} className="btn-secondary mt-6">
+            Volver a Reportes
+          </button>
+        </div>
       ) : sections.length === 0 ? (
         <div className="card p-10 text-center text-body">No hay partidos con tipos de elección asignados.</div>
       ) : (
@@ -339,7 +359,7 @@ export default function NewReportPage() {
                   {overLimit && (
                     <div className="mt-3 flex items-center gap-2 text-xs text-meta-1 bg-meta-1/5 border border-meta-1/20 rounded px-3 py-2">
                       <span>⚠️</span>
-                      <span>El total de votos para este tipo ({typeTotal.toLocaleString()}) supera el padrón ({tableVoters!.toLocaleString()}) — válidos: {validVotes.toLocaleString()}, nulos: {(nulls[etId] || 0).toLocaleString()}, blancos: {(blanks[etId] || 0).toLocaleString()}</span>
+                      <span>ERROR: El total de votos para este tipo ({typeTotal.toLocaleString()}) supera el padrón ({tableVoters!.toLocaleString()}) — válidos: {validVotes.toLocaleString()}, nulos: {(nulls[etId] || 0).toLocaleString()}, blancos: {(blanks[etId] || 0).toLocaleString()}</span>
                     </div>
                   )}
                 </div>
@@ -361,12 +381,12 @@ export default function NewReportPage() {
       <div className="flex justify-end gap-3 mt-6">
         <button onClick={() => navigate('/reports')} className="btn-secondary">Cancelar</button>
         <button onClick={handleSave}
-          disabled={createMutation.isPending || updateMutation.isPending || anyOverLimit}
+          disabled={createMutation.isPending || updateMutation.isPending}
           className="btn-secondary">
           {createMutation.isPending || updateMutation.isPending ? 'Guardando...' : '💾 Guardar borrador'}
         </button>
         <button onClick={() => submitMutation.mutate()}
-          disabled={submitMutation.isPending || anyOverLimit}
+          disabled={submitMutation.isPending}
           className="btn-primary">
           {submitMutation.isPending ? 'Enviando...' : '📤 Guardar y enviar'}
         </button>

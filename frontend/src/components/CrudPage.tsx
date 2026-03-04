@@ -78,6 +78,12 @@ export default function CrudPage({
     for (const f of fields) {
       if (f.required && !data[f.key]) return toast.error(`${f.label} es obligatorio`);
     }
+
+    // Clean up empty strings for UUID fields to avoid strict backend validation errors
+    if (data.partyId === '') data.partyId = null;
+    if (data.schoolId === '') data.schoolId = null;
+    if (data.tableId === '') data.tableId = null;
+
     if (modal === 'create') createMutation.mutate(data);
     else updateMutation.mutate({ id: editing.id, data });
   };

@@ -14,6 +14,8 @@ const roleBadge: Record<string, { label: string; cls: string }> = {
 export default function UsersPage() {
   const { user } = useAuthStore();
   const [selectedSchoolId, setSelectedSchoolId] = useState<string>('');
+  // tracks the role currently chosen in the form (to conditionally enable school for JEFE_CAMPANA)
+  const [formRole, setFormRole] = useState<string>('');
 
   const isAdmin = user?.role === 'ADMIN';
   const isJefeCampana = user?.role === 'JEFE_CAMPANA';
@@ -63,6 +65,16 @@ export default function UsersPage() {
     label: `${t.tableNumber}${t.school ? ' — ' + t.school.recintoElectoral : ''}`,
   }));
 
+  // ── schoolId disabled rules:
+  //   JEFE_RECINTO: always locked to own school
+  //   JEFE_CAMPANA: editable only when creating a JEFE_RECINTO; otherwise disabled
+  //   ADMIN: always editable
+  const schoolDisabled = isJefeRecinto
+    ? true
+    : isJefeCampana
+      ? formRole !== 'JEFE_RECINTO'
+      : false;
+
   const fields = [
     { key: 'username', label: 'Usuario', required: true },
     { key: 'fullName', label: 'Nombre completo', required: true },
@@ -74,6 +86,7 @@ export default function UsersPage() {
       type: 'select' as const,
       options: roleOptions,
       disabled: isJefeRecinto, // JEFE_RECINTO always creates DELEGADO
+      onChange: (val: string) => setFormRole(val),
     },
     {
       key: 'partyId', label: 'Partido',
@@ -85,7 +98,7 @@ export default function UsersPage() {
       key: 'schoolId', label: 'Recinto asignado (Jefe Recinto)',
       type: 'select' as const,
       options: schoolOptions,
-      disabled: isJefeRecinto, // JEFE_RECINTO locked to own school
+      disabled: schoolDisabled,
       onChange: (val: string) => setSelectedSchoolId(val),
     },
     {
@@ -103,6 +116,7 @@ export default function UsersPage() {
     defaultValues.schoolId = (user as any)?.school?.id;
   } else if (isJefeCampana) {
     defaultValues.partyId = (user as any)?.party?.id;
+    // schoolId intentionally not pre-filled so JEFE_CAMPANA can select it when creating JEFE_RECINTO
   }
 
   return (
