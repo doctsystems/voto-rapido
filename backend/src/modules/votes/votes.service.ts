@@ -234,11 +234,11 @@ export class VotesService {
     return { entries, totalVotes };
   }
 
-  // ── Validation: per-type total ≤ totalVoters ────────────────────────────────
+  // ── Validation: per-type total ≤ totalVoters (strong error) ──
 
-  private async validatePerTypeLimit(dto: CreateReportDto, totalVoters: number | null) {
+  private async validatePerTypeLimit(dto: CreateReportDto, totalVoters: number | null): Promise<void> {
     if (!totalVoters) return;
-    // Per election type: válidos + nulos + blancos ≤ totalVoters de la mesa
+    // Per election type: válidos + nulos + blancos vs totalVoters de la mesa
     const extrasMap: Record<string, { nullVotes: number; blankVotes: number }> = {};
     for (const ex of dto.extras ?? []) {
       extrasMap[ex.electionTypeId] = {
@@ -254,16 +254,13 @@ export class VotesService {
       validPerType[ed.electionTypeId] += (ed.votes || 0);
     }
 
-    // Check each type: valid + null + blank ≤ padrón
     for (const [etId, validVotes] of Object.entries(validPerType)) {
       const extras = extrasMap[etId] ?? { nullVotes: 0, blankVotes: 0 };
       const total = validVotes + extras.nullVotes + extras.blankVotes;
       if (total > totalVoters) {
         const et = await this.etRepo.findOne({ where: { id: etId } });
         const etName = et?.name ?? etId;
-        throw new BadRequestException(
-          `Los votos para "${etName}" (válidos: ${validVotes}, nulos: ${extras.nullVotes}, blancos: ${extras.blankVotes} = ${total}) superan el padrón de la mesa (${totalVoters} votantes habilitados).`
-        );
+        throw new BadRequestException(`Los votos para "${etName}" (${total}) superan el padrón de la mesa (${totalVoters}).`);
       }
     }
   }
@@ -297,9 +294,15 @@ export class VotesService {
     }
 
     const existing = await this.reportRepo.findOne({
-      where: { delegate: { id: currentUser.sub }, table: { id: table.id } },
+      where: { table: { id: table.id } },
     });
-    if (existing) throw new ConflictException('Ya existe un reporte para esta mesa. Edítalo en lugar de crear uno nuevo.');
+    if (existing) {
+      if (existing.status === ReportStatus.VERIFIED) {
+        throw new ConflictException('Ya existe un reporte veriﬁcado para esta mesa. Solicite su eliminación para crear uno nuevo.');
+      } else {
+        throw new ConflictException('Ya existe un reporte para esta mesa. Edítalo en lugar de crear uno nuevo.');
+      }
+    }
 
     await this.validatePerTypeLimit(dto, table.totalVoters);
     const { entries, totalVotes } = await this.buildEntries(dto);

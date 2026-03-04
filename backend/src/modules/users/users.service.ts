@@ -88,6 +88,21 @@ export class UsersService {
       const table = await this.tableRepo.findOne({ where: { id: dto.tableId } });
       if (!table) throw new NotFoundException('Mesa no encontrada');
       user.table = table;
+
+      // Un solo delegado por partido en la misma mesa
+      if (dto.role === Role.DELEGADO && dto.partyId) {
+        const existingDelegate = await this.userRepo.findOne({
+          where: {
+            role: Role.DELEGADO,
+            table: { id: dto.tableId },
+            party: { id: dto.partyId },
+            isActive: true,
+          }
+        });
+        if (existingDelegate) {
+          throw new ConflictException('Ya existe un delegado activo para este partido en esta mesa');
+        }
+      }
     }
     if (dto.schoolId) {
       const school = await this.schoolRepo.findOne({ where: { id: dto.schoolId } });

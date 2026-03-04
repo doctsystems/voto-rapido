@@ -19,15 +19,15 @@ export class CreateSchoolDto {
 export class SchoolsService {
   constructor(
     @InjectRepository(School) private readonly repo: Repository<School>,
-  ) {}
+  ) { }
 
   findAll(search?: string) {
     const where = search
       ? [
-          { recintoElectoral: Like(`%${search}%`) },
-          { codigoRecinto: Like(`%${search}%`) },
-          { municipio: Like(`%${search}%`) },
-        ]
+        { recintoElectoral: Like(`%${search}%`) },
+        { codigoRecinto: Like(`%${search}%`) },
+        { municipio: Like(`%${search}%`) },
+      ]
       : undefined;
     return this.repo.find({
       where,
