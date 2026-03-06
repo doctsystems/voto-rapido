@@ -1,9 +1,13 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { VotingTable } from './voting-table.entity';
-import { School } from '../schools/school.entity';
-import { IsString, IsOptional, IsNumber, IsUUID } from 'class-validator';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { VotingTable } from "./voting-table.entity";
+import { School } from "../schools/school.entity";
+import { IsString, IsOptional, IsNumber, IsUUID } from "class-validator";
 
 export class CreateTableDto {
   @IsString() tableNumber: string;
@@ -14,30 +18,31 @@ export class CreateTableDto {
 @Injectable()
 export class TablesService {
   constructor(
-    @InjectRepository(VotingTable) private readonly repo: Repository<VotingTable>,
+    @InjectRepository(VotingTable)
+    private readonly repo: Repository<VotingTable>,
     @InjectRepository(School) private readonly schoolRepo: Repository<School>,
   ) {}
 
   findAll() {
     return this.repo.find({
-      relations: ['school', 'delegates'],
-      order: { school_id: 'ASC', tableNumber: 'ASC' },
+      relations: ["school", "delegates"],
+      order: { school_id: "ASC", tableNumber: "ASC" },
     });
   }
 
   async findOne(id: string) {
     const table = await this.repo.findOne({
       where: { id },
-      relations: ['school', 'delegates'],
+      relations: ["school", "delegates"],
     });
-    if (!table) throw new NotFoundException('Mesa no encontrada');
+    if (!table) throw new NotFoundException("Mesa no encontrada");
     return table;
   }
 
   private async resolveSchool(schoolId: string | undefined) {
     if (!schoolId) return undefined;
     const school = await this.schoolRepo.findOne({ where: { id: schoolId } });
-    if (!school) throw new NotFoundException('Recinto electoral no encontrado');
+    if (!school) throw new NotFoundException("Recinto electoral no encontrado");
     return school;
   }
 
@@ -53,7 +58,7 @@ export class TablesService {
     });
     if (existing) {
       throw new ConflictException(
-        `Ya existe la mesa "${dto.tableNumber}" en el recinto "${school?.recintoElectoral ?? '(sin recinto)'}"`
+        `Ya existe la mesa "${dto.tableNumber}" en el recinto "${school?.nombreRecinto ?? "(sin recinto)"}"`,
       );
     }
 
@@ -98,8 +103,8 @@ export class TablesService {
   findBySchool(schoolId: string) {
     return this.repo.find({
       where: { school: { id: schoolId } },
-      relations: ['school', 'delegates'],
-      order: { tableNumber: 'ASC' },
+      relations: ["school", "delegates"],
+      order: { tableNumber: "ASC" },
     });
   }
 }

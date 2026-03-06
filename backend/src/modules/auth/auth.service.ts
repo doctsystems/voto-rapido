@@ -1,8 +1,8 @@
-import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from '../users/user.entity';
+import { Injectable, UnauthorizedException, Logger } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { User } from "../users/user.entity";
 
 @Injectable()
 export class AuthService {
@@ -16,17 +16,17 @@ export class AuthService {
   async login(username: string, password: string) {
     const user = await this.userRepo.findOne({
       where: [{ username }, { email: username }],
-      relations: ['party', 'table', 'table.school', 'school'],
+      relations: ["party", "table", "table.school", "school"],
     });
 
     if (!user || !user.isActive) {
       this.logger.warn(`Login fallido: ${username}`);
-      throw new UnauthorizedException('Credenciales inválidas');
+      throw new UnauthorizedException("Credenciales inválidas");
     }
 
-    if (!await user.validatePassword(password)) {
+    if (!(await user.validatePassword(password))) {
       this.logger.warn(`Contraseña incorrecta: ${username}`);
-      throw new UnauthorizedException('Credenciales inválidas');
+      throw new UnauthorizedException("Credenciales inválidas");
     }
 
     const payload = {
@@ -50,9 +50,28 @@ export class AuthService {
         fullName: user.fullName,
         email: user.email,
         role: user.role,
-        party: user.party ? { id: user.party.id, name: user.party.name, acronym: user.party.acronym, color: user.party.color } : null,
-        table: user.table ? { id: user.table.id, tableNumber: user.table.tableNumber, school: user.table.school ?? null } : null,
-        school: user.school ? { id: user.school.id, recintoElectoral: user.school.recintoElectoral, codigoRecinto: user.school.codigoRecinto } : null,
+        party: user.party
+          ? {
+              id: user.party.id,
+              name: user.party.name,
+              acronym: user.party.acronym,
+              color: user.party.color,
+            }
+          : null,
+        table: user.table
+          ? {
+              id: user.table.id,
+              tableNumber: user.table.tableNumber,
+              school: user.table.school ?? null,
+            }
+          : null,
+        school: user.school
+          ? {
+              id: user.school.id,
+              nombreRecinto: user.school.nombreRecinto,
+              codigoRecinto: user.school.codigoRecinto,
+            }
+          : null,
       },
     };
   }
@@ -60,7 +79,7 @@ export class AuthService {
   async getProfile(userId: string) {
     return this.userRepo.findOne({
       where: { id: userId },
-      relations: ['party', 'table', 'table.school', 'school'],
+      relations: ["party", "table", "table.school", "school"],
     });
   }
 }

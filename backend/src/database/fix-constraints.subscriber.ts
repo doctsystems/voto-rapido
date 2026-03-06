@@ -1,6 +1,6 @@
-import { DataSource } from 'typeorm';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { DataSource } from "typeorm";
+import { InjectDataSource } from "@nestjs/typeorm";
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 
 /**
  * Runs once on app startup to:
@@ -15,7 +15,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 export class FixConstraintsService implements OnModuleInit {
   private readonly logger = new Logger(FixConstraintsService.name);
 
-  constructor(@InjectDataSource() private dataSource: DataSource) {}
+  constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
 
   async onModuleInit() {
     try {
@@ -50,9 +50,9 @@ export class FixConstraintsService implements OnModuleInit {
           END LOOP;
         END $$;
       `);
-      this.logger.log('✅ voting_tables constraint migration completed');
+      this.logger.log("✅ voting_tables constraint migration completed");
     } catch (err) {
-      this.logger.warn('Could not run constraint migration: ' + err?.message);
+      this.logger.warn("Could not run constraint migration: " + err?.message);
     }
   }
 }

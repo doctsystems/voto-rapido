@@ -1,10 +1,14 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Party } from './party.entity';
-import { PartyElectionType } from './party-election-type.entity';
-import { ElectionType } from '../election-types/election-type.entity';
-import { IsString, IsOptional, IsArray, IsUUID } from 'class-validator';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { Party } from "./party.entity";
+import { PartyElectionType } from "./party-election-type.entity";
+import { ElectionType } from "../election-types/election-type.entity";
+import { IsString, IsOptional, IsUUID } from "class-validator";
 
 export class CreatePartyDto {
   @IsString() name: string;
@@ -22,30 +26,36 @@ export class AssignElectionTypeDto {
 export class PartiesService {
   constructor(
     @InjectRepository(Party) private readonly repo: Repository<Party>,
-    @InjectRepository(PartyElectionType) private readonly petRepo: Repository<PartyElectionType>,
-    @InjectRepository(ElectionType) private readonly etRepo: Repository<ElectionType>,
+    @InjectRepository(PartyElectionType)
+    private readonly petRepo: Repository<PartyElectionType>,
+    @InjectRepository(ElectionType)
+    private readonly etRepo: Repository<ElectionType>,
   ) {}
 
   findAll() {
     return this.repo.find({
-      relations: ['electionTypes', 'electionTypes.electionType'],
-      order: { name: 'ASC' },
+      relations: ["electionTypes", "electionTypes.electionType"],
+      order: { name: "ASC" },
     });
   }
 
   async findOne(id: string) {
     const p = await this.repo.findOne({
       where: { id },
-      relations: ['electionTypes', 'electionTypes.electionType'],
+      relations: ["electionTypes", "electionTypes.electionType"],
     });
-    if (!p) throw new NotFoundException('Partido no encontrado');
+    if (!p) throw new NotFoundException("Partido no encontrado");
     return p;
   }
 
   async create(dto: CreatePartyDto, actorId?: string) {
-    const existing = await this.repo.findOne({ where: [{ name: dto.name }, { acronym: dto.acronym }] });
-    if (existing) throw new ConflictException('Partido o siglas ya existen');
-    return this.repo.save(this.repo.create({ ...dto, createdBy: actorId, updatedBy: actorId }));
+    const existing = await this.repo.findOne({
+      where: [{ name: dto.name }, { acronym: dto.acronym }],
+    });
+    if (existing) throw new ConflictException("Partido o siglas ya existen");
+    return this.repo.save(
+      this.repo.create({ ...dto, createdBy: actorId, updatedBy: actorId }),
+    );
   }
 
   async update(id: string, dto: Partial<CreatePartyDto>, actorId?: string) {
@@ -58,21 +68,25 @@ export class PartiesService {
     await this.findOne(id);
     await this.repo.update(id, { deletedBy: actorId });
     await this.repo.softDelete(id);
-    return { message: 'Partido eliminado' };
+    return { message: "Partido eliminado" };
   }
 
   async assignElectionType(partyId: string, dto: AssignElectionTypeDto) {
     const party = await this.repo.findOne({ where: { id: partyId } });
-    if (!party) throw new NotFoundException('Partido no encontrado');
-    const electionType = await this.etRepo.findOne({ where: { id: dto.electionTypeId } });
-    if (!electionType) throw new NotFoundException('Tipo de elección no encontrado');
+    if (!party) throw new NotFoundException("Partido no encontrado");
+    const electionType = await this.etRepo.findOne({
+      where: { id: dto.electionTypeId },
+    });
+    if (!electionType)
+      throw new NotFoundException("Tipo de elección no encontrado");
 
     // Upsert (restore if soft-deleted)
     const existing = await this.petRepo
-      .createQueryBuilder('pet')
+      .createQueryBuilder("pet")
       .withDeleted()
-      .where('pet.party_id = :partyId AND pet.election_type_id = :etId', {
-        partyId, etId: dto.electionTypeId,
+      .where("pet.party_id = :partyId AND pet.election_type_id = :etId", {
+        partyId,
+        etId: dto.electionTypeId,
       })
       .getOne();
 
@@ -83,16 +97,22 @@ export class PartiesService {
       return this.petRepo.save(existing);
     }
 
-    return this.petRepo.save(this.petRepo.create({ party, electionType, candidateName: dto.candidateName }));
+    return this.petRepo.save(
+      this.petRepo.create({
+        party,
+        electionType,
+        candidateName: dto.candidateName,
+      }),
+    );
   }
 
   async removeElectionType(partyId: string, electionTypeId: string) {
     const pet = await this.petRepo.findOne({
       where: { party: { id: partyId }, electionType: { id: electionTypeId } },
     });
-    if (!pet) throw new NotFoundException('Asignación no encontrada');
+    if (!pet) throw new NotFoundException("Asignación no encontrada");
     await this.petRepo.softDelete(pet.id);
-    return { message: 'Tipo de elección removido del partido' };
+    return { message: "Tipo de elección removido del partido" };
   }
 
   /** Retorna partidos activos con solo sus tipos de elección asignados.
@@ -100,18 +120,20 @@ export class PartiesService {
   async getPartiesWithElectionTypes() {
     const parties = await this.repo.find({
       where: { isActive: true },
-      relations: ['electionTypes', 'electionTypes.electionType'],
-      order: { name: 'ASC' },
+      relations: ["electionTypes", "electionTypes.electionType"],
+      order: { name: "ASC" },
     });
-    return parties.map(p => ({
+    return parties.map((p) => ({
       id: p.id,
       name: p.name,
       acronym: p.acronym,
       color: p.color,
       electionTypes: (p.electionTypes || [])
-        .filter(pet => pet.isActive && !pet.deletedAt)
-        .sort((a, b) => (a.electionType.order ?? 0) - (b.electionType.order ?? 0))
-        .map(pet => ({
+        .filter((pet) => pet.isActive && !pet.deletedAt)
+        .sort(
+          (a, b) => (a.electionType.order ?? 0) - (b.electionType.order ?? 0),
+        )
+        .map((pet) => ({
           id: pet.electionType.id,
           name: pet.electionType.name,
           order: pet.electionType.order,
