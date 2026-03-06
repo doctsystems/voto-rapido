@@ -1,25 +1,31 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from '../lib/toast';
-import { authApi } from '../lib/api';
-import { useAuthStore } from '../store/auth.store';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "../lib/toast";
+import { authApi } from "../lib/api";
+import { useAuthStore } from "../store/auth.store";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const { setAuth } = useAuthStore();
-  const [form, setForm] = useState({ username: '', password: '' });
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState({ username: "", password: "" });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.username || !form.password) return toast.error('Completa todos los campos');
+    if (!form.username || !form.password)
+      return toast.error("Completa todos los campos");
     setLoading(true);
     try {
       const data = await authApi.login(form.username, form.password);
       setAuth(data.accessToken, data.user);
-      navigate('/');
+      // Invalidar queries específicas después del login
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["metrics"] });
+      navigate("/");
     } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Credenciales incorrectas');
+      toast.error(err.response?.data?.message || "Credenciales incorrectas");
     } finally {
       setLoading(false);
     }
@@ -44,13 +50,15 @@ export default function LoginPage() {
           </p>
           <div className="mt-12 grid grid-cols-3 gap-6">
             {[
-              { icon: '🗳', label: 'Recintos', value: 'Múltiples' },
-              { icon: '👥', label: 'Partidos', value: 'Todos' },
-              { icon: '📊', label: 'En vivo', value: 'Real-time' },
-            ].map(s => (
+              { icon: "🗳", label: "Recintos", value: "Múltiples" },
+              { icon: "👥", label: "Partidos", value: "Todos" },
+              { icon: "📊", label: "En vivo", value: "Real-time" },
+            ].map((s) => (
               <div key={s.label} className="text-center">
                 <div className="text-2xl mb-1">{s.icon}</div>
-                <div className="text-white font-semibold text-sm">{s.value}</div>
+                <div className="text-white font-semibold text-sm">
+                  {s.value}
+                </div>
                 <div className="text-bodydark text-xs">{s.label}</div>
               </div>
             ))}
@@ -71,7 +79,9 @@ export default function LoginPage() {
 
           <div className="mb-8">
             <h2 className="text-3xl font-bold text-black">Iniciar sesión</h2>
-            <p className="text-body mt-2">Ingresa tus credenciales para acceder al sistema</p>
+            <p className="text-body mt-2">
+              Ingresa tus credenciales para acceder al sistema
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -81,7 +91,7 @@ export default function LoginPage() {
                 type="text"
                 autoComplete="username"
                 value={form.username}
-                onChange={e => setForm({ ...form, username: e.target.value })}
+                onChange={(e) => setForm({ ...form, username: e.target.value })}
                 className="input"
                 placeholder="tu.usuario"
                 disabled={loading}
@@ -93,7 +103,7 @@ export default function LoginPage() {
                 type="password"
                 autoComplete="current-password"
                 value={form.password}
-                onChange={e => setForm({ ...form, password: e.target.value })}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
                 className="input"
                 placeholder="••••••••"
                 disabled={loading}
@@ -106,13 +116,30 @@ export default function LoginPage() {
             >
               {loading ? (
                 <span className="flex items-center gap-2 justify-center">
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  <svg
+                    className="animate-spin h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8z"
+                    />
                   </svg>
                   Ingresando...
                 </span>
-              ) : 'Ingresar'}
+              ) : (
+                "Ingresar"
+              )}
             </button>
           </form>
 

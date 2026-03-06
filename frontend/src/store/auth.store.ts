@@ -1,7 +1,8 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { clearAllQueries } from "../lib/query-utils";
 
-export type UserRole = 'ADMIN' | 'JEFE_CAMPANA' | 'JEFE_RECINTO' | 'DELEGADO';
+export type UserRole = "ADMIN" | "JEFE_CAMPANA" | "JEFE_RECINTO" | "DELEGADO";
 
 export interface AuthUser {
   id: string;
@@ -10,8 +11,21 @@ export interface AuthUser {
   email: string;
   role: UserRole;
   party?: { id: string; name: string; acronym: string; color: string } | null;
-  table?: { id: string; tableNumber: string; totalVoters?: number; school?: { id: string; recintoElectoral: string; codigoRecinto?: string } | null } | null;
-  school?: { id: string; recintoElectoral: string; codigoRecinto?: string } | null;
+  table?: {
+    id: string;
+    tableNumber: string;
+    totalVoters?: number;
+    school?: {
+      id: string;
+      nombreRecinto: string;
+      codigoRecinto?: string;
+    } | null;
+  } | null;
+  school?: {
+    id: string;
+    nombreRecinto: string;
+    codigoRecinto?: string;
+  } | null;
 }
 
 interface AuthState {
@@ -28,9 +42,17 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       user: null,
       isAuthenticated: false,
-      setAuth: (token, user) => set({ token, user, isAuthenticated: true }),
-      logout: () => set({ token: null, user: null, isAuthenticated: false }),
+      setAuth: (token, user) => {
+        // Limpiar cache completamente cuando cambia el usuario
+        clearAllQueries();
+        set({ token, user, isAuthenticated: true });
+      },
+      logout: () => {
+        // Limpiar cache completamente al hacer logout
+        clearAllQueries();
+        set({ token: null, user: null, isAuthenticated: false });
+      },
     }),
-    { name: 'voto-rapido-auth' },
+    { name: "voto-rapido-auth" },
   ),
 );
