@@ -207,7 +207,7 @@ export class VotesService {
     @InjectRepository(VotingTable) private tableRepo: Repository<VotingTable>,
     @InjectRepository(Party) private partyRepo: Repository<Party>,
     @InjectRepository(ElectionType) private etRepo: Repository<ElectionType>,
-  ) {}
+  ) { }
 
   private baseQuery() {
     return this.reportRepo
@@ -250,9 +250,11 @@ export class VotesService {
       throw new ForbiddenException("Solo puede ver sus propios reportes");
 
     if (currentUser.role === Role.JEFE_RECINTO) {
-      // JEFE_RECINTO can view any report in their recinto (any party)
+      // JEFE_RECINTO can view reports of their own party in their recinto
       if (report.table?.school?.id !== currentUser.schoolId)
         throw new ForbiddenException("Solo puede ver reportes de su recinto");
+      if (report.delegate?.party?.id !== currentUser.partyId)
+        throw new ForbiddenException("Solo puede ver reportes de su partido");
     }
 
     if (
@@ -270,8 +272,10 @@ export class VotesService {
     if (currentUser.role === Role.DELEGADO) {
       query.where("d.id = :userId", { userId: currentUser.sub });
     } else if (currentUser.role === Role.JEFE_RECINTO) {
-      // JEFE_RECINTO sees all reports in their recinto (any party)
-      query.where("s.id = :schoolId", { schoolId: currentUser.schoolId });
+      // JEFE_RECINTO sees only reports of their own party in their recinto
+      query
+        .where("s.id = :schoolId", { schoolId: currentUser.schoolId })
+        .andWhere("dp.id = :partyId", { partyId: currentUser.partyId });
     } else if (currentUser.role === Role.JEFE_CAMPANA) {
       query.where("dp.id = :partyId", { partyId: currentUser.partyId });
     }
@@ -464,11 +468,15 @@ export class VotesService {
       throw new ForbiddenException(
         "Solo puede actualizar sus propios reportes",
       );
-    // JEFE_RECINTO: can update reports for any table in their recinto
+    // JEFE_RECINTO: can update reports of their own party in their recinto
     if (currentUser.role === Role.JEFE_RECINTO) {
       if (report.table?.school?.id !== currentUser.schoolId)
         throw new ForbiddenException(
           "Solo puede actualizar reportes de su recinto",
+        );
+      if (report.delegate?.party?.id !== currentUser.partyId)
+        throw new ForbiddenException(
+          "Solo puede actualizar reportes de su partido",
         );
     }
     if (report.status === ReportStatus.VERIFIED)
@@ -499,60 +507,76 @@ export class VotesService {
     const role = currentUser.role as Role;
 
     if (role === Role.DELEGADO) {
-      if (report.delegate.id !== currentUser.sub)
+      // Delegado solo puede enviar sus propios reportes
+      if (report.delegate?.id !== currentUser.sub) {
         throw new ForbiddenException("Solo puede enviar sus propios reportes");
+      }
     } else if (role === Role.JEFE_RECINTO) {
-      if (report.table?.school?.id !== currentUser.schoolId)
-        throw new ForbiddenException(
-          "Solo puede enviar reportes de su recinto",
-        );
+      // Jefe de recinto solo puede enviar reportes de su recinto
+      if (report.table?.school?.id !== currentUser.schoolId) {
+        throw new ForbiddenException("Solo puede enviar reportes de su recinto");
+      }
+
+      // Si el reporte fue creado por un delegado, validar partido
+      if (report.delegate?.role === Role.DELEGADO &&
+        report.delegate.party?.id !== currentUser.partyId) {
+        throw new ForbiddenException("Solo puede enviar reportes de su partido");
+      }
     } else {
       throw new ForbiddenException(
         "Solo el delegado o jefe de recinto puede enviar el reporte",
       );
     }
-    if (report.status !== ReportStatus.DRAFT)
+
+    if (report.status !== ReportStatus.DRAFT) {
       throw new BadRequestException("Solo borradores pueden enviarse");
+    }
 
     report.status = ReportStatus.SUBMITTED;
     report.submittedAt = new Date();
     report.updatedBy = currentUser.sub;
+
     return this.reportRepo.save(report);
   }
 
   async verify(id: string, currentUser: any) {
     const report = await this.fetchReport(id);
-    if (report.status !== ReportStatus.SUBMITTED)
-      throw new BadRequestException(
-        "Solo reportes enviados pueden verificarse",
-      );
-
     const role = currentUser.role as Role;
 
-    if (role === Role.ADMIN)
-      throw new ForbiddenException(
-        "El administrador no puede verificar reportes.",
-      );
-
-    // JEFE_CAMPANA: can verify any report of their party
-    if (role === Role.JEFE_CAMPANA) {
-      if (report.delegate.party?.id !== currentUser.partyId)
-        throw new ForbiddenException(
-          "Solo puede verificar reportes de su partido",
-        );
+    // Solo reportes enviados pueden verificarse
+    if (report.status !== ReportStatus.SUBMITTED) {
+      throw new BadRequestException("Solo reportes enviados pueden verificarse");
     }
-    // JEFE_RECINTO: can verify reports of their recinto AND party
-    else if (role === Role.JEFE_RECINTO) {
-      if (report.table?.school?.id !== currentUser.schoolId)
-        throw new ForbiddenException(
-          "Solo puede verificar reportes de su recinto",
-        );
+
+    if (role === Role.ADMIN) {
+      throw new ForbiddenException("El administrador no puede verificar reportes.");
+    }
+
+    if (role === Role.JEFE_CAMPANA) {
+      // Jefe de campaña: verificar reportes de su partido
+      if (report.delegate?.role === Role.DELEGADO &&
+        report.delegate.party?.id !== currentUser.partyId) {
+        throw new ForbiddenException("Solo puede verificar reportes de su partido");
+      }
+    } else if (role === Role.JEFE_RECINTO) {
+      // Jefe de recinto: verificar reportes de su recinto
+      if (report.table?.school?.id !== currentUser.schoolId) {
+        throw new ForbiddenException("Solo puede verificar reportes de su recinto");
+      }
+
+      // Si el reporte fue creado por un delegado, validar partido
+      if (report.delegate?.role === Role.DELEGADO &&
+        report.delegate.party?.id !== currentUser.partyId) {
+        throw new ForbiddenException("Solo puede verificar reportes de su partido");
+      }
     } else {
       throw new ForbiddenException("No tiene permisos para verificar reportes");
     }
 
+    // Actualizar estado
     report.status = ReportStatus.VERIFIED;
     report.updatedBy = currentUser.sub;
+
     return this.reportRepo.save(report);
   }
 
@@ -574,11 +598,15 @@ export class VotesService {
           "Solo puede eliminar reportes de su partido",
         );
     }
-    // JEFE_RECINTO: can delete reports of their recinto AND party
+    // JEFE_RECINTO: can delete reports of their recinto AND their party
     else if (role === Role.JEFE_RECINTO) {
       if (report.table?.school?.id !== currentUser.schoolId)
         throw new ForbiddenException(
           "Solo puede eliminar reportes de su recinto",
+        );
+      if (report.delegate?.party?.id !== currentUser.partyId)
+        throw new ForbiddenException(
+          "Solo puede eliminar reportes de su partido",
         );
     }
 
@@ -646,12 +674,59 @@ export class VotesService {
       ...aggregateReports(data.reports),
     }));
 
-    return { totalReports, draft, submitted, verified, byParty };
+    // Global vote summary across all reports (one representative per table per ET
+    // to avoid double-counting null/blank when multiple parties report the same table)
+    const globalAgg = this.computeGlobalVoteSummary(allReports);
+
+    return { totalReports, draft, submitted, verified, byParty, ...globalAgg };
+  }
+
+  /**
+   * Computes a global vote summary deduplicated by table+electionType,
+   * so null/blank votes are only counted once per mesa per election type
+   * regardless of how many party delegates reported for that mesa.
+   */
+  private computeGlobalVoteSummary(allReports: VoteReport[]) {
+    let totalValidVotes = 0;
+    let totalNullVotes = 0;
+    let totalBlankVotes = 0;
+
+    // Track which (tableId, electionTypeId) pairs we've already accounted for null/blank
+    const seenTableEt = new Set<string>();
+
+    for (const report of allReports) {
+      const seenEtInReport = new Set<string>();
+      for (const entry of report.entries || []) {
+        const et = entry.electionType;
+        if (!et) continue;
+        totalValidVotes += entry.votes || 0;
+
+        // Count null/blank only once per (table, electionType) globally
+        const globalKey = `${report.table?.id}:${et.id}`;
+        if (!seenTableEt.has(globalKey) && !seenEtInReport.has(et.id)) {
+          seenEtInReport.add(et.id);
+          seenTableEt.add(globalKey);
+          totalNullVotes += entry.nullVotes || 0;
+          totalBlankVotes += entry.blankVotes || 0;
+        }
+      }
+    }
+
+    const totalEmitidos = totalValidVotes + totalNullVotes + totalBlankVotes;
+    return {
+      totalValidVotes,
+      totalNullVotes,
+      totalBlankVotes,
+      totalEmitidos,
+    };
   }
 
   private async getRecintoMetrics(currentUser: any) {
     const query = this.baseQuery();
-    query.where("s.id = :schoolId", { schoolId: currentUser.schoolId });
+    // JEFE_RECINTO sees only their own party's reports in their recinto
+    query
+      .where("s.id = :schoolId", { schoolId: currentUser.schoolId })
+      .andWhere("dp.id = :partyId", { partyId: currentUser.partyId });
     return aggregateReports(await query.getMany());
   }
 

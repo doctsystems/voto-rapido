@@ -12,11 +12,11 @@ export enum ReportStatus {
 
 @Entity('vote_reports')
 export class VoteReport extends BaseEntity {
-  @ManyToOne(() => User, (user) => user.reports, { eager: true })
+  @ManyToOne(() => User, (user) => user.reports, { eager: false })
   @JoinColumn({ name: 'delegate_id' })
   delegate: User;
 
-  @ManyToOne(() => VotingTable, (table) => table.reports, { eager: true })
+  @ManyToOne(() => VotingTable, (table) => table.reports, { eager: false })
   @JoinColumn({ name: 'table_id' })
   table: VotingTable;
 
