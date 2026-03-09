@@ -128,17 +128,24 @@ function aggregateReports(reports: VoteReport[]) {
     }
 
     // Aggregate null/blank per election type from entries (they're stored on the first party entry per type)
-    const seenEtPerReport = new Set<string>();
+    const seenTableEt = new Set<string>();
+
     for (const entry of report.entries || []) {
       const et = entry.electionType;
       if (!et) continue;
-      const key = `${report.id}:${et.id}`;
-      if (!seenEtPerReport.has(key)) {
-        seenEtPerReport.add(key);
+
+      const key = `${report.table?.id}:${et.id}`;
+      if (!seenTableEt.has(key)) {
+        seenTableEt.add(key);
+
+        // Buscar en este reporte el entry que tenga nulos/blancos
+        const nbEntry = (report.entries || []).find(
+          e => e.electionType?.id === et.id && ((e.nullVotes ?? 0) > 0 || (e.blankVotes ?? 0) > 0)
+        );
+
         if (etMap[et.id]) {
-          etMap[et.id].nullVotes += entry.nullVotes || 0;
-          etMap[et.id].blankVotes += entry.blankVotes || 0;
-          // Accumulate totalVoters once per election type per report
+          etMap[et.id].nullVotes += nbEntry?.nullVotes || 0;
+          etMap[et.id].blankVotes += nbEntry?.blankVotes || 0;
           etMap[et.id].totalVoters += report.table?.totalVoters || 0;
         }
       }
@@ -159,25 +166,21 @@ function aggregateReports(reports: VoteReport[]) {
         name: et.name,
         order: et.order,
         validVotes,
-        nullVotes: et.nullVotes,
-        blankVotes: et.blankVotes,
+        nullVotes: et.nullVotes,   // <── aquí
+        blankVotes: et.blankVotes, // <── aquí
         totalVotes: emitidos,
         totalVoters: total,
         parties: parties.map((p) => ({
           ...p,
-          percentage:
-            validVotes > 0 ? +((p.votes / validVotes) * 100).toFixed(2) : 0,
+          percentage: validVotes > 0 ? +((p.votes / validVotes) * 100).toFixed(2) : 0,
         })),
         summary: {
           validVotes,
-          validPct:
-            emitidos > 0 ? +((validVotes / emitidos) * 100).toFixed(2) : 0,
+          validPct: emitidos > 0 ? +((validVotes / emitidos) * 100).toFixed(2) : 0,
           blankVotes: et.blankVotes,
-          blankPct:
-            emitidos > 0 ? +((et.blankVotes / emitidos) * 100).toFixed(2) : 0,
+          blankPct: emitidos > 0 ? +((et.blankVotes / emitidos) * 100).toFixed(2) : 0,
           nullVotes: et.nullVotes,
-          nullPct:
-            emitidos > 0 ? +((et.nullVotes / emitidos) * 100).toFixed(2) : 0,
+          nullPct: emitidos > 0 ? +((et.nullVotes / emitidos) * 100).toFixed(2) : 0,
           emitidos,
           totalVoters: total,
         },
@@ -619,13 +622,11 @@ export class VotesService {
   // ── Metrics ────────────────────────────────────────────────────────────────
 
   async getMetrics(currentUser: any) {
-    if (currentUser.role === Role.ADMIN) return this.getAdminMetrics();
-    if (currentUser.role === Role.JEFE_RECINTO)
-      return this.getRecintoMetrics(currentUser);
-    if (currentUser.role === Role.DELEGADO)
-      return this.getDelegadoMetrics(currentUser);
+    if (currentUser.role === Role.ADMIN) {
+      return this.getAdminMetrics();
+    }
 
-    // JEFE_CAMPANA
+    // Delegado, Jefe de campaña y Jefe de recinto
     const query = this.baseQuery();
     query.where("dp.id = :partyId", { partyId: currentUser.partyId });
     return aggregateReports(await query.getMany());
@@ -719,20 +720,5 @@ export class VotesService {
       totalBlankVotes,
       totalEmitidos,
     };
-  }
-
-  private async getRecintoMetrics(currentUser: any) {
-    const query = this.baseQuery();
-    // JEFE_RECINTO sees only their own party's reports in their recinto
-    query
-      .where("s.id = :schoolId", { schoolId: currentUser.schoolId })
-      .andWhere("dp.id = :partyId", { partyId: currentUser.partyId });
-    return aggregateReports(await query.getMany());
-  }
-
-  private async getDelegadoMetrics(currentUser: any) {
-    const query = this.baseQuery();
-    query.where("d.id = :userId", { userId: currentUser.sub });
-    return aggregateReports(await query.getMany());
   }
 }
