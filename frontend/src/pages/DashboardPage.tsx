@@ -16,6 +16,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
 // ─── Status Cards ──────────────────────────────────────────────────────────────
 function StatusCards({ metrics }: { metrics: any }) {
+  const { user } = useAuthStore();
   const cards = [
     {
       label: "Borradores",
@@ -47,28 +48,32 @@ function StatusCards({ metrics }: { metrics: any }) {
     },
   ];
   return (
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-      {cards.map((c) => (
-        <div
-          key={c.label}
-          className="rounded-2xl bg-white border border-black/[.06] shadow-[0_2px_16px_rgba(0,0,0,.06)]"
-        >
-          <div className="flex items-center gap-4 p-5">
+    <>
+      {user?.role === "ADMIN" && (
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+          {cards.map((c) => (
             <div
-              className={`flex h-12 w-12 items-center justify-center rounded-full text-xl flex-shrink-0 ${c.bg}`}
+              key={c.label}
+              className="rounded-2xl bg-white border border-black/[.06] shadow-[0_2px_16px_rgba(0,0,0,.06)]"
             >
-              {c.icon}
+              <div className="flex items-center gap-4 p-5">
+                <div
+                  className={`flex h-12 w-12 items-center justify-center rounded-full text-xl flex-shrink-0 ${c.bg}`}
+                >
+                  {c.icon}
+                </div>
+                <div>
+                  <p className="text-sm text-body">{c.label}</p>
+                  <h4 className={`text-2xl font-bold ${c.text}`}>
+                    {c.value.toLocaleString()}
+                  </h4>
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-body">{c.label}</p>
-              <h4 className={`text-2xl font-bold ${c.text}`}>
-                {c.value.toLocaleString()}
-              </h4>
-            </div>
-          </div>
+          ))}
         </div>
-      ))}
-    </div>
+      )}
+    </>
   );
 }
 
@@ -324,7 +329,7 @@ function PartyPanel({ pd, defaultOpen }: { pd: any; defaultOpen: boolean }) {
             {pd.partyName}
           </span>
         </div>
-        <div className="flex items-center gap-2 text-xs font-mono flex-shrink-0">
+        {/* <div className="flex items-center gap-2 text-xs font-mono flex-shrink-0">
           <span className="text-body">{pd.totalReports} rep.</span>
           {pd.verified > 0 && (
             <span className="badge badge-verified">{pd.verified} ✓</span>
@@ -335,7 +340,7 @@ function PartyPanel({ pd, defaultOpen }: { pd: any; defaultOpen: boolean }) {
           {pd.draft > 0 && (
             <span className="badge badge-draft">{pd.draft}</span>
           )}
-        </div>
+        </div> */}
         <span
           className={`text-body transition-transform duration-200 inline-block ${open ? "rotate-180" : ""}`}
         >
@@ -415,11 +420,7 @@ export default function DashboardPage() {
         <div>
           <h2 className="text-2xl font-bold text-black">Dashboard Electoral</h2>
           <p className="text-body text-sm mt-0.5">
-            {user?.role === "ADMIN" && "Vista general — todos los partidos"}
-            {user?.role === "JEFE_CAMPANA" &&
-              "Resultados consolidados de tu partido"}
-            {user?.role === "JEFE_RECINTO" && "Resultados de tu recinto"}
-            {user?.role === "DELEGADO" && "Tus reportes enviados"}
+            {user?.role === "ADMIN" ? "Vista general — todos los partidos" : "Resultados consolidados"}
           </p>
         </div>
         <div className="flex gap-2">
