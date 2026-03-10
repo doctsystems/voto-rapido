@@ -19,7 +19,7 @@ const roleBadge: Record<string, string> = {
 
 const navSections = [
   {
-    label: "Principal",
+    label: "Menu Principal",
     items: [
       {
         to: "/",
@@ -93,11 +93,11 @@ export default function Layout() {
   const SidebarContent = () => (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-5.5 lg:py-6.5 border-b border-strokedark">
+      <div className="flex h-24 shrink-0 items-center justify-center lg:justify-start px-6 lg:px-8 border-b border-stroke">
         <img
           src="/images/logo.svg"
           alt="VotoRápido"
-          className="h-12 w-auto"
+          className="h-12 lg:h-16 w-auto object-contain"
         />
       </div>
 
@@ -105,7 +105,7 @@ export default function Layout() {
       <nav className="flex-1 overflow-y-auto px-3 py-2">
         {visibleSections.map((section) => (
           <div key={section.label}>
-            <div className="nav-section">{section.label}</div>
+            <div className="nav-section text-gray-900">{section.label}</div>
             <ul className="space-y-0.5">
               {section.items.map((item) => (
                 <li key={item.to}>
@@ -114,10 +114,10 @@ export default function Layout() {
                     end={item.to === "/"}
                     onClick={() => setSidebarOpen(false)}
                     className={({ isActive }) =>
-                      `nav-item ${isActive ? "active" : ""}`
+                      `nav-item ${isActive ? "active" : ""} text-gray-600`
                     }
                   >
-                    <span className="text-base w-5 text-center opacity-70">
+                    <span className=" text-gray-900 text-base w-5 text-center opacity-70">
                       {item.icon}
                     </span>
                     {item.label}
@@ -130,7 +130,7 @@ export default function Layout() {
       </nav>
 
       {/* Logout */}
-      <div className="border-t border-strokedark px-3 py-4">
+      <div className="border-t px-2 py-2">
         <button
           onClick={handleLogout}
           className="nav-item w-full text-left text-meta-1 hover:bg-meta-1/10 hover:text-meta-1"
@@ -145,7 +145,7 @@ export default function Layout() {
   return (
     <div className="flex h-screen overflow-hidden">
       {/* ── Desktop Sidebar ── */}
-      <aside className="hidden lg:flex lg:flex-col w-64 flex-shrink-0 bg-boxdark min-h-screen">
+      <aside className="hidden lg:flex lg:flex-col w-64 flex-shrink-0 bg-white border-r min-h-screen">
         <SidebarContent />
       </aside>
 
@@ -156,7 +156,7 @@ export default function Layout() {
             className="absolute inset-0 bg-black/60"
             onClick={() => setSidebarOpen(false)}
           />
-          <aside className="absolute left-0 top-0 h-full w-64 bg-boxdark">
+          <aside className="absolute left-0 top-0 h-full w-64 bg-whiter">
             <SidebarContent />
           </aside>
         </div>
@@ -184,8 +184,8 @@ export default function Layout() {
         </header>
 
         {/* Desktop topbar breadcrumb */}
-        <header className="hidden lg:flex items-center justify-between border-b border-stroke bg-white px-8 py-4">
-          <div className="text-xs text-body font-medium tracking-wide uppercase">
+        <header className="hidden lg:flex h-24 shrink-0 items-center justify-between border-b border-stroke bg-white px-8">
+          <div className="text-xl font-bold text-black tracking-wide uppercase">
             Sistema de Conteo Rápido Electoral
           </div>
           <div className="flex items-center gap-3 text-sm text-body">
