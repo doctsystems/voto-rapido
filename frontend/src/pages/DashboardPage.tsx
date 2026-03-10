@@ -467,23 +467,32 @@ function PartyPanel({ pd, defaultOpen }: { pd: any; defaultOpen: boolean }) {
   );
 }
 
-// ─── Admin Dashboard ───────────────────────────────────────────────────────────
-function AdminDashboard({ metrics }: { metrics: any }) {
-  const byParty: any[] = metrics?.byParty ?? [];
-  const [allOpen, setAllOpen] = useState(false);
+
+// ─── Main Page ─────────────────────────────────────────────────────────────────
+export default function DashboardPage() {
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === "ADMIN";
+
+  const { data: metrics, isLoading } = useQuery({
+    queryKey: ["metrics"],
+    queryFn: () => votesApi.getMetrics(),
+    refetchInterval: 30_000,
+  });
+
+  // Solo admin necesita el selector de partido
   const [selectedPartyId, setSelectedPartyId] = useState<string>("");
+  const byParty: any[] = metrics?.byParty ?? [];
 
   // Partidos ordenados alfabéticamente por nombre
   const sortedParties = [...byParty].sort((a, b) =>
     (a.partyName ?? "").localeCompare(b.partyName ?? "", "es")
   );
 
-  // Datos del partido seleccionado (con forma compatible con StatusCards + ResultsPanel)
+  // Datos del partido seleccionado
   const selectedPartyData = selectedPartyId
     ? byParty.find((p) => p.partyId === selectedPartyId)
     : null;
 
-  // Construir un objeto metrics-like para el partido seleccionado
   const partyMetrics = selectedPartyData
     ? {
         byElectionType: selectedPartyData.byElectionType ?? [],
@@ -492,136 +501,53 @@ function AdminDashboard({ metrics }: { metrics: any }) {
       }
     : null;
 
-  if (byParty.length === 0) {
-    return (
-      <div className="card flex flex-col items-center py-20 text-body">
-        <div className="text-5xl mb-4">🗳️</div>
-        <p>No hay reportes ingresados aún</p>
-      </div>
-    );
-  }
-
   return (
     <div>
-      {/* ── Selector de partido ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-        <h3 className="font-semibold text-black">Resultados por partido</h3>
-        <div className="flex items-center gap-3">
-          <label
-            htmlFor="party-selector"
-            className="text-sm text-body font-medium whitespace-nowrap"
-          >
-            Ver partido:
-          </label>
-          <select
-            id="party-selector"
-            value={selectedPartyId}
-            onChange={(e) => setSelectedPartyId(e.target.value)}
-            className="rounded-lg border border-stroke bg-white px-3 py-2 text-sm text-black shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary min-w-[200px]"
-          >
-            <option value="">— Todos los partidos —</option>
-            {sortedParties.map((p) => (
-              <option key={p.partyId} value={p.partyId}>
-                {p.partyName} ({p.partyAcronym})
-              </option>
-            ))}
-          </select>
-          {selectedPartyId && (
-            <button
-              onClick={() => setSelectedPartyId("")}
-              className="btn-secondary btn-sm"
-              title="Limpiar selección"
-            >
-              ✕
-            </button>
+      {/* ── Header ── */}
+      <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-2xl font-bold text-black">Dashboard Electoral</h2>
+          {isAdmin ? (
+            /* Selector de partido integrado bajo el título */
+            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+              <span className="text-body text-sm">Ver resultados de:</span>
+              <select
+                id="party-selector"
+                value={selectedPartyId}
+                onChange={(e) => setSelectedPartyId(e.target.value)}
+                className="rounded-lg border border-stroke bg-white px-3 py-1.5 text-sm text-black shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                style={
+                  selectedPartyData
+                    ? { borderLeftColor: selectedPartyData.partyColor, borderLeftWidth: 3 }
+                    : {}
+                }
+              >
+                <option value="">— Selecciona un partido —</option>
+                {sortedParties.map((p) => (
+                  <option key={p.partyId} value={p.partyId}>
+                    {p.partyName} ({p.partyAcronym})
+                  </option>
+                ))}
+              </select>
+              {selectedPartyId && (
+                <button
+                  onClick={() => setSelectedPartyId("")}
+                  className="text-body hover:text-danger text-xs px-1"
+                  title="Limpiar selección"
+                >
+                  ✕ limpiar
+                </button>
+              )}
+            </div>
+          ) : (
+            <p className="text-body text-sm mt-0.5">Resultados consolidados</p>
           )}
         </div>
-      </div>
-
-      {/* ── Vista de partido seleccionado ── */}
-      {selectedPartyData && partyMetrics ? (
-        <div>
-          {/* Header con color y nombre del partido */}
-          <div
-            className="flex items-center gap-3 mb-4 px-4 py-3 rounded-xl border border-black/[.06]"
-            style={{ borderLeftColor: selectedPartyData.partyColor, borderLeftWidth: 4 }}
-          >
-            <div
-              className="w-5 h-5 rounded-md flex-shrink-0"
-              style={{ backgroundColor: selectedPartyData.partyColor || "#94a3b8" }}
-            />
-            <div>
-              <span className="font-bold text-black text-lg">{selectedPartyData.partyAcronym}</span>
-              <span className="text-body text-sm ml-2">{selectedPartyData.partyName}</span>
-            </div>
-            <div className="ml-auto flex gap-4 text-xs font-mono text-body">
-              <span>📝 {selectedPartyData.draft ?? 0} borradores</span>
-              <span>📤 {selectedPartyData.submitted ?? 0} enviados</span>
-              <span>✅ {selectedPartyData.verified ?? 0} verificados</span>
-            </div>
-          </div>
-
-          {/* StatusCards con datos del partido (igual que no-admin) */}
-          <StatusCards metrics={partyMetrics} forceNonAdmin />
-
-          {/* Gráficas por tipo de elección */}
-          <ResultsPanel metrics={partyMetrics} />
-        </div>
-      ) : (
-        /* ── Vista de todos los partidos (original) ── */
-        <div>
-          <div className="flex justify-end mb-3">
-            <button
-              onClick={() => setAllOpen((o) => !o)}
-              className="btn-secondary btn-sm"
-            >
-              {allOpen ? "▲ Contraer todos" : "▼ Expandir todos"}
-            </button>
-          </div>
-          <div className="space-y-3">
-            {byParty.map((pd: any) => (
-              <PartyPanel
-                key={`${pd.partyId}-${allOpen}`}
-                pd={pd}
-                defaultOpen={allOpen}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Main Page ─────────────────────────────────────────────────────────────────
-export default function DashboardPage() {
-  const { user } = useAuthStore();
-  const { data: metrics, isLoading } = useQuery({
-    queryKey: ["metrics"],
-    queryFn: () => votesApi.getMetrics(),
-    refetchInterval: 30_000,
-  });
-
-  return (
-    <div>
-      <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h2 className="text-2xl font-bold text-black">Dashboard Electoral</h2>
-          <p className="text-body text-sm mt-0.5">
-            {user?.role === "ADMIN" ? "Vista general — todos los partidos" : "Resultados consolidados"}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={reportsApi.exportExcel}
-            className="btn-secondary btn-sm"
-          >
+        <div className="flex gap-2 flex-shrink-0">
+          <button onClick={reportsApi.exportExcel} className="btn-secondary btn-sm">
             📊 Excel
           </button>
-          <button
-            onClick={reportsApi.exportPdf}
-            className="btn-secondary btn-sm"
-          >
+          <button onClick={reportsApi.exportPdf} className="btn-secondary btn-sm">
             📄 PDF
           </button>
         </div>
@@ -629,36 +555,35 @@ export default function DashboardPage() {
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
-          <svg
-            className="w-8 h-8 animate-spin text-primary"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-            />
+          <svg className="w-8 h-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
         </div>
+      ) : isAdmin ? (
+        /* ── Admin: muestra siempre las cards + gráficas del partido elegido ── */
+        selectedPartyData && partyMetrics ? (
+          <>
+            <StatusCards metrics={partyMetrics} forceNonAdmin />
+            <ResultsPanel metrics={partyMetrics} />
+          </>
+        ) : (
+          /* Placeholder cuando no hay partido seleccionado */
+          <div className="flex flex-col items-center justify-center py-24 text-body rounded-2xl border border-dashed border-stroke bg-white">
+            <div className="text-5xl mb-4">🗳️</div>
+            <p className="font-medium text-black">Selecciona un partido para ver sus resultados</p>
+            <p className="text-sm mt-1">Usa el selector de partido en el encabezado</p>
+          </div>
+        )
       ) : (
+        /* ── No-admin: cards + gráficas propias ── */
         <>
           <StatusCards metrics={metrics} />
-          {user?.role === "ADMIN" ? (
-            <AdminDashboard metrics={metrics} />
-          ) : (
-            <ResultsPanel metrics={metrics} />
-          )}
+          <ResultsPanel metrics={metrics} />
         </>
       )}
     </div>
   );
 }
+
+
