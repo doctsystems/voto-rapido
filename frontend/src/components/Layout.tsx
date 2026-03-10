@@ -94,55 +94,11 @@ export default function Layout() {
     <div className="flex h-full flex-col">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-5.5 lg:py-6.5 border-b border-strokedark">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white font-bold text-lg select-none">
-          V
-        </div>
-        <div>
-          <span className="text-white font-bold text-lg leading-tight block">
-            VotoRápido
-          </span>
-          <span className="text-bodydark text-xs">Sistema Electoral</span>
-        </div>
-      </div>
-
-      {/* User card */}
-      <div className="mx-3 mt-4 mb-2 rounded-2xl bg-strokedark/80 p-4 backdrop-blur-sm">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-primary/30 text-white font-bold text-base select-none">
-            {user?.fullName?.charAt(0) ?? "?"}
-          </div>
-          <div className="min-w-0">
-            <div className="truncate text-sm font-semibold text-white">
-              {user?.fullName}
-            </div>
-            <span
-              className={`mt-0.5 inline-block text-xs font-medium px-2 py-0.5 rounded-full ${roleBadge[role] || "bg-white/10 text-white"}`}
-            >
-              {roleLabel[role] || role}
-            </span>
-            {user?.party && (
-              <div className="mt-1 flex items-center gap-1.5">
-                <div
-                  className="h-2 w-2 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: user.party.color }}
-                />
-                <span className="text-bodydark text-xs truncate">
-                  {user.party.acronym}
-                </span>
-              </div>
-            )}
-            {user?.table && (
-              <div className="text-bodydark text-xs mt-0.5">
-                🗳 Mesa {user.table.tableNumber}
-              </div>
-            )}
-            {user?.school && (
-              <div className="text-bodydark text-xs mt-0.5 truncate">
-                📍 {user.school.nombreRecinto}
-              </div>
-            )}
-          </div>
-        </div>
+        <img
+          src="/images/logo.svg"
+          alt="VotoRápido"
+          className="h-12 w-auto"
+        />
       </div>
 
       {/* Navigation */}
