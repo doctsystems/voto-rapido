@@ -77,29 +77,35 @@ function StatCard({
   value,
   sub,
   icon,
-  accent,
+  headerColor,
 }: {
   label: string;
   value: string | number;
   sub?: string;
   icon: string;
-  accent: string; // tailwind bg color class for icon bg
+  headerColor?: string; // CSS color for header bg, defaults to boxdark
 }) {
   return (
-    <div className="rounded-2xl bg-white border border-black/[.06] shadow-[0_2px_16px_rgba(0,0,0,.06)] flex flex-col justify-between p-5">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-sm text-body font-medium">{label}</p>
-        <div className={`flex h-10 w-10 items-center justify-center rounded-full text-lg flex-shrink-0 ${accent}`}>
-          {icon}
-        </div>
+    <div className="rounded-2xl bg-white border border-black/[.06] shadow-[0_2px_16px_rgba(0,0,0,.06)] overflow-hidden flex flex-col">
+      {/* Header — igual estilo que ElectionTypeBlock */}
+      <div
+        className="flex items-center gap-2.5 px-5 py-3 text-white"
+        style={{ backgroundColor: headerColor || "#10131aff" }}
+      >
+        <span className="text-base">{icon}</span>
+        <span className="font-semibold text-xs uppercase tracking-wider opacity-90">
+          {label}
+        </span>
       </div>
-      <div>
+      {/* Body */}
+      <div className="flex-1 flex flex-col justify-center px-5 py-4">
         <h4 className="text-3xl font-bold text-black font-mono">{value}</h4>
         {sub && <p className="text-xs text-body mt-0.5">{sub}</p>}
       </div>
     </div>
   );
 }
+
 
 // ─── Status Cards ──────────────────────────────────────────────────────────────
 function StatusCards({ metrics, forceNonAdmin }: { metrics: any; forceNonAdmin?: boolean }) {
@@ -108,10 +114,10 @@ function StatusCards({ metrics, forceNonAdmin }: { metrics: any; forceNonAdmin?:
   // ── ADMIN sin partido seleccionado: muestra cards de estado de reportes ──────
   if (user?.role === "ADMIN" && !forceNonAdmin) {
     const adminCards = [
-      { label: "Borradores",     value: metrics?.draft        ?? 0, icon: "📝", bg: "bg-meta-2/60",  text: "text-body"     },
-      { label: "Enviados",       value: metrics?.submitted    ?? 0, icon: "📤", bg: "bg-blue-50",    text: "text-blue-600" },
-      { label: "Verificados",    value: metrics?.verified     ?? 0, icon: "✅", bg: "bg-green-50",   text: "text-meta-3"  },
-      { label: "Total Reportes", value: metrics?.totalReports ?? 0, icon: "📊", bg: "bg-primary/10", text: "text-primary"  },
+      { label: "Borradores", value: metrics?.draft ?? 0, icon: "📝", bg: "bg-meta-2/60", text: "text-body" },
+      { label: "Enviados", value: metrics?.submitted ?? 0, icon: "📤", bg: "bg-blue-50", text: "text-blue-600" },
+      { label: "Verificados", value: metrics?.verified ?? 0, icon: "✅", bg: "bg-green-50", text: "text-meta-3" },
+      { label: "Total Reportes", value: metrics?.totalReports ?? 0, icon: "📊", bg: "bg-primary/10", text: "text-primary" },
     ];
     return (
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
@@ -140,7 +146,7 @@ function StatusCards({ metrics, forceNonAdmin }: { metrics: any; forceNonAdmin?:
   const et2 = sorted[1]; // ET siguiente (ej: Alcalde)
 
   const totalReports = metrics?.totalReports ?? 0;
-  const totalTables  = metrics?.totalTables  ?? 0;
+  const totalTables = metrics?.totalTables ?? 0;
   const pct = totalTables > 0 ? ((totalReports / totalTables) * 100) : 0;
 
   return (
@@ -161,7 +167,7 @@ function StatusCards({ metrics, forceNonAdmin }: { metrics: any; forceNonAdmin?:
         value={totalReports.toLocaleString()}
         sub={`de ${totalTables.toLocaleString()} mesas`}
         icon="📋"
-        accent="bg-primary/10"
+        headerColor="#1c2434"
       />
 
       {/* Card 4: % Cobertura */}
@@ -170,7 +176,7 @@ function StatusCards({ metrics, forceNonAdmin }: { metrics: any; forceNonAdmin?:
         value={`${pct.toFixed(1)}%`}
         sub={`${totalReports} de ${totalTables} mesas`}
         icon="📡"
-        accent="bg-meta-3/20"
+        headerColor="#1c2434"
       />
     </div>
   );
@@ -495,10 +501,10 @@ export default function DashboardPage() {
 
   const partyMetrics = selectedPartyData
     ? {
-        byElectionType: selectedPartyData.byElectionType ?? [],
-        totalReports: selectedPartyData.totalReports ?? 0,
-        totalTables: metrics?.totalTables ?? 0,
-      }
+      byElectionType: selectedPartyData.byElectionType ?? [],
+      totalReports: selectedPartyData.totalReports ?? 0,
+      totalTables: metrics?.totalTables ?? 0,
+    }
     : null;
 
   return (

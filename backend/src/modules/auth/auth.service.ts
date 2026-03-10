@@ -62,6 +62,7 @@ export class AuthService {
           ? {
               id: user.table.id,
               tableNumber: user.table.tableNumber,
+              totalVoters: user.table.totalVoters ?? null,
               school: user.table.school ?? null,
             }
           : null,

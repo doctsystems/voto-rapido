@@ -1353,10 +1353,10 @@ async function seed() {
   console.log("  admin              / admin123");
   console.log("  jefe_cdc           / jefe123");
   console.log("  jefe_isa           / jefe123");
-  console.log("  jrecinto_cdc_1     / jrecinto123");
-  console.log("  jrecinto_isa_1     / jrecinto123");
-  console.log("  delegado_cdc_6008791  / delegado123");
-  console.log("  delegado_isa_6008791  / delegado123");
+  console.log("  jrecinto_cdc_ueoce     / jrecinto123");
+  console.log("  jrecinto_isa_ueoce     / jrecinto123");
+  console.log("  del_cdc_ueoce_1  / delegado123");
+  console.log("  del_isa_ueoce_1  / delegado123");
 
   await AppDataSource.destroy();
 }

@@ -556,12 +556,7 @@ export default function NewReportPage() {
                     <div className="mt-3 flex items-center gap-2 text-xs text-meta-1 bg-meta-1/5 border border-meta-1/20 rounded px-3 py-2">
                       <span>⚠️</span>
                       <span>
-                        ERROR: El total de votos para este tipo (
-                        {typeTotal.toLocaleString()}) supera el padrón (
-                        {tableVoters!.toLocaleString()}) — válidos:{" "}
-                        {validVotes.toLocaleString()}, nulos:{" "}
-                        {(nulls[etId] || 0).toLocaleString()}, blancos:{" "}
-                        {(blanks[etId] || 0).toLocaleString()}
+                        El total de votos para este tipo de elección supera el padrón habilitado.
                       </span>
                     </div>
                   )}
