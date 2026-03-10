@@ -14,66 +14,165 @@ import { useAuthStore } from "../store/auth.store";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
-// ─── Status Cards ──────────────────────────────────────────────────────────────
-function StatusCards({ metrics }: { metrics: any }) {
-  const { user } = useAuthStore();
-  const cards = [
-    {
-      label: "Borradores",
-      value: metrics?.draft ?? 0,
-      icon: "📝",
-      bg: "bg-meta-2/60",
-      text: "text-body",
-    },
-    {
-      label: "Enviados",
-      value: metrics?.submitted ?? 0,
-      icon: "📤",
-      bg: "bg-blue-50",
-      text: "text-blue-600",
-    },
-    {
-      label: "Verificados",
-      value: metrics?.verified ?? 0,
-      icon: "✅",
-      bg: "bg-green-50",
-      text: "text-meta-3",
-    },
-    {
-      label: "Total Reportes",
-      value: metrics?.totalReports ?? 0,
-      icon: "📊",
-      bg: "bg-primary/10",
-      text: "text-primary",
-    },
-  ];
+// ─── Leader Card (ET winner for non-admin) ─────────────────────────────────────
+function LeaderCard({ et }: { et: any }) {
+  const winner = et?.parties?.[0];
+  const hasData = winner && winner.votes > 0;
+
   return (
-    <>
-      {user?.role === "ADMIN" && (
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-          {cards.map((c) => (
-            <div
-              key={c.label}
-              className="rounded-2xl bg-white border border-black/[.06] shadow-[0_2px_16px_rgba(0,0,0,.06)]"
-            >
-              <div className="flex items-center gap-4 p-5">
-                <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-full text-xl flex-shrink-0 ${c.bg}`}
-                >
-                  {c.icon}
-                </div>
-                <div>
-                  <p className="text-sm text-body">{c.label}</p>
-                  <h4 className={`text-2xl font-bold ${c.text}`}>
-                    {c.value.toLocaleString()}
-                  </h4>
-                </div>
+    <div className="rounded-2xl bg-white border border-black/[.06] shadow-[0_2px_16px_rgba(0,0,0,.06)] overflow-hidden flex flex-col">
+      {/* Header */}
+      <div
+        className="px-5 py-3 text-white font-semibold text-sm tracking-wide flex items-center gap-2"
+        style={{ backgroundColor: hasData ? (winner.color || "#3C50E0") : "#64748b" }}
+      >
+        <span>🏆</span>
+        <span className="uppercase tracking-wider text-xs opacity-90">{et?.name ?? "—"}</span>
+      </div>
+
+      {/* Body */}
+      <div className="flex-1 flex flex-col justify-center p-5">
+        {hasData ? (
+          <>
+            {/* Party dot + acronym */}
+            <div className="flex items-center gap-2 mb-1">
+              <span
+                className="w-3 h-3 rounded-sm flex-shrink-0"
+                style={{ backgroundColor: winner.color || "#3C50E0" }}
+              />
+              <span className="font-bold text-black text-lg leading-none">{winner.acronym}</span>
+              <span className="ml-auto text-xs font-mono font-semibold text-meta-3 bg-green-50 px-2 py-0.5 rounded-full">
+                {winner.percentage?.toFixed(1)}%
+              </span>
+            </div>
+
+            {/* Candidate name */}
+            {winner.candidateName && (
+              <p className="text-xs text-body truncate mb-2">{winner.candidateName}</p>
+            )}
+            {!winner.candidateName && (
+              <p className="text-xs text-body/50 mb-2 italic">{winner.name}</p>
+            )}
+
+            {/* Vote count */}
+            <p className="text-2xl font-bold text-black font-mono">
+              {winner.votes.toLocaleString()}
+              <span className="text-xs font-normal text-body ml-1">votos</span>
+            </p>
+          </>
+        ) : (
+          <div className="flex flex-col items-center py-2 text-body">
+            <span className="text-2xl mb-1">🗳️</span>
+            <p className="text-xs">Sin datos aún</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Stat Card simple ──────────────────────────────────────────────────────────
+function StatCard({
+  label,
+  value,
+  sub,
+  icon,
+  accent,
+}: {
+  label: string;
+  value: string | number;
+  sub?: string;
+  icon: string;
+  accent: string; // tailwind bg color class for icon bg
+}) {
+  return (
+    <div className="rounded-2xl bg-white border border-black/[.06] shadow-[0_2px_16px_rgba(0,0,0,.06)] flex flex-col justify-between p-5">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-sm text-body font-medium">{label}</p>
+        <div className={`flex h-10 w-10 items-center justify-center rounded-full text-lg flex-shrink-0 ${accent}`}>
+          {icon}
+        </div>
+      </div>
+      <div>
+        <h4 className="text-3xl font-bold text-black font-mono">{value}</h4>
+        {sub && <p className="text-xs text-body mt-0.5">{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Status Cards ──────────────────────────────────────────────────────────────
+function StatusCards({ metrics, forceNonAdmin }: { metrics: any; forceNonAdmin?: boolean }) {
+  const { user } = useAuthStore();
+
+  // ── ADMIN sin partido seleccionado: muestra cards de estado de reportes ──────
+  if (user?.role === "ADMIN" && !forceNonAdmin) {
+    const adminCards = [
+      { label: "Borradores",     value: metrics?.draft        ?? 0, icon: "📝", bg: "bg-meta-2/60",  text: "text-body"     },
+      { label: "Enviados",       value: metrics?.submitted    ?? 0, icon: "📤", bg: "bg-blue-50",    text: "text-blue-600" },
+      { label: "Verificados",    value: metrics?.verified     ?? 0, icon: "✅", bg: "bg-green-50",   text: "text-meta-3"  },
+      { label: "Total Reportes", value: metrics?.totalReports ?? 0, icon: "📊", bg: "bg-primary/10", text: "text-primary"  },
+    ];
+    return (
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+        {adminCards.map((c) => (
+          <div key={c.label} className="rounded-2xl bg-white border border-black/[.06] shadow-[0_2px_16px_rgba(0,0,0,.06)]">
+            <div className="flex items-center gap-4 p-5">
+              <div className={`flex h-12 w-12 items-center justify-center rounded-full text-xl flex-shrink-0 ${c.bg}`}>
+                {c.icon}
+              </div>
+              <div>
+                <p className="text-sm text-body">{c.label}</p>
+                <h4 className={`text-2xl font-bold ${c.text}`}>{c.value.toLocaleString()}</h4>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // ── No-ADMIN: cards elegantes ──────────────────────────────────────────────
+  const byET: any[] = metrics?.byElectionType ?? [];
+  // Sort by order asc — first two ETs (Gobernador=order 1, Alcalde=order 2)
+  const sorted = [...byET].sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+  const et1 = sorted[0]; // ET de mayor prioridad (ej: Gobernador)
+  const et2 = sorted[1]; // ET siguiente (ej: Alcalde)
+
+  const totalReports = metrics?.totalReports ?? 0;
+  const totalTables  = metrics?.totalTables  ?? 0;
+  const pct = totalTables > 0 ? ((totalReports / totalTables) * 100) : 0;
+
+  return (
+    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+      {/* Card 1: Líder ET1 */}
+      {et1 ? <LeaderCard et={et1} /> : (
+        <div className="rounded-2xl bg-white border border-black/[.06] shadow p-5 flex items-center justify-center text-body text-sm">Sin ET configurado</div>
       )}
-    </>
+
+      {/* Card 2: Líder ET2 */}
+      {et2 ? <LeaderCard et={et2} /> : (
+        <div className="rounded-2xl bg-white border border-black/[.06] shadow p-5 flex items-center justify-center text-body text-sm">—</div>
+      )}
+
+      {/* Card 3: Total actas/mesas contabilizadas */}
+      <StatCard
+        label="Actas contabilizadas"
+        value={totalReports.toLocaleString()}
+        sub={`de ${totalTables.toLocaleString()} mesas`}
+        icon="📋"
+        accent="bg-primary/10"
+      />
+
+      {/* Card 4: % Cobertura */}
+      <StatCard
+        label="Cobertura de mesas"
+        value={`${pct.toFixed(1)}%`}
+        sub={`${totalReports} de ${totalTables} mesas`}
+        icon="📡"
+        accent="bg-meta-3/20"
+      />
+    </div>
   );
 }
 
@@ -372,6 +471,26 @@ function PartyPanel({ pd, defaultOpen }: { pd: any; defaultOpen: boolean }) {
 function AdminDashboard({ metrics }: { metrics: any }) {
   const byParty: any[] = metrics?.byParty ?? [];
   const [allOpen, setAllOpen] = useState(false);
+  const [selectedPartyId, setSelectedPartyId] = useState<string>("");
+
+  // Partidos ordenados alfabéticamente por nombre
+  const sortedParties = [...byParty].sort((a, b) =>
+    (a.partyName ?? "").localeCompare(b.partyName ?? "", "es")
+  );
+
+  // Datos del partido seleccionado (con forma compatible con StatusCards + ResultsPanel)
+  const selectedPartyData = selectedPartyId
+    ? byParty.find((p) => p.partyId === selectedPartyId)
+    : null;
+
+  // Construir un objeto metrics-like para el partido seleccionado
+  const partyMetrics = selectedPartyData
+    ? {
+        byElectionType: selectedPartyData.byElectionType ?? [],
+        totalReports: selectedPartyData.totalReports ?? 0,
+        totalTables: metrics?.totalTables ?? 0,
+      }
+    : null;
 
   if (byParty.length === 0) {
     return (
@@ -381,26 +500,95 @@ function AdminDashboard({ metrics }: { metrics: any }) {
       </div>
     );
   }
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
+      {/* ── Selector de partido ── */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <h3 className="font-semibold text-black">Resultados por partido</h3>
-        <button
-          onClick={() => setAllOpen((o) => !o)}
-          className="btn-secondary btn-sm"
-        >
-          {allOpen ? "▲ Contraer todos" : "▼ Expandir todos"}
-        </button>
+        <div className="flex items-center gap-3">
+          <label
+            htmlFor="party-selector"
+            className="text-sm text-body font-medium whitespace-nowrap"
+          >
+            Ver partido:
+          </label>
+          <select
+            id="party-selector"
+            value={selectedPartyId}
+            onChange={(e) => setSelectedPartyId(e.target.value)}
+            className="rounded-lg border border-stroke bg-white px-3 py-2 text-sm text-black shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary min-w-[200px]"
+          >
+            <option value="">— Todos los partidos —</option>
+            {sortedParties.map((p) => (
+              <option key={p.partyId} value={p.partyId}>
+                {p.partyName} ({p.partyAcronym})
+              </option>
+            ))}
+          </select>
+          {selectedPartyId && (
+            <button
+              onClick={() => setSelectedPartyId("")}
+              className="btn-secondary btn-sm"
+              title="Limpiar selección"
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
-      <div className="space-y-3">
-        {byParty.map((pd: any) => (
-          <PartyPanel
-            key={`${pd.partyId}-${allOpen}`}
-            pd={pd}
-            defaultOpen={allOpen}
-          />
-        ))}
-      </div>
+
+      {/* ── Vista de partido seleccionado ── */}
+      {selectedPartyData && partyMetrics ? (
+        <div>
+          {/* Header con color y nombre del partido */}
+          <div
+            className="flex items-center gap-3 mb-4 px-4 py-3 rounded-xl border border-black/[.06]"
+            style={{ borderLeftColor: selectedPartyData.partyColor, borderLeftWidth: 4 }}
+          >
+            <div
+              className="w-5 h-5 rounded-md flex-shrink-0"
+              style={{ backgroundColor: selectedPartyData.partyColor || "#94a3b8" }}
+            />
+            <div>
+              <span className="font-bold text-black text-lg">{selectedPartyData.partyAcronym}</span>
+              <span className="text-body text-sm ml-2">{selectedPartyData.partyName}</span>
+            </div>
+            <div className="ml-auto flex gap-4 text-xs font-mono text-body">
+              <span>📝 {selectedPartyData.draft ?? 0} borradores</span>
+              <span>📤 {selectedPartyData.submitted ?? 0} enviados</span>
+              <span>✅ {selectedPartyData.verified ?? 0} verificados</span>
+            </div>
+          </div>
+
+          {/* StatusCards con datos del partido (igual que no-admin) */}
+          <StatusCards metrics={partyMetrics} forceNonAdmin />
+
+          {/* Gráficas por tipo de elección */}
+          <ResultsPanel metrics={partyMetrics} />
+        </div>
+      ) : (
+        /* ── Vista de todos los partidos (original) ── */
+        <div>
+          <div className="flex justify-end mb-3">
+            <button
+              onClick={() => setAllOpen((o) => !o)}
+              className="btn-secondary btn-sm"
+            >
+              {allOpen ? "▲ Contraer todos" : "▼ Expandir todos"}
+            </button>
+          </div>
+          <div className="space-y-3">
+            {byParty.map((pd: any) => (
+              <PartyPanel
+                key={`${pd.partyId}-${allOpen}`}
+                pd={pd}
+                defaultOpen={allOpen}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

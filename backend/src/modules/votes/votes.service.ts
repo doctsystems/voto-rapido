@@ -14,6 +14,7 @@ import { User } from "../users/user.entity";
 import { VotingTable } from "../tables/voting-table.entity";
 import { Party } from "../parties/party.entity";
 import { ElectionType } from "../election-types/election-type.entity";
+import { PartyElectionType } from "../parties/party-election-type.entity";
 import { Role } from "../../common/enums/role.enum";
 import {
   IsString,
@@ -59,7 +60,11 @@ export class CreateReportDto {
 
 // ─── Aggregation ──────────────────────────────────────────────────────────────
 
-function aggregateReports(reports: VoteReport[]) {
+/** candidateMap: { `${partyId}:${etId}` → candidateName } */
+function aggregateReports(
+  reports: VoteReport[],
+  candidateMap: Record<string, string> = {},
+) {
   const submitted = reports.filter(
     (r) => r.status === ReportStatus.SUBMITTED,
   ).length;
@@ -76,7 +81,7 @@ function aggregateReports(reports: VoteReport[]) {
       order: number;
       parties: Record<
         string,
-        { name: string; acronym: string; color: string; votes: number }
+        { name: string; acronym: string; color: string; votes: number; candidateName: string | null }
       >;
       nullVotes: number;
       blankVotes: number;
@@ -120,6 +125,7 @@ function aggregateReports(reports: VoteReport[]) {
           acronym: p.acronym,
           color: p.color,
           votes: 0,
+          candidateName: candidateMap[`${p.id}:${et.id}`] ?? null,
         };
       etMap[et.id].parties[p.id].votes += entry.votes;
 
@@ -171,7 +177,11 @@ function aggregateReports(reports: VoteReport[]) {
         totalVotes: emitidos,
         totalVoters: total,
         parties: parties.map((p) => ({
-          ...p,
+          name: p.name,
+          acronym: p.acronym,
+          color: p.color,
+          votes: p.votes,
+          candidateName: (p as any).candidateName ?? null,
           percentage: validVotes > 0 ? +((p.votes / validVotes) * 100).toFixed(2) : 0,
         })),
         summary: {
@@ -210,6 +220,7 @@ export class VotesService {
     @InjectRepository(VotingTable) private tableRepo: Repository<VotingTable>,
     @InjectRepository(Party) private partyRepo: Repository<Party>,
     @InjectRepository(ElectionType) private etRepo: Repository<ElectionType>,
+    @InjectRepository(PartyElectionType) private petRepo: Repository<PartyElectionType>,
   ) { }
 
   private baseQuery() {
@@ -622,17 +633,35 @@ export class VotesService {
   // ── Metrics ────────────────────────────────────────────────────────────────
 
   async getMetrics(currentUser: any) {
+    const candidateMap = await this.buildCandidateMap();
+    const totalTables = await this.tableRepo.count({ where: { isActive: true } });
+
     if (currentUser.role === Role.ADMIN) {
-      return this.getAdminMetrics();
+      return { totalTables, ...(await this.getAdminMetrics(candidateMap)) };
     }
 
     // Delegado, Jefe de campaña y Jefe de recinto
     const query = this.baseQuery();
     query.where("dp.id = :partyId", { partyId: currentUser.partyId });
-    return aggregateReports(await query.getMany());
+    return { totalTables, ...aggregateReports(await query.getMany(), candidateMap) };
   }
 
-  private async getAdminMetrics() {
+  /** Builds { `${partyId}:${etId}` → candidateName } from PartyElectionType table */
+  private async buildCandidateMap(): Promise<Record<string, string>> {
+    const pets = await this.petRepo.find({
+      relations: ['party', 'electionType'],
+      where: { isActive: true },
+    });
+    const map: Record<string, string> = {};
+    for (const pet of pets) {
+      if (pet.party && pet.electionType && pet.candidateName) {
+        map[`${pet.party.id}:${pet.electionType.id}`] = pet.candidateName;
+      }
+    }
+    return map;
+  }
+
+  private async getAdminMetrics(candidateMap: Record<string, string> = {}) {
     const allReports = await this.baseQuery().getMany();
     const totalReports = allReports.length;
     const draft = allReports.filter(
@@ -672,7 +701,7 @@ export class VotesService {
       partyName: data.partyName,
       partyAcronym: data.partyAcronym,
       partyColor: data.partyColor,
-      ...aggregateReports(data.reports),
+      ...aggregateReports(data.reports, candidateMap),
     }));
 
     // Global vote summary across all reports (one representative per table per ET
