@@ -214,7 +214,7 @@ export default function UsersPage() {
           {isAdminOrJefe && (filterSchool || filterParty) && (
             <button
               onClick={() => { setFilterSchool(""); setFilterParty(""); }}
-              className="text-xs text-body hover:text-meta-1 transition-colors"
+              className="text-xs text-body hover:text-meta-1 transition-colors whitespace-nowrap"
             >
               ✕ Limpiar
             </button>

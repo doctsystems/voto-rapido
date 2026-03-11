@@ -29,19 +29,25 @@ interface CrudPageProps {
   extraActions?: (row: any, invalidate: () => void) => React.ReactNode;
   defaultValues?: Record<string, any>;
   headerContent?: React.ReactNode;
+  headerActions?: React.ReactNode;
   customEmptyState?: React.ReactNode;
+  hideEdit?: boolean;
 }
 
 export default function CrudPage({
   title, description, queryKey, fetchFn, createFn, updateFn, deleteFn,
   fields, columns, canDelete = true, canCreate = true, extraActions, defaultValues = {},
-  headerContent, customEmptyState,
+  headerContent, headerActions, customEmptyState, hideEdit = false,
 }: CrudPageProps) {
   const qc = useQueryClient();
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [editing, setEditing] = useState<any | null>(null);
   const [form, setForm] = useState<any>({});
   const [search, setSearch] = useState('');
+  
+  // -- Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const { data = [], isLoading } = useQuery({ queryKey: [queryKey], queryFn: fetchFn });
   const invalidate = () => qc.invalidateQueries({ queryKey: [queryKey] });
@@ -99,22 +105,31 @@ export default function CrudPage({
     )
     : (data as any[]);
 
+  // Paginación Lógica
+  const totalPages = itemsPerPage === 9999 ? 1 : Math.ceil(filtered.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = itemsPerPage === 9999 ? filtered.length : startIndex + itemsPerPage;
+  const paginatedData = filtered.slice(startIndex, endIndex);
+
   const hasGrid = fields.some(f => f.colSpan);
 
   return (
     <div>
       {/* Page header */}
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-black">{title}</h2>
           {description && <p className="text-sm text-body mt-0.5">{description}</p>}
         </div>
-        {canCreate && (
-          <button onClick={openCreate} className="btn-primary self-start sm:self-auto">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M12 4v16m8-8H4" /></svg>
-            Nuevo {title}
-          </button>
-        )}
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          {headerActions}
+          {canCreate && (
+            <button onClick={openCreate} className="btn-primary w-full justify-center sm:w-auto">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M12 4v16m8-8H4" /></svg>
+              Nuevo {title}
+            </button>
+          )}
+        </div>
       </div>
 
       {headerContent && <div className="mb-4">{headerContent}</div>}
@@ -126,7 +141,7 @@ export default function CrudPage({
           <div className="relative">
             <input
               type="text" placeholder={`Buscar en ${title.toLowerCase()}...`}
-              value={search} onChange={e => setSearch(e.target.value)}
+              value={search} onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
               className="input h-9 pl-8 text-xs max-w-xs"
             />
             <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-body" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
@@ -144,8 +159,8 @@ export default function CrudPage({
             <p className="text-sm">Sin registros{search ? ` para "${search}"` : ''}</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="ta-table">
+          <div className="overflow-x-auto w-full">
+            <table className="ta-table w-full">
               <thead>
                 <tr>
                   {columns.map(col => <th key={col.key + col.label}>{col.label}</th>)}
@@ -153,7 +168,7 @@ export default function CrudPage({
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((row: any) => (
+                {paginatedData.map((row: any) => (
                   <tr key={row.id}>
                     {columns.map(col => (
                       <td key={col.key + col.label} className="text-black">
@@ -163,9 +178,11 @@ export default function CrudPage({
                     <td>
                       <div className="flex items-center justify-center gap-3">
                         {extraActions?.(row, invalidate)}
-                        <button onClick={() => openEdit(row)} className="btn-xs btn-action-primary">
-                          Editar
-                        </button>
+                        {!hideEdit && (
+                          <button onClick={() => openEdit(row)} className="btn-xs btn-action-primary">
+                            Editar
+                          </button>
+                        )}
                         {canDelete && (
                           <button
                             onClick={() => { if (confirm('¿Eliminar este registro?')) deleteMutation.mutate(row.id); }}
@@ -182,10 +199,62 @@ export default function CrudPage({
             </table>
           </div>
         )}
-      </div>
-      )}
+          
+        {/* Paginación UI */}
+        {filtered.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-4 border-t border-stroke bg-whiter">
+            <div className="text-sm text-body text-center sm:text-left">
+              Mostrando <span className="font-semibold text-black">{startIndex + 1}</span> al{' '}
+              <span className="font-semibold text-black">{Math.min(endIndex, filtered.length)}</span> de{' '}
+              <span className="font-semibold text-black">{filtered.length}</span> resultados
+            </div>
 
-      {/* Insert and Edit Modals */}
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-body">Mostrar:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="rounded border border-stroke bg-white px-2 py-1 text-sm text-black outline-none focus:border-primary"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={9999}>Todos</option>
+                </select>
+              </div>
+              
+              {itemsPerPage !== 9999 && totalPages > 1 && (
+                <div className="flex items-center gap-1 mt-2 sm:mt-0">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1 rounded text-sm text-body bg-white border border-stroke hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Anterior
+                  </button>
+                  <div className="px-3 py-1 text-sm text-black font-medium">
+                    {currentPage} / {totalPages}
+                  </div>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1 rounded text-sm text-body bg-white border border-stroke hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    )}
+
+    {/* Insert and Edit Modals */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={e => e.target === e.currentTarget && closeModal()}>
           <div className="bg-white rounded-xl border border-black/[.06] shadow-default w-full max-w-lg max-h-[90vh] overflow-auto">

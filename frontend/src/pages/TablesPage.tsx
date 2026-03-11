@@ -1,98 +1,15 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "../lib/toast";
+import { useQuery } from "@tanstack/react-query";
+import CrudPage, { Field } from "../components/CrudPage";
 import { tablesApi, schoolsApi } from "../lib/api";
 
 export default function TablesPage() {
-  const qc = useQueryClient();
-
-  // Schools para el selector
   const { data: schools = [] } = useQuery({
     queryKey: ["schools-all"],
     queryFn: () => schoolsApi.getAll(),
   });
 
   const [filterSchoolId, setFilterSchoolId] = useState<string>("");
-
-  // Mesas — sin pasar argumentos para no recibir el QueryFunctionContext
-  const { data: tables = [], isLoading } = useQuery({
-    queryKey: ["tables", filterSchoolId],
-    queryFn: () => tablesApi.getAll(filterSchoolId || undefined),
-  });
-
-  const [modal, setModal] = useState<"create" | "edit" | null>(null);
-  const [editing, setEditing] = useState<any | null>(null);
-  const [form, setForm] = useState({
-    tableNumber: "",
-    schoolId: "",
-    totalVoters: "",
-  });
-
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["tables"] });
-
-  const createMutation = useMutation({
-    mutationFn: (data: any) => tablesApi.create(data),
-    onSuccess: () => {
-      toast.success("Mesa creada");
-      invalidate();
-      closeModal();
-    },
-    onError: (e: any) =>
-      toast.error(e.response?.data?.message || "Error al crear"),
-  });
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: any) => tablesApi.update(id, data),
-    onSuccess: () => {
-      toast.success("Mesa actualizada");
-      invalidate();
-      closeModal();
-    },
-    onError: (e: any) =>
-      toast.error(e.response?.data?.message || "Error al actualizar"),
-  });
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => tablesApi.remove(id),
-    onSuccess: () => {
-      toast.success("Mesa eliminada");
-      invalidate();
-    },
-    onError: (e: any) =>
-      toast.error(e.response?.data?.message || "Error al eliminar"),
-  });
-
-  const openCreate = () => {
-    setForm({ tableNumber: "", schoolId: "", totalVoters: "" });
-    setEditing(null);
-    setModal("create");
-  };
-
-  const openEdit = (row: any) => {
-    setForm({
-      tableNumber: row.tableNumber || "",
-      // row.school es el objeto relación; extraemos su id para el select
-      schoolId: row.school?.id || "",
-      totalVoters: row.totalVoters != null ? String(row.totalVoters) : "",
-    });
-    setEditing(row);
-    setModal("edit");
-  };
-
-  const closeModal = () => {
-    setModal(null);
-    setEditing(null);
-  };
-
-  const handleSave = () => {
-    const payload = {
-      tableNumber: form.tableNumber,
-      schoolId: form.schoolId || undefined,
-      totalVoters: form.totalVoters ? parseInt(form.totalVoters) : undefined,
-    };
-    if (!form.tableNumber)
-      return toast.error("El número de mesa es obligatorio");
-    if (modal === "create") createMutation.mutate(payload);
-    else updateMutation.mutate({ id: editing.id, data: payload });
-  };
 
   const schoolOptions = (schools as any[]).map((s: any) => ({
     value: s.id,
@@ -101,208 +18,96 @@ export default function TablesPage() {
       : s.nombreRecinto,
   }));
 
-  return (
-    <div>
-      <div className="mb-6 flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-black">Mesas de Votación</h1>
-          <p className="text-sm text-body mt-0.5">
-            Mesas electorales agrupadas por recinto electoral
-          </p>
-        </div>
-        <button onClick={openCreate} className="btn-primary">
-          ✚ Nueva Mesa
-        </button>
-      </div>
+  const fields: Field[] = [
+    { key: "tableNumber", label: "Número de Mesa", required: true, placeholder: "Ej: M001", colSpan: true },
+    { key: "schoolId", label: "Recinto Electoral", type: "select", options: schoolOptions },
+    { key: "totalVoters", label: "Total votantes habilitados (padrón)", type: "number", placeholder: "Ej: 300" },
+  ];
 
-      {/* ─── Filter ─────────────────────────────────────────────── */}
-      <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-        <span className="text-body text-sm font-medium">Ver mesas de:</span>
-        <select
-          value={filterSchoolId}
-          onChange={(e) => setFilterSchoolId(e.target.value)}
-          className="rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full sm:w-auto sm:max-w-xs"
-        >
-          <option value="">Todos los recintos</option>
-          {schoolOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        {filterSchoolId && (
-          <button
-            onClick={() => setFilterSchoolId("")}
-            className="text-xs text-body hover:text-meta-1 transition-colors"
-          >
-            ✕ Limpiar
-          </button>
-        )}
-      </div>
-
-      {isLoading ? (
-        <div className="card p-10 text-center text-bodydark">Cargando...</div>
-      ) : (tables as any[]).length === 0 ? (
-        <div className="card p-10 text-center text-slate-500">
-          Sin mesas registradas
-        </div>
-      ) : (
-        <div className="card overflow-hidden">
-          <table className="ta-table">
-            <thead>
-              <tr>
-                <th>Mesa</th>
-                <th>Recinto Electoral</th>
-                <th>Padrón</th>
-                <th className="text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(tables as any[]).map((row: any) => (
-                <tr key={row.id} className="hover:bg-whiten transition-colors">
-                  <td className="px-4 py-3">
-                    <span className="font-medium text-black">
-                      {row.tableNumber}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    {row.school ? (
-                      <div>
-                        <div className="text-black">
-                          {row.school.nombreRecinto}
-                        </div>
-                        {row.school.codigoRecinto && (
-                          <div className="text-xs font-mono text-bodydark">
-                            #{row.school.codigoRecinto}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-bodydark italic text-sm">
-                        Sin asignar
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-left">
-                    {row.totalVoters != null ? (
-                      <span className="text-black">
-                        {row.totalVoters.toLocaleString()}
-                      </span>
-                    ) : (
-                      <span className="text-bodydark">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <div className="flex items-center justify-center gap-3">
-                      <button
-                        onClick={() => openEdit(row)}
-                        className="btn-xs btn-action-primary"
-                      >
-                        Editar
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (confirm(`¿Eliminar mesa ${row.tableNumber}?`))
-                            deleteMutation.mutate(row.id);
-                        }}
-                        className="btn-xs btn-action-danger"
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Modal crear/editar */}
-      {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-sm shadow-default border border-stroke w-full max-w-md">
-            <div className="p-6 border-b border-stroke flex justify-between items-center">
-              <h2 className="text-lg font-bold text-black">
-                {modal === "create" ? "Nueva Mesa" : "Editar Mesa"}
-              </h2>
-              <button
-                onClick={closeModal}
-                className="text-bodydark hover:text-body text-xl"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="label">
-                  Número de Mesa <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={form.tableNumber}
-                  onChange={(e) =>
-                    setForm({ ...form, tableNumber: e.target.value })
-                  }
-                  className="input"
-                  placeholder="Ej: M001"
-                />
+  const columns = [
+    {
+      key: "tableNumber",
+      label: "Mesa",
+      render: (v: any) => <span className="font-medium text-black">{v}</span>,
+    },
+    {
+      key: "school",
+      label: "Recinto Electoral",
+      render: (v: any) =>
+        v ? (
+          <div>
+            <div className="text-black">{v.nombreRecinto}</div>
+            {v.codigoRecinto && (
+              <div className="text-xs font-mono text-bodydark">
+                #{v.codigoRecinto}
               </div>
-              <div>
-                <label className="label">Recinto Electoral</label>
-                <select
-                  value={form.schoolId}
-                  onChange={(e) =>
-                    setForm({ ...form, schoolId: e.target.value })
-                  }
-                  className="input"
-                >
-                  <option value="">— Sin asignar —</option>
-                  {schoolOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-                {schoolOptions.length === 0 && (
-                  <p className="text-xs text-amber-600 mt-1">
-                    ⚠ No hay recintos registrados. Crea uno primero.
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="label">
-                  Total votantes habilitados (padrón)
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={form.totalVoters}
-                  onChange={(e) =>
-                    setForm({ ...form, totalVoters: e.target.value })
-                  }
-                  className="input"
-                  placeholder="Ej: 300"
-                />
-              </div>
-            </div>
-            <div className="px-6 pb-6 flex justify-end gap-3">
-              <button onClick={closeModal} className="btn-secondary">
-                Cancelar
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={createMutation.isPending || updateMutation.isPending}
-                className="btn-primary"
-              >
-                {createMutation.isPending || updateMutation.isPending
-                  ? "Guardando..."
-                  : "Guardar"}
-              </button>
-            </div>
+            )}
           </div>
+        ) : (
+          <span className="text-bodydark italic text-sm">Sin asignar</span>
+        ),
+    },
+    {
+      key: "totalVoters",
+      label: "Padrón",
+      render: (v: any) =>
+        v != null ? (
+          <span className="text-black">{v.toLocaleString()}</span>
+        ) : (
+          <span className="text-bodydark">—</span>
+        ),
+    },
+  ];
+
+  return (
+    <CrudPage
+      title="Mesas de Votación"
+      description="Mesas electorales agrupadas por recinto electoral"
+      queryKey={`tables-${filterSchoolId}`}
+      fetchFn={() => {
+        if (!filterSchoolId) return Promise.resolve([]);
+        return tablesApi.getAll(filterSchoolId);
+      }}
+      createFn={tablesApi.create}
+      updateFn={tablesApi.update}
+      deleteFn={tablesApi.remove}
+      fields={fields}
+      columns={columns}
+      customEmptyState={
+        !filterSchoolId ? (
+          <div className="card p-10 text-center mt-6">
+            <div className="text-4xl mb-3">🏢</div>
+            <p className="text-body font-medium">
+              Selecciona un recinto electoral para ver sus mesas
+            </p>
+          </div>
+        ) : undefined
+      }
+      headerContent={
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <span className="text-body text-sm font-medium">Ver mesas de:</span>
+          <select
+            value={filterSchoolId}
+            onChange={(e) => setFilterSchoolId(e.target.value)}
+            className="rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full sm:w-auto sm:max-w-xs"
+          >
+            <option value="">Todos los recintos</option>
+            {schoolOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+          {filterSchoolId && (
+            <button
+              onClick={() => setFilterSchoolId("")}
+              className="text-xs text-body hover:text-meta-1 transition-colors whitespace-nowrap"
+            >
+              ✕ Limpiar
+            </button>
+          )}
         </div>
-      )}
-    </div>
+      }
+    />
   );
 }

@@ -94,14 +94,14 @@ export default function PartiesPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-start justify-between">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-black">Partidos Políticos</h1>
           <p className="text-sm text-body mt-0.5">
             Gestión de partidos y sus tipos de elección asignados
           </p>
         </div>
-        <button onClick={openCreate} className="btn-primary">
+        <button onClick={openCreate} className="btn-primary w-full justify-center sm:w-auto">
           ✚ Nuevo Partido
         </button>
       </div>
@@ -112,7 +112,7 @@ export default function PartiesPage() {
         <div className="space-y-3">
           {(parties as any[]).map((party: any) => (
             <div key={party.id} className="card p-5">
-              <div className="flex items-start justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 {/* Party info */}
                 <div className="flex items-center gap-3">
                   <div
@@ -129,16 +129,16 @@ export default function PartiesPage() {
                   </div>
                 </div>
                 {/* Actions */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <button
                     onClick={() => openAssign(party)}
-                    className="btn-secondary btn-sm text-xs"
+                    className="btn-secondary btn-sm text-xs flex-1 sm:flex-none justify-center"
                   >
                     🗳 Tipos de elección
                   </button>
                   <button
                     onClick={() => openEdit(party)}
-                    className="btn-secondary btn-sm text-xs"
+                    className="btn-secondary btn-sm text-xs flex-1 sm:flex-none justify-center"
                   >
                     Editar
                   </button>
@@ -147,7 +147,7 @@ export default function PartiesPage() {
                       if (confirm("¿Eliminar?"))
                         deleteMutation.mutate(party.id);
                     }}
-                    className="text-red-500 hover:text-red-700 text-xs font-medium px-2"
+                    className="text-red-500 hover:text-red-700 text-xs font-medium px-2 py-1"
                   >
                     Eliminar
                   </button>

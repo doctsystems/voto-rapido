@@ -198,8 +198,9 @@ function VoteDetailTable({ et }: { et: any }) {
   ];
 
   return (
-    <table className="ta-table">
-      <thead>
+    <div className="overflow-x-auto w-full">
+      <table className="ta-table w-full">
+        <thead>
         <tr>
           <th>Detalle</th>
           <th className="text-right">Total</th>
@@ -226,6 +227,7 @@ function VoteDetailTable({ et }: { et: any }) {
         ))}
       </tbody>
     </table>
+    </div>
   );
 }
 
@@ -464,7 +466,7 @@ export default function DashboardPage() {
   return (
     <div>
       {/* ── Header ── */}
-      <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between flex-wrap">
         <div className="flex-1 min-w-0">
           <h2 className="text-2xl font-bold text-black">Dashboard Electoral</h2>
           {isAdmin ? (
@@ -505,11 +507,11 @@ export default function DashboardPage() {
             <p className="text-body text-sm mt-0.5">Resultados consolidados</p>
           )}
         </div>
-        <div className="flex gap-2 flex-shrink-0">
-          <button onClick={reportsApi.exportExcel} className="btn-secondary btn-sm">
+        <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto">
+          <button onClick={reportsApi.exportExcel} className="btn-secondary btn-sm flex-1 sm:flex-none justify-center">
             📊 Excel
           </button>
-          <button onClick={reportsApi.exportPdf} className="btn-secondary btn-sm">
+          <button onClick={reportsApi.exportPdf} className="btn-secondary btn-sm flex-1 sm:flex-none justify-center">
             📄 PDF
           </button>
         </div>

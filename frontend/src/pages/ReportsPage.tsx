@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import CrudPage from "../components/CrudPage";
 import { votesApi, reportsApi, schoolsApi, partiesApi } from "../lib/api";
 import { useAuthStore } from "../store/auth.store";
 import { toast } from "../lib/toast";
@@ -21,12 +22,12 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default function ReportsPage() {
   const { user } = useAuthStore();
-  console.log("user: ", user);
   const isAdmin = user?.role === "ADMIN";
   const isJefeCampana = user?.role === "JEFE_CAMPANA";
   const isAdminOrJefe = isAdmin || isJefeCampana;
   const qc = useQueryClient();
   const [selected, setSelected] = useState<any | null>(null);
+  
   const [filterSchool, setFilterSchool] = useState(
     isAdminOrJefe ? "" : ((user as any)?.school?.id || (user as any)?.table?.school?.id || "")
   );
@@ -38,24 +39,10 @@ export default function ReportsPage() {
     queryKey: ["parties"],
     queryFn: partiesApi.getAll,
   });
+  
   const { data: schools = [] } = useQuery({
     queryKey: ["schools"],
     queryFn: () => schoolsApi.getAll(),
-  });
-  const { data: rawReports = [], isLoading } = useQuery({
-    queryKey: ["reports", filterSchool, filterParty],
-    queryFn: () => {
-      // If Admin/Jefe and both filters are empty, don't fetch everything by default to avoid huge payloads
-      if (isAdminOrJefe && !filterSchool && !filterParty) return Promise.resolve([]);
-      // Otherwise fetch for the selected school (if any), then filter below for party
-      return votesApi.getReports(filterSchool || undefined);
-    },
-  });
-
-  // Client-side filtering for party (since API accepts school but not party in getReports currently)
-  const reports = rawReports.filter((r: any) => {
-    if (!filterParty) return true;
-    return r.delegate?.party?.id === filterParty;
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["reports"] });
@@ -69,6 +56,7 @@ export default function ReportsPage() {
     onError: (e: any) =>
       toast.error(e.response?.data?.message || "Error al enviar"),
   });
+  
   const verifyMutation = useMutation({
     mutationFn: (id: string) => votesApi.verifyReport(id),
     onSuccess: () => {
@@ -78,213 +66,169 @@ export default function ReportsPage() {
     onError: (e: any) =>
       toast.error(e.response?.data?.message || "Error al verificar"),
   });
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => votesApi.deleteReport(id),
-    onSuccess: () => {
-      toast.success("Reporte eliminado. El delegado puede crear uno nuevo.");
-      invalidate();
-      setSelected(null);
-    },
-    onError: (e: any) =>
-      toast.error(e.response?.data?.message || "Error al eliminar"),
-  });
 
-  // ADMIN can NOT verify or delete — only JEFE_CAMPANA and JEFE_RECINTO
   const role = user?.role ?? "";
   const canVerify = role === "JEFE_CAMPANA" || role === "JEFE_RECINTO";
   const canDelete = role === "JEFE_CAMPANA" || role === "JEFE_RECINTO";
   const canCreate = role === "DELEGADO" || role === "JEFE_RECINTO";
   const canSubmit = role === "DELEGADO" || role === "JEFE_RECINTO";
 
-  const handleDelete = (id: string, label?: string) => {
-    toast.confirm(
-      `¿Eliminar reporte${label ? ` de ${label}` : ""}? El delegado podrá crear uno nuevo.`,
-      () => deleteMutation.mutate(id),
-      "Eliminar",
-    );
-  };
+  const columns = [
+    {
+      key: "tableNumber",
+      label: "Mesa",
+      render: (_v: any, row: any) => <span className="font-medium text-black">{row.table?.tableNumber}</span>
+    },
+    {
+      key: "delegate",
+      label: "Delegado",
+      render: (_v: any, row: any) => (
+        <div>
+          <div className="text-xs font-medium text-black">{row.delegate?.fullName}</div>
+          {row.delegate?.party && (
+            <div className="text-xs text-body">{row.delegate.party.acronym}</div>
+          )}
+        </div>
+      )
+    },
+    {
+      key: "status",
+      label: "Estado",
+      render: (v: string) => <span className={STATUS_BADGE[v]}>{STATUS_LABEL[v]}</span>
+    }
+  ];
 
   return (
     <div>
-      {/* ─── Header ─────────────────────────────────────────────── */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-bold text-black">
-            Reportes de Votación
-          </h2>
-          <p className="text-body text-sm mt-0.5">
-            {(reports as any[]).length} reporte(s) encontrado(s)
-          </p>
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={reportsApi.exportExcel}
-            className="btn-secondary btn-sm"
-          >
-            📊 Excel
-          </button>
-          <button
-            onClick={reportsApi.exportPdf}
-            className="btn-secondary btn-sm"
-          >
-            📄 PDF
-          </button>
-          {canCreate && (
-            <Link to="/reports/new" className="btn-primary btn-sm">
-              + Nuevo Reporte
-            </Link>
-          )}
-        </div>
-      </div>
-
-      {/* ─── Filter ─────────────────────────────────────────────── */}
-      <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-        {isAdminOrJefe && (
-          <span className="text-body text-sm font-medium">Ver reportes de:</span>
-        )}
-        <select
-          value={filterParty}
-          onChange={(e) => setFilterParty(e.target.value)}
-          disabled={!isAdminOrJefe}
-          className={`rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full sm:w-auto sm:max-w-xs ${!isAdminOrJefe ? "opacity-75 bg-slate-50 cursor-not-allowed" : ""}`}
-        >
-          {isAdminOrJefe && <option value="">Todos los partidos</option>}
-          {(parties as any[]).map((p: any) => (
-            <option key={p.id} value={p.id}>
-              {p.acronym} — {p.name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={filterSchool}
-          onChange={(e) => setFilterSchool(e.target.value)}
-          disabled={!isAdminOrJefe}
-          className={`rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full sm:w-auto sm:max-w-xs ${!isAdminOrJefe ? "opacity-75 bg-slate-50 cursor-not-allowed" : ""}`}
-        >
-          {isAdminOrJefe && <option value="">Todos los recintos</option>}
-          {(schools as any[]).map((s: any) => (
-            <option key={s.id} value={s.id}>
-              {s.codigoRecinto ? `[${s.codigoRecinto}] ` : ""}
-              {s.nombreRecinto}
-            </option>
-          ))}
-        </select>
-        {isAdminOrJefe && (filterSchool || filterParty) && (
-          <button
-            onClick={() => { setFilterSchool(""); setFilterParty(""); }}
-            className="text-xs text-body hover:text-meta-1 transition-colors"
-          >
-            ✕ Limpiar
-          </button>
-        )}
-      </div>
-
-      {/* ─── Table ──────────────────────────────────────────────── */}
-      {isLoading ? (
-        <div className="card p-10 text-center text-body">Cargando...</div>
-      ) : isAdminOrJefe && !filterSchool && !filterParty ? (
-        <div className="card p-10 text-center">
-          <div className="text-4xl mb-3">🏢</div>
-          <p className="text-body font-medium">
-            Selecciona un recinto o partido para ver sus reportes
-          </p>
-        </div>
-      ) : (reports as any[]).length === 0 ? (
-        <div className="card p-10 text-center">
-          <div className="text-4xl mb-3">📋</div>
-          <p className="text-body">
-            No hay reportes{filterSchool ? " para este recinto" : " aún"}
-          </p>
-          {canCreate && (
-            <Link
-              to="/reports/new"
-              className="btn-primary btn-sm mt-4 inline-flex"
+      <CrudPage
+        title="Reportes de Votación"
+        description="Listado de reportes de escrutinio"
+        queryKey={`reports-${filterSchool}-${filterParty}`}
+        fetchFn={async () => {
+          if (isAdminOrJefe && !filterSchool && !filterParty) return [];
+          const raw = await votesApi.getReports(filterSchool || undefined);
+          if (!filterParty) return raw;
+          return raw.filter((r: any) => r.delegate?.party?.id === filterParty);
+        }}
+        // Dummy functions required by CrudPage interface but actually not used because actions are deactivated/hidden
+        createFn={async () => {}}
+        updateFn={async () => {}}
+        deleteFn={votesApi.deleteReport}
+        canCreate={false}
+        canDelete={false}
+        hideEdit={true}
+        fields={[]}
+        columns={columns}
+        headerActions={
+          <>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <button
+                onClick={reportsApi.exportExcel}
+                className="btn-secondary btn-sm flex-1 sm:flex-none justify-center"
+              >
+                📊 Excel
+              </button>
+              <button
+                onClick={reportsApi.exportPdf}
+                className="btn-secondary btn-sm flex-1 sm:flex-none justify-center"
+              >
+                📄 PDF
+              </button>
+            </div>
+            {canCreate && (
+              <Link to="/reports/new" className="btn-primary btn-sm w-full sm:w-auto justify-center">
+                + Nuevo Reporte
+              </Link>
+            )}
+          </>
+        }
+        headerContent={
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+            {isAdminOrJefe && (
+              <span className="text-body text-sm font-medium">Ver reportes de:</span>
+            )}
+            <select
+              value={filterParty}
+              onChange={(e) => setFilterParty(e.target.value)}
+              disabled={!isAdminOrJefe}
+              className={`rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full sm:w-auto sm:max-w-xs ${!isAdminOrJefe ? "opacity-75 bg-slate-50 cursor-not-allowed" : ""}`}
             >
-              Crear primer reporte
-            </Link>
-          )}
-        </div>
-      ) : (
-        <div className="rounded-2xl bg-white border border-black/[.06] shadow-[0_2px_16px_rgba(0,0,0,.06)] overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="ta-table">
-              <thead>
-                <tr>
-                  <th>Mesa</th>
-                  <th>Delegado</th>
-                  <th>Estado</th>
-                  <th className="text-center">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(reports as any[]).map((r: any) => (
-                  <tr key={r.id}>
-                    <td>
-                      <span className="font-medium text-black">
-                        {r.table?.tableNumber}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="text-xs font-medium text-black">
-                        {r.delegate?.fullName}
-                      </div>
-                      {r.delegate?.party && (
-                        <div className="text-xs text-body">
-                          {r.delegate.party.acronym}
-                        </div>
-                      )}
-                    </td>
-                    <td>
-                      <span className={STATUS_BADGE[r.status]}>
-                        {STATUS_LABEL[r.status]}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => setSelected(r)}
-                          className="btn-secondary btn-xs"
-                        >
-                          Ver
-                        </button>
-                        {canSubmit &&
-                          r.status === "DRAFT" &&
-                          (user?.role === "JEFE_RECINTO" ||
-                            r.delegate?.id === user?.id) && (
-                            <button
-                              onClick={() => submitMutation.mutate(r.id)}
-                              className="btn-xs btn-action-primary"
-                            >
-                              Enviar
-                            </button>
-                          )}
-                        {canVerify && r.status === "SUBMITTED" && (
-                          <button
-                            onClick={() => verifyMutation.mutate(r.id)}
-                            className="btn-success btn-xs"
-                          >
-                            Verificar
-                          </button>
-                        )}
-                        {canDelete && (
-                          <button
-                            onClick={() =>
-                              handleDelete(r.id, r.table?.tableNumber)
-                            }
-                            className="btn-xs btn-action-danger"
-                          >
-                            Eliminar
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              {isAdminOrJefe && <option value="">Todos los partidos</option>}
+              {(parties as any[]).map((p: any) => (
+                <option key={p.id} value={p.id}>
+                  {p.acronym} — {p.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={filterSchool}
+              onChange={(e) => setFilterSchool(e.target.value)}
+              disabled={!isAdminOrJefe}
+              className={`rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full sm:w-auto sm:max-w-xs ${!isAdminOrJefe ? "opacity-75 bg-slate-50 cursor-not-allowed" : ""}`}
+            >
+              {isAdminOrJefe && <option value="">Todos los recintos</option>}
+              {(schools as any[]).map((s: any) => (
+                <option key={s.id} value={s.id}>
+                  {s.codigoRecinto ? `[${s.codigoRecinto}] ` : ""}
+                  {s.nombreRecinto}
+                </option>
+              ))}
+            </select>
+            {isAdminOrJefe && (filterSchool || filterParty) && (
+              <button
+                onClick={() => { setFilterSchool(""); setFilterParty(""); }}
+                className="text-xs text-body hover:text-meta-1 transition-colors whitespace-nowrap"
+              >
+                ✕ Limpiar
+              </button>
+            )}
           </div>
-        </div>
-      )}
+        }
+        customEmptyState={
+          isAdminOrJefe && !filterSchool && !filterParty ? (
+            <div className="card p-10 text-center mt-6">
+              <div className="text-4xl mb-3">🏢</div>
+              <p className="text-body font-medium">
+                Selecciona un recinto o partido para ver sus reportes
+              </p>
+            </div>
+          ) : undefined
+        }
+        extraActions={(r: any) => (
+          <>
+            <button onClick={() => setSelected(r)} className="btn-secondary btn-xs">
+              Ver
+            </button>
+            {canSubmit && r.status === "DRAFT" && (user?.role === "JEFE_RECINTO" || r.delegate?.id === user?.id) && (
+              <button onClick={() => submitMutation.mutate(r.id)} className="btn-xs btn-action-primary">
+                Enviar
+              </button>
+            )}
+            {canVerify && r.status === "SUBMITTED" && (
+              <button onClick={() => verifyMutation.mutate(r.id)} className="btn-success btn-xs">
+                Verificar
+              </button>
+            )}
+            {canDelete && (
+              <button
+                onClick={() => {
+                  toast.confirm(
+                    `¿Eliminar reporte de la mesa ${r.table?.tableNumber}? El delegado podrá crear uno nuevo.`,
+                    () => votesApi.deleteReport(r.id).then(() => {
+                      toast.success("Reporte eliminado.");
+                      invalidate();
+                    }).catch((e: any) => toast.error(e.response?.data?.message || "Error al eliminar")),
+                    "Eliminar"
+                  );
+                }}
+                className="btn-xs btn-action-danger"
+              >
+                Eliminar
+              </button>
+            )}
+          </>
+        )}
+      />
 
       {/* ─── Detail Modal ────────────────────────────────────────── */}
       {selected && (
@@ -348,7 +292,6 @@ export default function ReportsPage() {
                     0,
                   );
                   const emitidos = validVotes + nullVotes + blankVotes;
-                  const tableVoters = selected.table?.totalVoters;
 
                   return (
                     <div key={type} className="mb-5">
@@ -465,9 +408,17 @@ export default function ReportsPage() {
                 )}
                 {canDelete && (
                   <button
-                    onClick={() =>
-                      handleDelete(selected.id, selected.table?.tableNumber)
-                    }
+                    onClick={() => {
+                      toast.confirm(
+                        `¿Eliminar reporte de la mesa ${selected.table?.tableNumber}? El delegado podrá crear uno nuevo.`,
+                        () => votesApi.deleteReport(selected.id).then(() => {
+                           toast.success("Reporte eliminado.");
+                           invalidate();
+                           setSelected(null);
+                        }).catch((e: any) => toast.error(e.response?.data?.message || "Error al eliminar")),
+                        "Eliminar"
+                      );
+                    }}
                     className="btn-danger btn-sm"
                   >
                     Eliminar
