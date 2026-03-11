@@ -21,9 +21,15 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default function ReportsPage() {
   const { user } = useAuthStore();
+  console.log("user: ", user);
+  const isAdmin = user?.role === "ADMIN";
+  const isJefeCampana = user?.role === "JEFE_CAMPANA";
+  const isAdminOrJefe = isAdmin || isJefeCampana;
   const qc = useQueryClient();
   const [selected, setSelected] = useState<any | null>(null);
-  const [filterSchool, setFilterSchool] = useState("");
+  const [filterSchool, setFilterSchool] = useState(
+    isAdminOrJefe ? "" : ((user as any)?.school?.id || (user as any)?.table?.school?.id || "")
+  );
 
   const { data: schools = [] } = useQuery({
     queryKey: ["schools"],
@@ -118,9 +124,10 @@ export default function ReportsPage() {
         <select
           value={filterSchool}
           onChange={(e) => setFilterSchool(e.target.value)}
-          className="rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all max-w-xs"
+          disabled={!isAdminOrJefe}
+          className={`rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all max-w-xs ${!isAdminOrJefe ? "opacity-75 bg-slate-50 cursor-not-allowed" : ""}`}
         >
-          <option value="">Todos los recintos</option>
+          {isAdminOrJefe && <option value="">Todos los recintos</option>}
           {(schools as any[]).map((s: any) => (
             <option key={s.id} value={s.id}>
               {s.codigoRecinto ? `[${s.codigoRecinto}] ` : ""}
@@ -128,7 +135,7 @@ export default function ReportsPage() {
             </option>
           ))}
         </select>
-        {filterSchool && (
+        {isAdminOrJefe && filterSchool && (
           <button
             onClick={() => setFilterSchool("")}
             className="text-xs text-body hover:text-meta-1 transition-colors"
@@ -141,6 +148,13 @@ export default function ReportsPage() {
       {/* ─── Table ──────────────────────────────────────────────── */}
       {isLoading ? (
         <div className="card p-10 text-center text-body">Cargando...</div>
+      ) : isAdminOrJefe && !filterSchool ? (
+        <div className="card p-10 text-center">
+          <div className="text-4xl mb-3">🏢</div>
+          <p className="text-body font-medium">
+            Selecciona un recinto para ver sus reportes
+          </p>
+        </div>
       ) : (reports as any[]).length === 0 ? (
         <div className="card p-10 text-center">
           <div className="text-4xl mb-3">📋</div>
@@ -162,7 +176,6 @@ export default function ReportsPage() {
             <table className="ta-table">
               <thead>
                 <tr>
-                  <th>Recinto</th>
                   <th>Mesa</th>
                   <th>Delegado</th>
                   <th>Estado</th>
@@ -172,18 +185,6 @@ export default function ReportsPage() {
               <tbody>
                 {(reports as any[]).map((r: any) => (
                   <tr key={r.id}>
-                    <td>
-                      <div className="text-xs font-medium text-black leading-tight">
-                        {r.table?.school?.nombreRecinto || (
-                          <span className="text-body italic">—</span>
-                        )}
-                      </div>
-                      {r.table?.school?.codigoRecinto && (
-                        <div className="text-xs font-mono text-body">
-                          #{r.table.school.codigoRecinto}
-                        </div>
-                      )}
-                    </td>
                     <td>
                       <span className="font-medium text-black">
                         {r.table?.tableNumber}
