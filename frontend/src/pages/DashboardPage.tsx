@@ -198,34 +198,28 @@ function VoteDetailTable({ et }: { et: any }) {
   ];
 
   return (
-    <table className="w-full text-sm">
+    <table className="ta-table">
       <thead>
-        <tr className="bg-whiter">
-          <th className="px-4 py-2.5 text-left text-xs font-semibold text-body uppercase tracking-wide">
-            Detalle
-          </th>
-          <th className="px-4 py-2.5 text-right text-xs font-semibold text-body uppercase tracking-wide">
-            Total
-          </th>
-          <th className="px-4 py-2.5 text-right text-xs font-semibold text-body uppercase tracking-wide">
-            %
-          </th>
+        <tr>
+          <th>Detalle</th>
+          <th className="text-right">Total</th>
+          <th className="text-right">%</th>
         </tr>
       </thead>
-      <tbody className="divide-y divide-stroke">
+      <tbody>
         {rows.map((r) => (
-          <tr key={r.label} className={r.bold ? "bg-whiter" : ""}>
+          <tr key={r.label} className={r.bold ? "bg-slate-50/50" : ""}>
             <td
-              className={`px-4 py-2.5 ${r.bold ? "font-semibold text-black" : "text-black"}`}
+              className={r.bold ? "font-semibold text-black" : "text-black"}
             >
               {r.label}
             </td>
             <td
-              className={`px-4 py-2.5 text-right font-mono ${r.bold ? "font-bold" : "font-semibold"} ${r.color}`}
+              className={`text-right font-mono ${r.bold ? "font-bold" : "font-semibold"} ${r.color}`}
             >
               {r.value.toLocaleString()}
             </td>
-            <td className="px-4 py-2.5 text-right font-mono text-body text-xs">
+            <td className="text-right font-mono text-body text-xs">
               {r.pct != null ? `${r.pct.toFixed(2)}%` : "—"}
             </td>
           </tr>
@@ -481,13 +475,15 @@ export default function DashboardPage() {
                 id="party-selector"
                 value={selectedPartyId}
                 onChange={(e) => setSelectedPartyId(e.target.value)}
-                className="rounded-lg border border-stroke bg-white px-3 py-1.5 text-sm text-black shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="rounded-lg bg-white px-3 py-1.5 text-sm text-black shadow-sm focus:outline-none "
                 style={
                   selectedPartyData
-                    ? { borderLeftColor: selectedPartyData.partyColor, borderLeftWidth: 3 }
-                    : {}
+                    ? { borderColor: selectedPartyData.partyColor, borderWidth: 3, borderStyle: 'solid' }
+                    : { borderColor: '#ccc', borderWidth: 1, borderStyle: 'solid' }
                 }
               >
+
+
                 <option value="">— Selecciona un partido —</option>
                 {sortedParties.map((p) => (
                   <option key={p.partyId} value={p.partyId}>

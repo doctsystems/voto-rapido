@@ -121,36 +121,27 @@ export default function TablesPage() {
         </div>
       ) : (
         <div className="card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-whiten border-b border-stroke">
+          <table className="ta-table">
+            <thead>
               <tr>
-                <th className="text-left px-4 py-3 font-semibold text-body">
-                  Mesa
-                </th>
-                <th className="text-left px-4 py-3 font-semibold text-body">
-                  Recinto Electoral
-                </th>
-                <th className="text-right px-4 py-3 font-semibold text-body">
-                  Padrón
-                </th>
-                <th className="text-right px-4 py-3 font-semibold text-body">
-                  Delegados
-                </th>
-                <th className="px-4 py-3"></th>
+                <th>Mesa</th>
+                <th>Recinto Electoral</th>
+                <th>Padrón</th>
+                <th className="text-center">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody>
               {(tables as any[]).map((row: any) => (
                 <tr key={row.id} className="hover:bg-whiten transition-colors">
                   <td className="px-4 py-3">
-                    <span className="font-mono font-bold text-primary bg-whiten px-2 py-0.5 rounded">
+                    <span className="font-medium text-black">
                       {row.tableNumber}
                     </span>
                   </td>
                   <td className="px-4 py-3">
                     {row.school ? (
                       <div>
-                        <div className="font-medium text-black">
+                        <div className="text-black">
                           {row.school.nombreRecinto}
                         </div>
                         {row.school.codigoRecinto && (
@@ -165,23 +156,20 @@ export default function TablesPage() {
                       </span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-left">
                     {row.totalVoters != null ? (
-                      <span className="font-mono font-semibold text-primary">
+                      <span className="text-black">
                         {row.totalVoters.toLocaleString()}
                       </span>
                     ) : (
                       <span className="text-bodydark">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right font-mono text-sm">
-                    {Array.isArray(row.delegates) ? row.delegates.length : 0}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-3">
+                  <td className="px-4 py-3 text-center">
+                    <div className="flex items-center justify-center gap-3">
                       <button
                         onClick={() => openEdit(row)}
-                        className="text-primary hover:text-primary-700 text-xs font-semibold"
+                        className="btn-xs btn-action-primary"
                       >
                         Editar
                       </button>
@@ -190,7 +178,7 @@ export default function TablesPage() {
                           if (confirm(`¿Eliminar mesa ${row.tableNumber}?`))
                             deleteMutation.mutate(row.id);
                         }}
-                        className="text-meta-1 hover:text-red-700 text-xs font-semibold"
+                        className="btn-xs btn-action-danger"
                       >
                         Eliminar
                       </button>

@@ -166,8 +166,7 @@ export default function ReportsPage() {
                   <th>Mesa</th>
                   <th>Delegado</th>
                   <th>Estado</th>
-                  <th>Enviado</th>
-                  <th className="text-right">Acciones</th>
+                  <th className="text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -186,12 +185,12 @@ export default function ReportsPage() {
                       )}
                     </td>
                     <td>
-                      <span className="font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-sm text-xs">
+                      <span className="font-medium text-black">
                         {r.table?.tableNumber}
                       </span>
                     </td>
                     <td>
-                      <div className="font-medium text-black text-sm">
+                      <div className="text-xs font-medium text-black">
                         {r.delegate?.fullName}
                       </div>
                       {r.delegate?.party && (
@@ -205,16 +204,11 @@ export default function ReportsPage() {
                         {STATUS_LABEL[r.status]}
                       </span>
                     </td>
-                    <td className="text-xs text-body">
-                      {r.submittedAt
-                        ? new Date(r.submittedAt).toLocaleString("es-BO")
-                        : "—"}
-                    </td>
                     <td>
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-center gap-2">
                         <button
                           onClick={() => setSelected(r)}
-                          className="text-xs font-medium text-primary hover:text-primary-700 transition-colors"
+                          className="btn-secondary btn-xs"
                         >
                           Ver
                         </button>
@@ -224,7 +218,7 @@ export default function ReportsPage() {
                             r.delegate?.id === user?.id) && (
                             <button
                               onClick={() => submitMutation.mutate(r.id)}
-                              className="btn-primary btn-xs"
+                              className="btn-xs btn-action-primary"
                             >
                               Enviar
                             </button>
@@ -242,7 +236,7 @@ export default function ReportsPage() {
                             onClick={() =>
                               handleDelete(r.id, r.table?.tableNumber)
                             }
-                            className="text-xs font-medium text-meta-1 hover:text-red-700 transition-colors"
+                            className="btn-xs btn-action-danger"
                           >
                             Eliminar
                           </button>

@@ -70,6 +70,14 @@
   .btn-xs {
     @apply !rounded-md !px-2 !py-1  !text-xs;
   }
+  .btn-action-primary {
+    @apply bg-primary/20 text-primary shadow-sm
+           hover:bg-[#3141b4]/80 hover:text-white active:scale-[.97];
+  }
+  .btn-action-danger {
+    @apply bg-meta-1/20 text-meta-1 shadow-sm
+           hover:bg-meta-7 hover:text-white active:scale-[.97];
+  }
 
   /* ─── Cards ───────────────────────────────────────────────────── */
   .card {
@@ -91,12 +99,12 @@
            focus:border-primary focus:ring-2 focus:ring-primary/10
            placeholder:text-body/50;
   }
-  select.input,
+  /*select.input,
   select.input-base {
     @apply appearance-none rounded-xl border border-stroke bg-white px-4 py-2.5
            text-sm text-black outline-none
            focus:border-primary focus:ring-2 focus:ring-primary/10;
-  }
+  }*/
   .label {
     @apply mb-1.5 block text-sm font-semibold text-black;
   }
@@ -117,20 +125,38 @@
 
   /* ─── Data table ──────────────────────────────────────────────── */
   .ta-table {
-    @apply w-full text-sm;
+    @apply w-full text-sm text-left table-auto;
   }
   .ta-table thead tr {
-    @apply bg-slate-50;
+    @apply bg-slate-50 border-b border-stroke;
   }
   .ta-table thead th {
-    @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-body
-           first:rounded-tl-xl last:rounded-tr-xl;
+    @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500;
   }
   .ta-table tbody tr {
-    @apply border-t border-black/[.05] transition-colors hover:bg-slate-50/70;
+    @apply border-b border-stroke last:border-0 transition-colors hover:bg-slate-50/50;
   }
   .ta-table tbody td {
-    @apply px-4 py-3 text-black;
+    @apply px-4 py-3.5 align-middle text-black;
+  }
+  .ta-table th.text-right, .ta-table td.text-right {
+    text-align: right;
+  }
+  .ta-table th.text-izq, .ta-table td.text-izq {
+    text-align: left;
+  }
+  .ta-table th.text-center, .ta-table td.text-center {
+    width: 1%;
+    white-space: nowrap;
+    text-align: center;
+  }
+  .ta-table thead th:first-child,
+  .ta-table tbody td:first-child {
+    @apply pl-6 sm:pl-8;
+  }
+  .ta-table thead th:last-child,
+  .ta-table tbody td:last-child {
+    @apply pr-6 sm:pr-8;
   }
 
   /* ─── Sidebar nav items ───────────────────────────────────────── */
@@ -161,4 +187,5 @@
     @apply bg-white rounded-2xl border border-black/[.06]
            shadow-[0_1px_14px_rgba(0,0,0,.06)] overflow-hidden;
   }
+
 }

@@ -144,7 +144,7 @@ export default function CrudPage({
               <thead>
                 <tr>
                   {columns.map(col => <th key={col.key + col.label}>{col.label}</th>)}
-                  <th className="text-right">Acciones</th>
+                  <th className="text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -156,15 +156,15 @@ export default function CrudPage({
                       </td>
                     ))}
                     <td>
-                      <div className="flex items-center justify-end gap-3">
+                      <div className="flex items-center justify-center gap-3">
                         {extraActions?.(row, invalidate)}
-                        <button onClick={() => openEdit(row)} className="text-xs font-medium text-primary hover:underline">
+                        <button onClick={() => openEdit(row)} className="btn-xs btn-action-primary">
                           Editar
                         </button>
                         {canDelete && (
                           <button
                             onClick={() => { if (confirm('¿Eliminar este registro?')) deleteMutation.mutate(row.id); }}
-                            className="text-xs font-medium text-meta-1 hover:underline"
+                            className="btn-xs btn-action-danger"
                           >
                             Eliminar
                           </button>

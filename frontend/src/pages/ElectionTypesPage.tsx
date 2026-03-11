@@ -12,14 +12,13 @@ export default function ElectionTypesPage() {
       updateFn={electionTypesApi.update}
       deleteFn={electionTypesApi.remove}
       fields={[
-        { key: 'name',        label: 'Nombre del cargo',  required: true, placeholder: 'Ej: Gobernador' },
-        { key: 'description', label: 'Descripción',       type: 'textarea', placeholder: 'Descripción del cargo...' },
-        { key: 'order',       label: 'Orden de aparición', type: 'number', placeholder: '1' },
+        { key: 'name', label: 'Nombre del cargo', required: true, placeholder: 'Ej: Gobernador' },
+        { key: 'description', label: 'Descripción', type: 'textarea', placeholder: 'Descripción del cargo...' },
+        { key: 'order', label: 'Orden de aparición', type: 'number', placeholder: '1' },
       ]}
       columns={[
-        { key: 'order',       label: '#', render: v => <span className="font-mono text-body text-xs">{v ?? '—'}</span> },
-        { key: 'name',        label: 'Cargo', render: v => <span className="font-semibold text-black">{v}</span> },
-        { key: 'description', label: 'Descripción', render: v => <span className="text-body text-sm">{v || '—'}</span> },
+        { key: 'order', label: '#', render: v => <span className="font-medium text-black">{v ?? '—'}</span> },
+        { key: 'name', label: 'Cargo', render: v => <span className="font-medium text-black">{v}</span> },
       ]}
     />
   );

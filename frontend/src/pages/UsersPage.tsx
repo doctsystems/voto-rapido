@@ -43,43 +43,43 @@ export default function UsersPage() {
   // ── Role options by actor role ──────────────────────────────────────────────
   const roleOptions = isAdmin
     ? [
-        { value: "ADMIN", label: "Administrador" },
-        { value: "JEFE_CAMPANA", label: "Jefe de Campaña" },
+      { value: "ADMIN", label: "Administrador" },
+      { value: "JEFE_CAMPANA", label: "Jefe de Campaña" },
+      { value: "JEFE_RECINTO", label: "Jefe de Recinto" },
+      { value: "DELEGADO", label: "Delegado" },
+    ]
+    : isJefeCampana
+      ? [
         { value: "JEFE_RECINTO", label: "Jefe de Recinto" },
         { value: "DELEGADO", label: "Delegado" },
       ]
-    : isJefeCampana
-      ? [
-          { value: "JEFE_RECINTO", label: "Jefe de Recinto" },
-          { value: "DELEGADO", label: "Delegado" },
-        ]
       : [{ value: "DELEGADO", label: "Delegado" }];
 
   // ── Party options: Admin sees all; others locked to their party ─────────────
   const partyOptions = isAdmin
     ? (parties as any[]).map((p) => ({
-        value: p.id,
-        label: `${p.acronym} — ${p.name}`,
-      }))
+      value: p.id,
+      label: `${p.acronym} — ${p.name}`,
+    }))
     : [
-        {
-          value: (user as any)?.party?.id,
-          label: `${(user as any)?.party?.acronym} — ${(user as any)?.party?.name}`,
-        },
-      ];
+      {
+        value: (user as any)?.party?.id,
+        label: `${(user as any)?.party?.acronym} — ${(user as any)?.party?.name}`,
+      },
+    ];
 
   // ── School options: JEFE_RECINTO locked to own school; others see all ───────
   const schoolOptions = isJefeRecinto
     ? [
-        {
-          value: (user as any)?.school?.id,
-          label: `[${(user as any)?.school?.codigoRecinto || "?"}] ${(user as any)?.school?.nombreRecinto}`,
-        },
-      ]
+      {
+        value: (user as any)?.school?.id,
+        label: `[${(user as any)?.school?.codigoRecinto || "?"}] ${(user as any)?.school?.nombreRecinto}`,
+      },
+    ]
     : (schools as any[]).map((s) => ({
-        value: s.id,
-        label: `[${s.codigoRecinto || "?"}] ${s.nombreRecinto}`,
-      }));
+      value: s.id,
+      label: `[${s.codigoRecinto || "?"}] ${s.nombreRecinto}`,
+    }));
 
   // ── Table options: filtered by selected school (or own school for JEFE_RECINTO)
   const tableOptions = (allTables as any[]).map((t) => ({
@@ -162,32 +162,22 @@ export default function UsersPage() {
           key: "username",
           label: "Usuario",
           render: (v) => (
-            <span className="font-mono font-medium text-black">{v}</span>
-          ),
-        },
-        {
-          key: "phone",
-          label: "Teléfono",
-          render: (v: any) =>
-            v ? (
-              <span className="font-mono text-sm">{v}</span>
-            ) : (
-              <span className="text-body text-xs">—</span>
-            ),
+            <span className="font-medium text-black">{v}</span>
+          )
         },
         { key: "fullName", label: "Nombre" },
         {
           key: "role",
           label: "Rol",
           render: (v) => {
-            const r = roleBadge[v] || { label: v, cls: "bg-meta-2 text-body" };
-            return <span className={`badge ${r.cls}`}>{r.label}</span>;
+            const r = roleBadge[v] || { label: v, cls: "bg-meta-2 text-black" };
+            return <span className={`badge ${r.cls} whitespace-nowrap`}>{r.label}</span>;
           },
         },
-        {
+        ...(isAdmin ? [{
           key: "party",
           label: "Partido",
-          render: (_, row) =>
+          render: (_: any, row: any) =>
             row.party ? (
               <div className="flex items-center gap-1.5">
                 <div
@@ -197,43 +187,22 @@ export default function UsersPage() {
                 <span className="text-sm">{row.party.acronym}</span>
               </div>
             ) : (
-              <span className="text-body text-sm">—</span>
+              <span className="text-black text-sm">—</span>
             ),
-        },
-        {
-          key: "table",
-          label: "Mesa",
-          render: (_, row) =>
-            row.table ? (
-              <span className="font-mono text-xs bg-whiten px-2 py-0.5 rounded border border-stroke">
-                {row.table.tableNumber}
-              </span>
-            ) : (
-              <span className="text-body text-sm">—</span>
-            ),
-        },
+        }] : []),
         {
           key: "school",
           label: "Recinto",
           render: (_, row) => {
             const s = row.school ?? row.table?.school;
             return s ? (
-              <span className="text-xs text-body">{s.nombreRecinto}</span>
+              <span className="text-xs text-black">{s.nombreRecinto}</span>
             ) : (
-              <span className="text-body">—</span>
+              <span className="text-black">—</span>
             );
           },
         },
-        {
-          key: "isActive",
-          label: "Estado",
-          render: (v) => (
-            <span className={`badge ${v ? "badge-verified" : "badge-danger"}`}>
-              {v ? "Activo" : "Inactivo"}
-            </span>
-          ),
-        },
-      ]}
+      ].filter(Boolean) as any[]}
     />
   );
 }

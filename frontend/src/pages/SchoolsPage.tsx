@@ -117,56 +117,39 @@ export default function SchoolsPage() {
       ) : (
         <div className="card overflow-hidden">
           <table className="ta-table">
-            <thead className="bg-whiten border-b border-stroke">
+            <thead>
               <tr>
                 {[
                   "Código",
                   "Recinto Electoral",
-                  "Municipio",
-                  "Circ.",
                   "Mesas",
-                  "Estado",
-                  "",
                 ].map((h) => (
-                  <th
-                    key={h}
-                    className="text-left px-4 py-3 font-semibold text-body"
-                  >
+                  <th key={h}>
                     {h}
                   </th>
                 ))}
+                <th className="text-center">
+                  Acciones
+                </th>
               </tr>
             </thead>
-            <tbody className="">
+            <tbody>
               {(schools as any[]).map((s: any) => (
                 <tr key={s.id} className="hover:bg-whiten transition-colors">
-                  <td className="px-4 py-3 font-mono text-xs bg-whiten text-slate-500">
+                  <td className="px-4 py-3 font-medium text-black">
                     {s.codigoRecinto || "—"}
                   </td>
-                  <td className="px-4 py-3 font-medium text-black">
+                  <td className="px-4 py-3 text-black">
                     {s.nombreRecinto}
                   </td>
-                  <td className="px-4 py-3 text-slate-500">
-                    {s.municipio || "—"}
-                  </td>
-                  <td className="px-4 py-3 text-slate-500 font-mono">
-                    {s.circunscripcion || "—"}
-                  </td>
-                  <td className="px-4 py-3 font-mono font-semibold text-primary">
+                  <td className="px-4 py-3 text-black">
                     {Array.isArray(s.tables) ? s.tables.length : 0}
                   </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full ${s.isActive ? "bg-green-100 text-green-700" : "bg-meta-2 text-slate-500"}`}
-                    >
-                      {s.isActive ? "Activo" : "Inactivo"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
+                  <td className="px-4 py-3 text-center">
+                    <div className="flex items-center justify-center gap-2">
                       <button
                         onClick={() => openEdit(s)}
-                        className="text-primary hover:text-primary-700 text-xs font-semibold"
+                        className="btn-xs btn-action-primary"
                       >
                         Editar
                       </button>
@@ -175,7 +158,7 @@ export default function SchoolsPage() {
                           if (confirm(`¿Eliminar "${s.nombreRecinto}"?`))
                             deleteMutation.mutate(s.id);
                         }}
-                        className="text-meta-1 hover:text-red-700 text-xs font-semibold"
+                        className="btn-xs btn-action-danger"
                       >
                         Eliminar
                       </button>
@@ -186,7 +169,7 @@ export default function SchoolsPage() {
               {(schools as any[]).length === 0 && (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={4}
                     className="px-4 py-10 text-center text-bodydark"
                   >
                     No se encontraron recintos.
