@@ -138,7 +138,7 @@ export default function ReportsPage() {
       </div>
 
       {/* ─── Filter ─────────────────────────────────────────────── */}
-      <div className="mb-4 flex items-center gap-3 flex-wrap">
+      <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
         {isAdminOrJefe && (
           <span className="text-body text-sm font-medium">Ver reportes de:</span>
         )}
@@ -146,7 +146,7 @@ export default function ReportsPage() {
           value={filterParty}
           onChange={(e) => setFilterParty(e.target.value)}
           disabled={!isAdminOrJefe}
-          className={`rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full max-w-xs ${!isAdminOrJefe ? "opacity-75 bg-slate-50 cursor-not-allowed" : ""}`}
+          className={`rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full sm:w-auto sm:max-w-xs ${!isAdminOrJefe ? "opacity-75 bg-slate-50 cursor-not-allowed" : ""}`}
         >
           {isAdminOrJefe && <option value="">Todos los partidos</option>}
           {(parties as any[]).map((p: any) => (
@@ -159,7 +159,7 @@ export default function ReportsPage() {
           value={filterSchool}
           onChange={(e) => setFilterSchool(e.target.value)}
           disabled={!isAdminOrJefe}
-          className={`rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full max-w-xs ${!isAdminOrJefe ? "opacity-75 bg-slate-50 cursor-not-allowed" : ""}`}
+          className={`rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full sm:w-auto sm:max-w-xs ${!isAdminOrJefe ? "opacity-75 bg-slate-50 cursor-not-allowed" : ""}`}
         >
           {isAdminOrJefe && <option value="">Todos los recintos</option>}
           {(schools as any[]).map((s: any) => (

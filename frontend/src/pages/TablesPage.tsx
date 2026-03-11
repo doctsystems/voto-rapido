@@ -116,12 +116,12 @@ export default function TablesPage() {
       </div>
 
       {/* ─── Filter ─────────────────────────────────────────────── */}
-      <div className="mb-4 flex items-center gap-3 flex-wrap">
+      <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
         <span className="text-body text-sm font-medium">Ver mesas de:</span>
         <select
           value={filterSchoolId}
           onChange={(e) => setFilterSchoolId(e.target.value)}
-          className="rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full max-w-xs"
+          className="rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full sm:w-auto sm:max-w-xs"
         >
           <option value="">Todos los recintos</option>
           {schoolOptions.map((opt) => (
