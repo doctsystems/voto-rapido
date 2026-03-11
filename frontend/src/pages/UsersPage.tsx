@@ -241,7 +241,7 @@ export default function UsersPage() {
         {
           key: "username",
           label: "Usuario",
-          render: (v) => (
+          render: (v: string) => (
             <span className="font-medium text-black">{v}</span>
           )
         },
@@ -249,7 +249,7 @@ export default function UsersPage() {
         {
           key: "role",
           label: "Rol",
-          render: (v) => {
+          render: (v: string) => {
             const r = roleBadge[v] || { label: v, cls: "bg-meta-2 text-black" };
             return <span className={`badge ${r.cls} whitespace-nowrap`}>{r.label}</span>;
           },

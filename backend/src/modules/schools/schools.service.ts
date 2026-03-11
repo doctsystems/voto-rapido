@@ -27,7 +27,7 @@ export class SchoolsService {
     @InjectRepository(School) private readonly repo: Repository<School>,
   ) {}
 
-  findAll(search?: string) {
+  async findAll(search?: string) {
     const where = search
       ? [
           { nombreRecinto: Like(`%${search}%`) },
@@ -35,11 +35,21 @@ export class SchoolsService {
           { municipio: Like(`%${search}%`) },
         ]
       : undefined;
-    return this.repo.find({
+    const schools = await this.repo.find({
       where,
       relations: ["tables"],
       order: { nombreRecinto: "ASC" },
     });
+    
+    schools.forEach(school => {
+      if (school.tables) {
+        school.tables.sort((a, b) => 
+          (a.tableNumber || "").localeCompare(b.tableNumber || "", undefined, { numeric: true, sensitivity: "base" })
+        );
+      }
+    });
+    
+    return schools;
   }
 
   async findOne(id: string) {
@@ -48,6 +58,13 @@ export class SchoolsService {
       relations: ["tables", "tables.delegates"],
     });
     if (!school) throw new NotFoundException("Recinto electoral no encontrado");
+    
+    if (school.tables) {
+      school.tables.sort((a, b) => 
+        (a.tableNumber || "").localeCompare(b.tableNumber || "", undefined, { numeric: true, sensitivity: "base" })
+      );
+    }
+    
     return school;
   }
 
@@ -83,11 +100,21 @@ export class SchoolsService {
     return { message: `Recinto "${school.nombreRecinto}" eliminado` };
   }
 
-  findByMunicipio(municipio: string) {
-    return this.repo.find({
+  async findByMunicipio(municipio: string) {
+    const schools = await this.repo.find({
       where: { municipio },
       relations: ["tables"],
       order: { nombreRecinto: "ASC" },
     });
+    
+    schools.forEach(school => {
+      if (school.tables) {
+        school.tables.sort((a, b) => 
+          (a.tableNumber || "").localeCompare(b.tableNumber || "", undefined, { numeric: true, sensitivity: "base" })
+        );
+      }
+    });
+    
+    return schools;
   }
 }

@@ -23,10 +23,20 @@ export class TablesService {
     @InjectRepository(School) private readonly schoolRepo: Repository<School>,
   ) {}
 
-  findAll() {
-    return this.repo.find({
+  async findAll() {
+    const tables = await this.repo.find({
       relations: ["school", "delegates"],
-      order: { school_id: "ASC", tableNumber: "ASC" },
+    });
+    
+    return tables.sort((a, b) => {
+      const schoolA = a.school_id || "";
+      const schoolB = b.school_id || "";
+      if (schoolA !== schoolB) return schoolA.localeCompare(schoolB);
+      
+      return a.tableNumber.localeCompare(b.tableNumber, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
     });
   }
 
@@ -100,11 +110,17 @@ export class TablesService {
     return { message: `Mesa ${table.tableNumber} eliminada` };
   }
 
-  findBySchool(schoolId: string) {
-    return this.repo.find({
+  async findBySchool(schoolId: string) {
+    const tables = await this.repo.find({
       where: { school: { id: schoolId } },
       relations: ["school", "delegates"],
-      order: { tableNumber: "ASC" },
     });
+    
+    return tables.sort((a, b) =>
+      a.tableNumber.localeCompare(b.tableNumber, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      })
+    );
   }
 }

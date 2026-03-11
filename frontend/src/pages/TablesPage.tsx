@@ -12,10 +12,12 @@ export default function TablesPage() {
     queryFn: () => schoolsApi.getAll(),
   });
 
+  const [filterSchoolId, setFilterSchoolId] = useState<string>("");
+
   // Mesas — sin pasar argumentos para no recibir el QueryFunctionContext
   const { data: tables = [], isLoading } = useQuery({
-    queryKey: ["tables"],
-    queryFn: () => tablesApi.getAll(),
+    queryKey: ["tables", filterSchoolId],
+    queryFn: () => tablesApi.getAll(filterSchoolId || undefined),
   });
 
   const [modal, setModal] = useState<"create" | "edit" | null>(null);
@@ -111,6 +113,31 @@ export default function TablesPage() {
         <button onClick={openCreate} className="btn-primary">
           ✚ Nueva Mesa
         </button>
+      </div>
+
+      {/* ─── Filter ─────────────────────────────────────────────── */}
+      <div className="mb-4 flex items-center gap-3 flex-wrap">
+        <span className="text-body text-sm font-medium">Ver mesas de:</span>
+        <select
+          value={filterSchoolId}
+          onChange={(e) => setFilterSchoolId(e.target.value)}
+          className="rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full max-w-xs"
+        >
+          <option value="">Todos los recintos</option>
+          {schoolOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        {filterSchoolId && (
+          <button
+            onClick={() => setFilterSchoolId("")}
+            className="text-xs text-body hover:text-meta-1 transition-colors"
+          >
+            ✕ Limpiar
+          </button>
+        )}
       </div>
 
       {isLoading ? (

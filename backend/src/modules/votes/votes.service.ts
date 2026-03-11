@@ -301,10 +301,19 @@ export class VotesService {
       });
     }
 
-    return query
-      .orderBy("s.nombreRecinto", "ASC")
-      .addOrderBy("t.tableNumber", "ASC")
-      .getMany();
+    const reports = await query.getMany();
+    return reports.sort((a, b) => {
+      const schoolA = a.table?.school?.nombreRecinto || "";
+      const schoolB = b.table?.school?.nombreRecinto || "";
+      if (schoolA !== schoolB) return schoolA.localeCompare(schoolB);
+
+      const tableA = a.table?.tableNumber || "";
+      const tableB = b.table?.tableNumber || "";
+      return tableA.localeCompare(tableB, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+    });
   }
 
   // ── Build entries from DTO ──────────────────────────────────────────────────
