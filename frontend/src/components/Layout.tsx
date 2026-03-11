@@ -94,11 +94,13 @@ export default function Layout() {
     <div className="flex h-full flex-col">
       {/* Logo */}
       <div className="flex h-20 shrink-0 items-center justify-center lg:justify-start px-6 lg:px-8 border-b border-stroke">
-        <img
-          src="/images/logo.svg"
-          alt="QuickTally"
-          className="h-12 lg:h-16 w-auto object-contain"
-        />
+        <NavLink to="/" className="flex items-center gap-2">
+          <img
+            src="/images/logo.svg"
+            alt="QuickTally"
+            className="h-10 lg:h-16 w-auto object-contain"
+          />
+        </NavLink>
       </div>
 
       {/* Navigation */}
@@ -184,11 +186,13 @@ export default function Layout() {
           </button>
           {/* Logo */}
           <div className="flex h-12 shrink-0 items-center justify-center lg:justify-start px-6 lg:px-8">
-            <img
-              src="/images/logo.svg"
-              alt="QuickTally"
-              className="h-10 lg:h-16 w-auto object-contain"
-            />
+            <NavLink to="/" className="flex items-center gap-2">
+              <img
+                src="/images/logo.svg"
+                alt="QuickTally"
+                className="h-10 lg:h-16 w-auto object-contain"
+              />
+            </NavLink>
           </div>
           <div className="w-9" />
         </header>
