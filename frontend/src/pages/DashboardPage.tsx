@@ -23,11 +23,11 @@ function LeaderCard({ et }: { et: any }) {
     <div className="rounded-2xl bg-white border border-black/[.06] shadow-[0_2px_16px_rgba(0,0,0,.06)] overflow-hidden flex flex-col">
       {/* Header */}
       <div
-        className="px-5 py-3 text-white font-semibold text-sm tracking-wide flex items-center gap-2"
+        className="px-5 py-3 text-white font-semibold text-s tracking-wide flex items-center gap-2"
         style={{ backgroundColor: hasData ? (winner.color || "#3C50E0") : "#64748b" }}
       >
-        <span>🏆</span>
-        <span className="uppercase tracking-wider text-xs opacity-90">{et?.name ?? "—"}</span>
+        <span>🥇</span>
+        <span className="uppercase tracking-wider text-x opacity-90">{et?.name ?? "—"}</span>
       </div>
 
       {/* Body */}
@@ -90,7 +90,7 @@ function StatCard({
       {/* Header — igual estilo que ElectionTypeBlock */}
       <div
         className="flex items-center gap-2.5 px-5 py-3 text-white"
-        style={{ backgroundColor: headerColor || "#10131aff" }}
+        style={{ backgroundColor: headerColor || "#224bacff" }}
       >
         <span className="text-base">{icon}</span>
         <span className="font-semibold text-xs uppercase tracking-wider opacity-90">
@@ -111,33 +111,6 @@ function StatCard({
 function StatusCards({ metrics, forceNonAdmin }: { metrics: any; forceNonAdmin?: boolean }) {
   const { user } = useAuthStore();
 
-  // ── ADMIN sin partido seleccionado: muestra cards de estado de reportes ──────
-  if (user?.role === "ADMIN" && !forceNonAdmin) {
-    const adminCards = [
-      { label: "Borradores", value: metrics?.draft ?? 0, icon: "📝", bg: "bg-meta-2/60", text: "text-body" },
-      { label: "Enviados", value: metrics?.submitted ?? 0, icon: "📤", bg: "bg-blue-50", text: "text-blue-600" },
-      { label: "Verificados", value: metrics?.verified ?? 0, icon: "✅", bg: "bg-green-50", text: "text-meta-3" },
-      { label: "Total Reportes", value: metrics?.totalReports ?? 0, icon: "📊", bg: "bg-primary/10", text: "text-primary" },
-    ];
-    return (
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-        {adminCards.map((c) => (
-          <div key={c.label} className="rounded-2xl bg-white border border-black/[.06] shadow-[0_2px_16px_rgba(0,0,0,.06)]">
-            <div className="flex items-center gap-4 p-5">
-              <div className={`flex h-12 w-12 items-center justify-center rounded-full text-xl flex-shrink-0 ${c.bg}`}>
-                {c.icon}
-              </div>
-              <div>
-                <p className="text-sm text-body">{c.label}</p>
-                <h4 className={`text-2xl font-bold ${c.text}`}>{c.value.toLocaleString()}</h4>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
   // ── No-ADMIN: cards elegantes ──────────────────────────────────────────────
   const byET: any[] = metrics?.byElectionType ?? [];
   // Sort by order asc — first two ETs (Gobernador=order 1, Alcalde=order 2)
@@ -153,12 +126,12 @@ function StatusCards({ metrics, forceNonAdmin }: { metrics: any; forceNonAdmin?:
     <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
       {/* Card 1: Líder ET1 */}
       {et1 ? <LeaderCard et={et1} /> : (
-        <div className="rounded-2xl bg-white border border-black/[.06] shadow p-5 flex items-center justify-center text-body text-sm">Sin ET configurado</div>
+        <div className="rounded-2xl bg-white border border-black/[.06] shadow p-5 flex items-center justify-center text-body text-s">Sin ET configurado</div>
       )}
 
       {/* Card 2: Líder ET2 */}
       {et2 ? <LeaderCard et={et2} /> : (
-        <div className="rounded-2xl bg-white border border-black/[.06] shadow p-5 flex items-center justify-center text-body text-sm">—</div>
+        <div className="rounded-2xl bg-white border border-black/[.06] shadow p-5 flex items-center justify-center text-body text-s">—</div>
       )}
 
       {/* Card 3: Total actas/mesas contabilizadas */}
@@ -166,8 +139,8 @@ function StatusCards({ metrics, forceNonAdmin }: { metrics: any; forceNonAdmin?:
         label="Actas contabilizadas"
         value={totalReports.toLocaleString()}
         sub={`de ${totalTables.toLocaleString()} mesas`}
-        icon="📋"
-        headerColor="#1c2434"
+        icon="🗳️"
+        headerColor="#3C50E0"
       />
 
       {/* Card 4: % Cobertura */}
@@ -175,8 +148,8 @@ function StatusCards({ metrics, forceNonAdmin }: { metrics: any; forceNonAdmin?:
         label="Cobertura de mesas"
         value={`${pct.toFixed(1)}%`}
         sub={`${totalReports} de ${totalTables} mesas`}
-        icon="📡"
-        headerColor="#1c2434"
+        icon="📊"
+        headerColor="#3C50E0"
       />
     </div>
   );
@@ -295,17 +268,17 @@ function ElectionTypeBlock({
       {/* Collapsible header */}
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-6 py-4 bg-boxdark hover:bg-boxdark-2 transition-colors text-left"
+        className="w-full flex items-center justify-between px-6 py-4 bg-[#3141b4] hover:bg-primary transition-colors text-left"
       >
         <div className="flex items-center gap-3">
           <span className="font-bold text-white text-base">{et.name}</span>
-          <span className="text-xs text-bodydark2 bg-black/20 px-2 py-0.5 rounded-full">
+          <span className="text-xs text-white bg-primary-300/50 px-2 py-0.5 rounded-full">
             {validVotes.toLocaleString()} válidos
           </span>
         </div>
         <div className="flex items-center gap-3">
           {winner && (
-            <div className="flex items-center gap-2 bg-white/15 rounded px-3 py-1">
+            <div className="flex items-center gap-2 bg-primary-300/50 rounded px-3 py-1">
               <div
                 className="w-2.5 h-2.5 rounded-md"
                 style={{ backgroundColor: winner.color }}
@@ -316,7 +289,6 @@ function ElectionTypeBlock({
               <span className="text-white/60 text-xs">
                 {winner.percentage?.toFixed(2)}%
               </span>
-              <span className="text-yellow-300 text-xs ml-1">🏆</span>
             </div>
           )}
           <span
@@ -380,7 +352,7 @@ function ResultsPanel({ metrics }: { metrics: any }) {
   if (byET.length === 0) {
     return (
       <div className="card flex flex-col items-center justify-center py-20 text-body">
-        <div className="text-5xl mb-4">🗳️</div>
+        <div className="text-5xl mb-4">📦</div>
         <p className="font-medium">Sin datos aún</p>
         <p className="text-sm mt-1">Los delegados deben ingresar reportes</p>
       </div>
@@ -576,7 +548,7 @@ export default function DashboardPage() {
         ) : (
           /* Placeholder cuando no hay partido seleccionado */
           <div className="flex flex-col items-center justify-center py-24 text-body rounded-2xl border border-dashed border-stroke bg-white">
-            <div className="text-5xl mb-4">🗳️</div>
+            <div className="text-5xl mb-4">📦</div>
             <p className="font-medium text-black">Selecciona un partido para ver sus resultados</p>
             <p className="text-sm mt-1">Usa el selector de partido en el encabezado</p>
           </div>

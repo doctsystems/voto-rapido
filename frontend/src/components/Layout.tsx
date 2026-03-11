@@ -93,10 +93,10 @@ export default function Layout() {
   const SidebarContent = () => (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex h-24 shrink-0 items-center justify-center lg:justify-start px-6 lg:px-8 border-b border-stroke">
+      <div className="flex h-20 shrink-0 items-center justify-center lg:justify-start px-6 lg:px-8 border-b border-stroke">
         <img
           src="/images/logo.svg"
-          alt="VotoRápido"
+          alt="QuickTally"
           className="h-12 lg:h-16 w-auto object-contain"
         />
       </div>
@@ -114,10 +114,13 @@ export default function Layout() {
                     end={item.to === "/"}
                     onClick={() => setSidebarOpen(false)}
                     className={({ isActive }) =>
-                      `nav-item ${isActive ? "active" : ""} text-gray-600`
+                      `nav-item ${isActive
+                        ? "bg-primary/20 text-primary"
+                        : "text-gray-600 hover:bg-black/5 hover:text-gray-900"
+                      }`
                     }
                   >
-                    <span className=" text-gray-900 text-base w-5 text-center opacity-70">
+                    <span className="text-base w-5 text-center opacity-70">
                       {item.icon}
                     </span>
                     {item.label}
@@ -179,19 +182,26 @@ export default function Layout() {
               />
             </svg>
           </button>
-          <span className="font-bold text-black">VotoRápido</span>
+          {/* Logo */}
+          <div className="flex h-12 shrink-0 items-center justify-center lg:justify-start px-6 lg:px-8">
+            <img
+              src="/images/logo.svg"
+              alt="QuickTally"
+              className="h-10 lg:h-16 w-auto object-contain"
+            />
+          </div>
           <div className="w-9" />
         </header>
 
         {/* Desktop topbar breadcrumb */}
-        <header className="hidden lg:flex h-24 shrink-0 items-center justify-between border-b border-stroke bg-white px-8">
+        <header className="hidden lg:flex h-20 shrink-0 items-center justify-between border-b border-stroke bg-white px-8">
           <div className="text-xl font-bold text-black tracking-wide uppercase">
-            Sistema de Conteo Rápido Electoral
+            Sistema de Conteo Votos
           </div>
           <div className="flex items-center gap-3 text-sm text-body">
             <span className="font-medium text-black">{user?.fullName}</span>
             <div
-              className={`text-xs px-2 py-0.5 rounded-full ${roleBadge[role] || ""}`}
+              className={`text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary`}
             >
               {roleLabel[role]}
             </div>

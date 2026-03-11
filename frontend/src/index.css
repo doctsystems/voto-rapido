@@ -51,8 +51,8 @@
            focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30;
   }
   .btn-primary {
-    @apply btn bg-primary text-white shadow-sm
-           hover:bg-[#3346c8] active:scale-[.97];
+    @apply btn bg-[#3141b4] text-white shadow-sm
+           hover:bg-primary active:scale-[.97];
   }
   .btn-secondary {
     @apply btn bg-white text-black border border-stroke shadow-sm
@@ -74,7 +74,7 @@
   /* ─── Cards ───────────────────────────────────────────────────── */
   .card {
     @apply bg-white rounded-2xl border border-black/[.06]
-           shadow-[0_2px_16px_rgba(0,0,0,.06)];
+           shadow-[0_1px_14px_rgba(0,0,0,.06)];
   }
   .card-header {
     @apply px-6 py-4 border-b border-black/[.06]
@@ -136,11 +136,7 @@
   /* ─── Sidebar nav items ───────────────────────────────────────── */
   .nav-item {
     @apply relative flex items-center gap-3 rounded-xl px-4 py-2.5
-           text-sm font-medium text-bodydark2 transition-all duration-150
-           hover:bg-white/10 hover:text-white;
-  }
-  .nav-item.active {
-    @apply bg-white/15 text-white;
+           text-sm font-medium transition-all duration-150;
   }
   .nav-section {
     @apply mb-1 mt-5 px-4 text-xs font-semibold uppercase tracking-widest text-bodydark/70;
@@ -157,12 +153,12 @@
   /* ─── Stat cards (dashboard) ──────────────────────────────────── */
   .stat-card {
     @apply bg-white rounded-2xl border border-black/[.06]
-           shadow-[0_2px_16px_rgba(0,0,0,.06)] p-6 flex items-center gap-4;
+           shadow-[0_1px_14px_rgba(0,0,0,.06)] p-6 flex items-center gap-4;
   }
 
   /* ─── Section panel for collapsible dashboard blocks ─────────── */
   .section-panel {
     @apply bg-white rounded-2xl border border-black/[.06]
-           shadow-[0_2px_16px_rgba(0,0,0,.06)] overflow-hidden;
+           shadow-[0_1px_14px_rgba(0,0,0,.06)] overflow-hidden;
   }
 }
