@@ -26,7 +26,7 @@ function LeaderCard({ et }: { et: any }) {
         className="px-5 py-3 text-white font-semibold text-s tracking-wide flex items-center gap-2"
         style={{ backgroundColor: hasData ? (winner.color || "#3C50E0") : "#64748b" }}
       >
-        <span>🥇</span>
+        <span>🏅</span>
         <span className="uppercase tracking-wider text-x opacity-90">{et?.name ?? "—"}</span>
       </div>
 
@@ -148,7 +148,7 @@ function StatusCards({ metrics, forceNonAdmin }: { metrics: any; forceNonAdmin?:
         label="Cobertura de mesas"
         value={`${pct.toFixed(1)}%`}
         sub={`${totalReports} de ${totalTables} mesas`}
-        icon="📊"
+        icon="📈"
         headerColor="#3C50E0"
       />
     </div>
@@ -406,18 +406,6 @@ function PartyPanel({ pd, defaultOpen }: { pd: any; defaultOpen: boolean }) {
             {pd.partyName}
           </span>
         </div>
-        {/* <div className="flex items-center gap-2 text-xs font-mono flex-shrink-0">
-          <span className="text-body">{pd.totalReports} rep.</span>
-          {pd.verified > 0 && (
-            <span className="badge badge-verified">{pd.verified} ✓</span>
-          )}
-          {pd.submitted > 0 && (
-            <span className="badge badge-submitted">{pd.submitted}</span>
-          )}
-          {pd.draft > 0 && (
-            <span className="badge badge-draft">{pd.draft}</span>
-          )}
-        </div> */}
         <span
           className={`text-body transition-transform duration-200 inline-block ${open ? "rotate-180" : ""}`}
         >

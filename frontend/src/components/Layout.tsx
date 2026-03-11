@@ -23,7 +23,7 @@ const navSections = [
     items: [
       {
         to: "/",
-        icon: "◈",
+        icon: "❖",
         label: "Dashboard",
         roles: ["ADMIN", "JEFE_CAMPANA", "JEFE_RECINTO", "DELEGADO"],
       },
@@ -111,7 +111,7 @@ export default function Layout() {
                 <li key={item.to}>
                   <NavLink
                     to={item.to}
-                    end={item.to === "/"}
+                    end={item.to === "/" || item.to === "/reports"}
                     onClick={() => setSidebarOpen(false)}
                     className={({ isActive }) =>
                       `nav-item ${isActive
