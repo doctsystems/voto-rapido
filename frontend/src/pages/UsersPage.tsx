@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Navigate } from "react-router-dom";
 import CrudPage from "../components/CrudPage";
 import { usersApi, partiesApi, tablesApi, schoolsApi } from "../lib/api";
 import { useAuthStore } from "../store/auth.store";
@@ -13,13 +14,25 @@ const roleBadge: Record<string, { label: string; cls: string }> = {
 
 export default function UsersPage() {
   const { user } = useAuthStore();
-  const [selectedSchoolId, setSelectedSchoolId] = useState<string>("");
-  // tracks the role currently chosen in the form (to conditionally enable school for JEFE_CAMPANA)
-  const [formRole, setFormRole] = useState<string>("");
-
   const isAdmin = user?.role === "ADMIN";
   const isJefeCampana = user?.role === "JEFE_CAMPANA";
   const isJefeRecinto = user?.role === "JEFE_RECINTO";
+  const isAdminOrJefe = isAdmin || isJefeCampana;
+
+  const [selectedSchoolId, setSelectedSchoolId] = useState<string>("");
+  const [formRole, setFormRole] = useState<string>("");
+
+  // Table view filter
+  const [filterSchool, setFilterSchool] = useState<string>(
+    isAdminOrJefe ? "" : ((user as any)?.school?.id || "")
+  );
+  const [filterParty, setFilterParty] = useState<string>(
+    isAdminOrJefe ? "" : ((user as any)?.party?.id || "")
+  );
+
+  if (user?.role === "DELEGADO") {
+    return <Navigate to="/" replace />;
+  }
 
   const { data: parties = [] } = useQuery({
     queryKey: ["parties"],
@@ -145,12 +158,79 @@ export default function UsersPage() {
     // schoolId intentionally not pre-filled so JEFE_CAMPANA can select it when creating JEFE_RECINTO
   }
 
+  const fetchUsersFiltered = async () => {
+    const allUsers = await usersApi.getAll();
+    if (!filterSchool && !filterParty) {
+      // If Admin/Jefe needs to select at least one filter to see any records, return empty array when none selected
+      if (isAdminOrJefe) return [];
+      return allUsers;
+    }
+    return allUsers.filter((u: any) => {
+      const uSchoolId = u.school?.id || u.table?.school?.id;
+      const matchSchool = filterSchool ? uSchoolId === filterSchool : true;
+      const matchParty = filterParty ? u.party?.id === filterParty : true;
+      return matchSchool && matchParty;
+    });
+  };
+
   return (
     <CrudPage
       title="Usuarios"
       description="Gestión de usuarios del sistema electoral"
-      queryKey="users"
-      fetchFn={usersApi.getAll}
+      queryKey={`users-${filterSchool}-${filterParty}`}
+      fetchFn={fetchUsersFiltered}
+      headerContent={
+        <div className="flex items-center gap-3 flex-wrap">
+          {isAdminOrJefe && (
+            <span className="text-body text-sm font-medium">Ver usuarios de:</span>
+          )}
+          <select
+            value={filterParty}
+            onChange={(e) => setFilterParty(e.target.value)}
+            disabled={!isAdminOrJefe}
+            className={`rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full max-w-xs ${!isAdminOrJefe ? "opacity-75 bg-slate-50 cursor-not-allowed" : ""}`}
+          >
+            {isAdminOrJefe && <option value="">Todos los partidos</option>}
+            {(parties as any[]).map((p: any) => (
+              <option key={p.id} value={p.id}>
+                {p.acronym} — {p.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={filterSchool}
+            onChange={(e) => setFilterSchool(e.target.value)}
+            disabled={!isAdminOrJefe}
+            className={`rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full max-w-xs ${!isAdminOrJefe ? "opacity-75 bg-slate-50 cursor-not-allowed" : ""}`}
+          >
+            {isAdminOrJefe && <option value="">Todos los recintos</option>}
+            {(schools as any[]).map((s: any) => (
+              <option key={s.id} value={s.id}>
+                {s.codigoRecinto ? `[${s.codigoRecinto}] ` : ""}
+                {s.nombreRecinto}
+              </option>
+            ))}
+          </select>
+          {isAdminOrJefe && (filterSchool || filterParty) && (
+            <button
+              onClick={() => { setFilterSchool(""); setFilterParty(""); }}
+              className="text-xs text-body hover:text-meta-1 transition-colors"
+            >
+              ✕ Limpiar
+            </button>
+          )}
+        </div>
+      }
+      customEmptyState={
+        isAdminOrJefe && !filterSchool && !filterParty ? (
+          <div className="card p-10 text-center mt-6">
+            <div className="text-4xl mb-3">🏢</div>
+            <p className="text-body font-medium">
+              Selecciona un recinto o partido para ver sus usuarios
+            </p>
+          </div>
+        ) : undefined
+      }
       createFn={usersApi.create}
       updateFn={usersApi.update}
       deleteFn={usersApi.remove}
@@ -190,18 +270,6 @@ export default function UsersPage() {
               <span className="text-black text-sm">—</span>
             ),
         }] : []),
-        {
-          key: "school",
-          label: "Recinto",
-          render: (_, row) => {
-            const s = row.school ?? row.table?.school;
-            return s ? (
-              <span className="text-xs text-black">{s.nombreRecinto}</span>
-            ) : (
-              <span className="text-black">—</span>
-            );
-          },
-        },
       ].filter(Boolean) as any[]}
     />
   );

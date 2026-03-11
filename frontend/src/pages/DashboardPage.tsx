@@ -470,7 +470,7 @@ export default function DashboardPage() {
           {isAdmin ? (
             /* Selector de partido integrado bajo el título */
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-              <span className="text-body text-sm">Ver resultados de:</span>
+              <span className="text-body text-sm font-medium">Ver resultados de:</span>
               <select
                 id="party-selector"
                 value={selectedPartyId}

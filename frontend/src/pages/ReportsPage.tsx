@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { votesApi, reportsApi, schoolsApi } from "../lib/api";
+import { votesApi, reportsApi, schoolsApi, partiesApi } from "../lib/api";
 import { useAuthStore } from "../store/auth.store";
 import { toast } from "../lib/toast";
 
@@ -30,14 +30,32 @@ export default function ReportsPage() {
   const [filterSchool, setFilterSchool] = useState(
     isAdminOrJefe ? "" : ((user as any)?.school?.id || (user as any)?.table?.school?.id || "")
   );
+  const [filterParty, setFilterParty] = useState(
+    isAdminOrJefe ? "" : ((user as any)?.party?.id || "")
+  );
 
+  const { data: parties = [] } = useQuery({
+    queryKey: ["parties"],
+    queryFn: partiesApi.getAll,
+  });
   const { data: schools = [] } = useQuery({
     queryKey: ["schools"],
     queryFn: () => schoolsApi.getAll(),
   });
-  const { data: reports = [], isLoading } = useQuery({
-    queryKey: ["reports", filterSchool],
-    queryFn: () => votesApi.getReports(filterSchool || undefined),
+  const { data: rawReports = [], isLoading } = useQuery({
+    queryKey: ["reports", filterSchool, filterParty],
+    queryFn: () => {
+      // If Admin/Jefe and both filters are empty, don't fetch everything by default to avoid huge payloads
+      if (isAdminOrJefe && !filterSchool && !filterParty) return Promise.resolve([]);
+      // Otherwise fetch for the selected school (if any), then filter below for party
+      return votesApi.getReports(filterSchool || undefined);
+    },
+  });
+
+  // Client-side filtering for party (since API accepts school but not party in getReports currently)
+  const reports = rawReports.filter((r: any) => {
+    if (!filterParty) return true;
+    return r.delegate?.party?.id === filterParty;
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["reports"] });
@@ -121,11 +139,27 @@ export default function ReportsPage() {
 
       {/* ─── Filter ─────────────────────────────────────────────── */}
       <div className="mb-4 flex items-center gap-3 flex-wrap">
+        {isAdminOrJefe && (
+          <span className="text-body text-sm font-medium">Ver reportes de:</span>
+        )}
+        <select
+          value={filterParty}
+          onChange={(e) => setFilterParty(e.target.value)}
+          disabled={!isAdminOrJefe}
+          className={`rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full max-w-xs ${!isAdminOrJefe ? "opacity-75 bg-slate-50 cursor-not-allowed" : ""}`}
+        >
+          {isAdminOrJefe && <option value="">Todos los partidos</option>}
+          {(parties as any[]).map((p: any) => (
+            <option key={p.id} value={p.id}>
+              {p.acronym} — {p.name}
+            </option>
+          ))}
+        </select>
         <select
           value={filterSchool}
           onChange={(e) => setFilterSchool(e.target.value)}
           disabled={!isAdminOrJefe}
-          className={`rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all max-w-xs ${!isAdminOrJefe ? "opacity-75 bg-slate-50 cursor-not-allowed" : ""}`}
+          className={`rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full max-w-xs ${!isAdminOrJefe ? "opacity-75 bg-slate-50 cursor-not-allowed" : ""}`}
         >
           {isAdminOrJefe && <option value="">Todos los recintos</option>}
           {(schools as any[]).map((s: any) => (
@@ -135,9 +169,9 @@ export default function ReportsPage() {
             </option>
           ))}
         </select>
-        {isAdminOrJefe && filterSchool && (
+        {isAdminOrJefe && (filterSchool || filterParty) && (
           <button
-            onClick={() => setFilterSchool("")}
+            onClick={() => { setFilterSchool(""); setFilterParty(""); }}
             className="text-xs text-body hover:text-meta-1 transition-colors"
           >
             ✕ Limpiar
@@ -148,11 +182,11 @@ export default function ReportsPage() {
       {/* ─── Table ──────────────────────────────────────────────── */}
       {isLoading ? (
         <div className="card p-10 text-center text-body">Cargando...</div>
-      ) : isAdminOrJefe && !filterSchool ? (
+      ) : isAdminOrJefe && !filterSchool && !filterParty ? (
         <div className="card p-10 text-center">
           <div className="text-4xl mb-3">🏢</div>
           <p className="text-body font-medium">
-            Selecciona un recinto para ver sus reportes
+            Selecciona un recinto o partido para ver sus reportes
           </p>
         </div>
       ) : (reports as any[]).length === 0 ? (

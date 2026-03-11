@@ -28,11 +28,14 @@ interface CrudPageProps {
   canCreate?: boolean;
   extraActions?: (row: any, invalidate: () => void) => React.ReactNode;
   defaultValues?: Record<string, any>;
+  headerContent?: React.ReactNode;
+  customEmptyState?: React.ReactNode;
 }
 
 export default function CrudPage({
   title, description, queryKey, fetchFn, createFn, updateFn, deleteFn,
   fields, columns, canDelete = true, canCreate = true, extraActions, defaultValues = {},
+  headerContent, customEmptyState,
 }: CrudPageProps) {
   const qc = useQueryClient();
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
@@ -114,9 +117,11 @@ export default function CrudPage({
         )}
       </div>
 
-      {/* Table card */}
-      <div className="card">
-        {/* Search + count bar */}
+      {headerContent && <div className="mb-4">{headerContent}</div>}
+
+      {customEmptyState ? customEmptyState : (
+        <div className="card">
+          {/* Search + count bar */}
         <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-stroke">
           <div className="relative">
             <input
@@ -178,8 +183,9 @@ export default function CrudPage({
           </div>
         )}
       </div>
+      )}
 
-      {/* Modal */}
+      {/* Insert and Edit Modals */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={e => e.target === e.currentTarget && closeModal()}>
           <div className="bg-white rounded-xl border border-black/[.06] shadow-default w-full max-w-lg max-h-[90vh] overflow-auto">
