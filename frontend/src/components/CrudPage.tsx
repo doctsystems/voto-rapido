@@ -44,7 +44,7 @@ export default function CrudPage({
   const [editing, setEditing] = useState<any | null>(null);
   const [form, setForm] = useState<any>({});
   const [search, setSearch] = useState('');
-  
+
   // -- Paginación
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -137,124 +137,124 @@ export default function CrudPage({
       {customEmptyState ? customEmptyState : (
         <div className="card">
           {/* Search + count bar */}
-        <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-stroke">
-          <div className="relative">
-            <input
-              type="text" placeholder={`Buscar en ${title.toLowerCase()}...`}
-              value={search} onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
-              className="input h-9 pl-8 text-xs max-w-xs"
-            />
-            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-body" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+          <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-stroke">
+            <div className="relative">
+              <input
+                type="text" placeholder={`Buscar en ${title.toLowerCase()}...`}
+                value={search} onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
+                className="input h-9 pl-8 text-xs max-w-xs"
+              />
+              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-body" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+            </div>
+            <span className="text-xs text-body whitespace-nowrap">{filtered.length} registro(s)</span>
           </div>
-          <span className="text-xs text-body whitespace-nowrap">{filtered.length} registro(s)</span>
-        </div>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <svg className="w-8 h-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-body">
-            <svg className="w-12 h-12 text-stroke mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}><path d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
-            <p className="text-sm">Sin registros{search ? ` para "${search}"` : ''}</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto w-full">
-            <table className="ta-table w-full">
-              <thead>
-                <tr>
-                  {columns.map(col => <th key={col.key + col.label}>{col.label}</th>)}
-                  <th className="text-center">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedData.map((row: any) => (
-                  <tr key={row.id}>
-                    {columns.map(col => (
-                      <td key={col.key + col.label} className="text-black">
-                        {col.render ? col.render(row[col.key], row) : String(row[col.key] ?? '—')}
-                      </td>
-                    ))}
-                    <td>
-                      <div className="flex items-center justify-center gap-3">
-                        {extraActions?.(row, invalidate)}
-                        {!hideEdit && (
-                          <button onClick={() => openEdit(row)} className="btn-xs btn-action-primary">
-                            Editar
-                          </button>
-                        )}
-                        {canDelete && (
-                          <button
-                            onClick={() => { if (confirm('¿Eliminar este registro?')) deleteMutation.mutate(row.id); }}
-                            className="btn-xs btn-action-danger"
-                          >
-                            Eliminar
-                          </button>
-                        )}
-                      </div>
-                    </td>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <svg className="w-8 h-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-body">
+              <svg className="w-12 h-12 text-stroke mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}><path d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
+              <p className="text-sm">Sin registros{search ? ` para "${search}"` : ''}</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto w-full">
+              <table className="ta-table w-full">
+                <thead>
+                  <tr>
+                    {columns.map(col => <th key={col.key + col.label}>{col.label}</th>)}
+                    <th className="text-center">Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-          
-        {/* Paginación UI */}
-        {filtered.length > 0 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-4 border-t border-stroke bg-whiter">
-            <div className="text-sm text-body text-center sm:text-left">
-              Mostrando <span className="font-semibold text-black">{startIndex + 1}</span> al{' '}
-              <span className="font-semibold text-black">{Math.min(endIndex, filtered.length)}</span> de{' '}
-              <span className="font-semibold text-black">{filtered.length}</span> resultados
+                </thead>
+                <tbody>
+                  {paginatedData.map((row: any) => (
+                    <tr key={row.id}>
+                      {columns.map(col => (
+                        <td key={col.key + col.label} className="text-black">
+                          {col.render ? col.render(row[col.key], row) : String(row[col.key] ?? '—')}
+                        </td>
+                      ))}
+                      <td>
+                        <div className="flex items-center justify-center gap-3">
+                          {extraActions?.(row, invalidate)}
+                          {!hideEdit && (
+                            <button onClick={() => openEdit(row)} className="btn-xs btn-action-primary">
+                              Editar
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              onClick={() => { if (confirm('¿Eliminar este registro?')) deleteMutation.mutate(row.id); }}
+                              className="btn-xs btn-action-danger"
+                            >
+                              Eliminar
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
+          )}
 
-            <div className="flex flex-col sm:flex-row items-center gap-3">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-body">Mostrar:</span>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="rounded border border-stroke bg-white px-2 py-1 text-sm text-black outline-none focus:border-primary"
-                >
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                  <option value={9999}>Todos</option>
-                </select>
+          {/* Paginación UI */}
+          {filtered.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-4 border-t border-stroke bg-whiter">
+              <div className="text-sm text-body text-center sm:text-left">
+                Mostrando <span className="font-semibold text-black">{startIndex + 1}</span> al{' '}
+                <span className="font-semibold text-black">{Math.min(endIndex, filtered.length)}</span> de{' '}
+                <span className="font-semibold text-black">{filtered.length}</span> resultados
               </div>
-              
-              {itemsPerPage !== 9999 && totalPages > 1 && (
-                <div className="flex items-center gap-1 mt-2 sm:mt-0">
-                  <button
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1 rounded text-sm text-body bg-white border border-stroke hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    Anterior
-                  </button>
-                  <div className="px-3 py-1 text-sm text-black font-medium">
-                    {currentPage} / {totalPages}
-                  </div>
-                  <button
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-1 rounded text-sm text-body bg-white border border-stroke hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    Siguiente
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    )}
 
-    {/* Insert and Edit Modals */}
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-body">Mostrar:</span>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="rounded border border-stroke bg-white px-2 py-1 text-sm text-black outline-none focus:border-primary"
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={9999}>Todos</option>
+                  </select>
+                </div>
+
+                {itemsPerPage !== 9999 && totalPages > 1 && (
+                  <div className="flex items-center gap-1 mt-2 sm:mt-0">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 rounded text-sm text-body bg-white border border-stroke hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Anterior
+                    </button>
+                    <div className="px-3 py-1 text-sm text-black font-medium">
+                      {currentPage} / {totalPages}
+                    </div>
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 rounded text-sm text-body bg-white border border-stroke hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Siguiente
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Insert and Edit Modals */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={e => e.target === e.currentTarget && closeModal()}>
           <div className="bg-white rounded-xl border border-black/[.06] shadow-default w-full max-w-lg max-h-[90vh] overflow-auto">
@@ -292,7 +292,7 @@ export default function CrudPage({
                   ) : field.type === 'color' ? (
                     <div className="flex items-center gap-3">
                       <input type="color"
-                        value={form[field.key] || '#3C50E0'}
+                        value={form[field.key] || '#313161'}
                         onChange={e => setForm({ ...form, [field.key]: e.target.value })}
                         className="h-10 w-16 cursor-pointer rounded-xl border border-stroke"
                       />
@@ -300,7 +300,7 @@ export default function CrudPage({
                         value={form[field.key] || ''}
                         onChange={e => setForm({ ...form, [field.key]: e.target.value })}
                         className="input flex-1"
-                        placeholder="#3C50E0"
+                        placeholder="#313161"
                       />
                     </div>
                   ) : field.type === 'textarea' ? (

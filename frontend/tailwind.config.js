@@ -7,13 +7,13 @@ export default {
       colors: {
         // TailAdmin core palette
         primary: {
-          DEFAULT: '#3C50E0',
+          DEFAULT: '#313161',
           50: '#EEF0FB',
           100: '#D5DAF5',
           200: '#ABB4EC',
           300: '#808FE2',
           400: '#5669D9',
-          500: '#3C50E0',
+          500: '#313161',
           600: '#2D3EB5',
           700: '#1E2D8A',
           800: '#101C5F',
@@ -40,13 +40,13 @@ export default {
 
         // Compatibility aliases — brand-* maps to primary-*
         brand: {
-          DEFAULT: '#3C50E0',
+          DEFAULT: '#313161',
           50: '#EEF0FB',
           100: '#D5DAF5',
           200: '#ABB4EC',
           300: '#808FE2',
           400: '#5669D9',
-          500: '#3C50E0',
+          500: '#313161',
           600: '#2D3EB5',
           700: '#1E2D8A',
           800: '#101C5F',

@@ -20,11 +20,11 @@ function LeaderCard({ et }: { et: any }) {
   const hasData = winner && winner.votes > 0;
 
   return (
+    console.log(winner.color),
     <div className="rounded-2xl bg-white border border-black/[.06] shadow-[0_2px_16px_rgba(0,0,0,.06)] overflow-hidden flex flex-col">
       {/* Header */}
       <div
-        className="px-5 py-3 text-white font-semibold text-s tracking-wide flex items-center gap-2"
-        style={{ backgroundColor: hasData ? (winner.color || "#3C50E0") : "#64748b" }}
+        className={`px-5 py-3 text-white font-semibold text-s tracking-wide flex items-center gap-2 bg-primary`}
       >
         <span>🏅</span>
         <span className="uppercase tracking-wider text-x opacity-90">{et?.name ?? "—"}</span>
@@ -37,8 +37,7 @@ function LeaderCard({ et }: { et: any }) {
             {/* Party dot + acronym */}
             <div className="flex items-center gap-2 mb-1">
               <span
-                className="w-3 h-3 rounded-sm flex-shrink-0"
-                style={{ backgroundColor: winner.color || "#3C50E0" }}
+                className={`w-3 h-3 rounded-sm flex-shrink-0 bg-${winner.color || "primary"}`}
               />
               <span className="font-bold text-black text-lg leading-none">{winner.acronym}</span>
               <span className="ml-auto text-xs font-mono font-semibold text-meta-3 bg-green-50 px-2 py-0.5 rounded-full">
@@ -89,8 +88,7 @@ function StatCard({
     <div className="rounded-2xl bg-white border border-black/[.06] shadow-[0_2px_16px_rgba(0,0,0,.06)] overflow-hidden flex flex-col">
       {/* Header — igual estilo que ElectionTypeBlock */}
       <div
-        className="flex items-center gap-2.5 px-5 py-3 text-white"
-        style={{ backgroundColor: headerColor || "#224bacff" }}
+        className={`flex items-center gap-2.5 px-5 py-3 text-white bg-${headerColor || "primary"}`}
       >
         <span className="text-base">{icon}</span>
         <span className="font-semibold text-xs uppercase tracking-wider opacity-90">
@@ -140,7 +138,7 @@ function StatusCards({ metrics, forceNonAdmin }: { metrics: any; forceNonAdmin?:
         value={totalReports.toLocaleString()}
         sub={`de ${totalTables.toLocaleString()} mesas`}
         icon="🗳️"
-        headerColor="#3C50E0"
+        headerColor="primary"
       />
 
       {/* Card 4: % Cobertura */}
@@ -149,7 +147,7 @@ function StatusCards({ metrics, forceNonAdmin }: { metrics: any; forceNonAdmin?:
         value={`${pct.toFixed(1)}%`}
         sub={`${totalReports} de ${totalTables} mesas`}
         icon="📈"
-        headerColor="#3C50E0"
+        headerColor="primary"
       />
     </div>
   );
@@ -201,32 +199,32 @@ function VoteDetailTable({ et }: { et: any }) {
     <div className="overflow-x-auto w-full">
       <table className="ta-table w-full">
         <thead>
-        <tr>
-          <th>Detalle</th>
-          <th className="text-right">Total</th>
-          <th className="text-right">%</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r) => (
-          <tr key={r.label} className={r.bold ? "bg-slate-50/50" : ""}>
-            <td
-              className={r.bold ? "font-semibold text-black" : "text-black"}
-            >
-              {r.label}
-            </td>
-            <td
-              className={`text-right font-mono ${r.bold ? "font-bold" : "font-semibold"} ${r.color}`}
-            >
-              {r.value.toLocaleString()}
-            </td>
-            <td className="text-right font-mono text-body text-xs">
-              {r.pct != null ? `${r.pct.toFixed(2)}%` : "—"}
-            </td>
+          <tr>
+            <th>Detalle</th>
+            <th className="text-right">Total</th>
+            <th className="text-right">%</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.label} className={r.bold ? "bg-slate-50/50" : ""}>
+              <td
+                className={r.bold ? "font-semibold text-black" : "text-black"}
+              >
+                {r.label}
+              </td>
+              <td
+                className={`text-right font-mono ${r.bold ? "font-bold" : "font-semibold"} ${r.color}`}
+              >
+                {r.value.toLocaleString()}
+              </td>
+              <td className="text-right font-mono text-body text-xs">
+                {r.pct != null ? `${r.pct.toFixed(2)}%` : "—"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -249,8 +247,8 @@ function ElectionTypeBlock({
       {
         label: "Votos válidos",
         data: et.parties.map((p: any) => p.votes),
-        backgroundColor: et.parties.map((p: any) => p.color || "#3C50E0"),
-        borderRadius: 4,
+        backgroundColor: et.parties.map((p: any) => p.color || "#313161"),
+        borderRadius: 5,
         borderSkipped: false,
       },
     ],
@@ -264,7 +262,7 @@ function ElectionTypeBlock({
       {/* Collapsible header */}
       <button
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-6 py-4 bg-[#3141b4] hover:bg-primary transition-colors text-left"
+        className="w-full flex items-center justify-between px-6 py-4 bg-primary hover:bg-primary/80 transition-colors text-left"
       >
         <div className="flex items-center gap-3">
           <span className="font-bold text-white text-base">{et.name}</span>
@@ -388,7 +386,7 @@ function PartyPanel({ pd, defaultOpen }: { pd: any; defaultOpen: boolean }) {
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center gap-3 px-6 py-4 hover:bg-whiter transition-colors text-left border-b border-stroke"
         style={{
-          borderLeftColor: pd.partyColor || "#3C50E0",
+          borderLeftColor: pd.partyColor || "#313161",
           borderLeftWidth: 4,
         }}
       >
@@ -477,7 +475,7 @@ export default function DashboardPage() {
                 id="party-selector"
                 value={selectedPartyId}
                 onChange={(e) => setSelectedPartyId(e.target.value)}
-                className="rounded-lg bg-white px-3 py-1.5 text-sm text-black shadow-sm focus:outline-none "
+                className="select-option rounded-lg bg-white px-3 py-1.5 text-sm text-black shadow-sm focus:outline-none "
                 style={
                   selectedPartyData
                     ? { borderColor: selectedPartyData.partyColor, borderWidth: 3, borderStyle: 'solid' }

@@ -51,18 +51,20 @@
            focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30;
   }
   .btn-primary {
-    @apply btn bg-[#3141b4] text-white shadow-sm
-           hover:bg-primary active:scale-[.97];
+    @apply btn bg-[#313161]/80 text-white shadow-sm
+          hover:bg-primary/20 hover:text-primary active:scale-[.97];
   }
   .btn-secondary {
-    @apply btn bg-white text-black border border-stroke shadow-sm
-           hover:bg-whiten active:scale-[.97];
+    @apply btn bg-white text-black border border-stroke shadow-sm 
+          hover:bg-whiten active:scale-[.97];
   }
   .btn-danger {
-    @apply btn bg-meta-1 text-white hover:bg-red-700 active:scale-[.97];
+    @apply btn bg-meta-1 text-white 
+          hover:bg-red-700 active:scale-[.97];
   }
   .btn-success {
-    @apply btn bg-meta-3 text-white hover:bg-green-600 active:scale-[.97];
+    @apply btn bg-meta-3 text-white 
+          hover:bg-green-600 active:scale-[.97];
   }
   .btn-sm {
     @apply !rounded-lg !px-3 !py-1.5 !text-xs;
@@ -71,12 +73,12 @@
     @apply !rounded-md !px-2 !py-1  !text-xs;
   }
   .btn-action-primary {
-    @apply bg-primary/20 text-primary shadow-sm
-           hover:bg-[#3141b4]/80 hover:text-white active:scale-[.97];
+    @apply bg-primary/20 text-primary shadow-sm 
+          hover:bg-[#313161]/80 hover:text-white active:scale-[.97];
   }
   .btn-action-danger {
-    @apply bg-meta-1/20 text-meta-1 shadow-sm
-           hover:bg-meta-7 hover:text-white active:scale-[.97];
+    @apply bg-meta-1/20 text-meta-1 shadow-sm 
+          hover:bg-meta-7 hover:text-white active:scale-[.97];
   }
 
   /* ─── Cards ───────────────────────────────────────────────────── */
@@ -187,5 +189,4 @@
     @apply bg-white rounded-2xl border border-black/[.06]
            shadow-[0_1px_14px_rgba(0,0,0,.06)] overflow-hidden;
   }
-
 }
