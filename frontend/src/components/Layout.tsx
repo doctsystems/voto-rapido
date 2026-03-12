@@ -168,7 +168,7 @@ export default function Layout() {
       )}
 
       {/* ── Main area ── */}
-      <div className="flex flex-1 flex-col overflow-y-auto min-w-0">
+      <div className="flex flex-1 flex-col min-w-0">
         {/* Mobile topbar */}
         <header className="flex items-center justify-between border-b border-stroke bg-white px-4 py-3 lg:hidden">
           <button
@@ -213,9 +213,23 @@ export default function Layout() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 p-6 lg:p-8">
-          <Outlet />
+        <main className="flex-1 overflow-y-auto p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto">
+            <Outlet />
+          </div>
         </main>
+
+        {/* Global Footer */}
+        <footer className="footer min-h-[3.5rem] flex items-center border-t border-stroke bg-white px-8 py-4 sm:py-0">
+          <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-body uppercase tracking-wider font-semibold text-center sm:text-left">
+            <div>
+              Copyright © {new Date().getFullYear()} <span className="text-primary">QuickTally</span>
+            </div>
+            <div>
+              <span className="opacity-70">Desarrollado con ❤️ para la democracia</span>
+            </div>
+          </div>
+        </footer>
       </div>
     </div>
   );

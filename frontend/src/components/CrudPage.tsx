@@ -202,7 +202,7 @@ export default function CrudPage({
 
           {/* Paginación UI */}
           {filtered.length > 0 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-4 border-t border-stroke bg-whiter">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-4 border-t border-stroke bg-whiter rounded-b-xl">
               <div className="text-sm text-body text-center sm:text-left">
                 Mostrando <span className="font-semibold text-black">{startIndex + 1}</span> al{' '}
                 <span className="font-semibold text-black">{Math.min(endIndex, filtered.length)}</span> de{' '}
