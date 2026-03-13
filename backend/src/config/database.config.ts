@@ -1,4 +1,8 @@
+import * as dotenv from "dotenv";
+import { join } from "node:path";
 import { registerAs } from "@nestjs/config";
+
+dotenv.config({ path: join(__dirname, "../../.env") });
 
 export default registerAs("database", () => ({
   host: process.env.DB_HOST || "localhost",
@@ -8,5 +12,5 @@ export default registerAs("database", () => ({
   name: process.env.DB_NAME || "voto_rapido",
   synchronize: process.env.NODE_ENV !== "production",
   logging: process.env.DB_LOGGING === "true",
-  ssl: true,
+  ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
 }));

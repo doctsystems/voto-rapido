@@ -32,6 +32,7 @@ import appConfig from './config/app.config';
         database: config.get('database.name'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
         synchronize: config.get('database.synchronize'),
+        ssl: config.get('database.ssl'),
         logging: config.get('database.logging'),
       }),
     }),
@@ -40,4 +41,4 @@ import appConfig from './config/app.config';
   ],
   providers: [FixConstraintsService],
 })
-export class AppModule {}
+export class AppModule { }

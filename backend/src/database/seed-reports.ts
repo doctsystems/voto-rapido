@@ -53,7 +53,7 @@ const AppDataSource = new DataSource({
     AuditLog,
   ],
   synchronize: false, // No modificar schema en seed de reportes
-  ssl: process.env.SSL === "true",
+  ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
 });
 
 // ─── Utilidades ────────────────────────────────────────────────────────────────
@@ -91,9 +91,9 @@ function generateVotesForTable(
   const emitidos = Math.floor(totalVoters * turnoutPct);
 
   // — Nulos y blancos —
-  const nullPct  = (rInt(1, 5, tableIdx * 17 + etIdx * 3 + 2)) / 100;
+  const nullPct = (rInt(1, 5, tableIdx * 17 + etIdx * 3 + 2)) / 100;
   const blankPct = (rInt(1, 5, tableIdx * 11 + etIdx * 5 + 3)) / 100;
-  const nullVotes  = Math.floor(emitidos * nullPct);
+  const nullVotes = Math.floor(emitidos * nullPct);
   const blankVotes = Math.floor(emitidos * blankPct);
   const validVotesTotal = emitidos - nullVotes - blankVotes;
 
@@ -104,8 +104,8 @@ function generateVotesForTable(
 
   // Separar partidos: CDC, ISA, PATRIA, PDC = mayores históricos; resto = menores
   const majorAcronyms = new Set(["CDC", "ISA", "PATRIA", "PDC"]);
-  const majorIndices  = parties.map((p, i) => majorAcronyms.has(p.acronym) ? i : -1).filter(i => i >= 0);
-  const minorIndices  = parties.map((p, i) => !majorAcronyms.has(p.acronym) ? i : -1).filter(i => i >= 0);
+  const majorIndices = parties.map((p, i) => majorAcronyms.has(p.acronym) ? i : -1).filter(i => i >= 0);
+  const minorIndices = parties.map((p, i) => !majorAcronyms.has(p.acronym) ? i : -1).filter(i => i >= 0);
 
   // Permutación aleatoria de los pesos dentro de cada grupo (por mesa+tipo)
   function permutedWeights(weights: number[], seed: number): number[] {
@@ -117,8 +117,8 @@ function generateVotesForTable(
     return arr;
   }
 
-  const majorSeed  = tableIdx * 997  + etIdx * 37;
-  const minorSeed  = tableIdx * 1009 + etIdx * 41;
+  const majorSeed = tableIdx * 997 + etIdx * 37;
+  const minorSeed = tableIdx * 1009 + etIdx * 41;
   const shuffledMajor = permutedWeights(majorBaseWeights, majorSeed);
   const shuffledMinor = permutedWeights(minorBaseWeights, minorSeed);
 

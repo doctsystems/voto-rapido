@@ -37,7 +37,7 @@ const AppDataSource = new DataSource({
     AuditLog,
   ],
   synchronize: true,
-  ssl: process.env.SSL === "true",
+  ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
 });
 
 // Shared location data for all recintos (same for these elections)
