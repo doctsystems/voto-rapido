@@ -8,21 +8,16 @@ steps:
     args: ['push', 'gcr.io/$PROJECT_ID/nest-backend']
 
   # Paso 3: Desplegar en Cloud Run usando el SDK desde Docker Hub
-  - name: 'google/cloud-sdk:latest'
-    entrypoint: gcloud
+  - name: "gcr.io/cloud-builders/gcloud"
+    entrypoint: "bash"
     args:
-      [
-        'run',
-        'deploy',
-        'nest-backend',
-        '--image',
-        'gcr.io/$PROJECT_ID/nest-backend',
-        '--platform',
-        'managed',
-        '--region',
-        'us-central1',
-        '--allow-unauthenticated',
-      ]
+      - "-c"
+      - "gcloud run deploy nest-backend \
+      --image=gcr.io/$PROJECT_ID/nest-backend \
+      --platform=managed \
+      --region=us-central1 \
+      --allow-unauthenticated \
+      --set-env-vars DB_HOST=$_DB_HOST,DB_USERNAME=$_DB_USERNAME,DB_NAME=$_DB_NAME,DB_PASSWORD=$_DB_PASSWORD,JWT_SECRET=$_JWT_SECRET,DB_SSL=$_DB_SSL,DB_PORT=$_DB_PORT"
 
 options:
   logging: CLOUD_LOGGING_ONLY

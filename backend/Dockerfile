@@ -5,8 +5,6 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-CMD ["sh", "-c", "env && node dist/main.js"]
-
 FROM node:20-alpine
 WORKDIR /app
 RUN mkdir -p logs
