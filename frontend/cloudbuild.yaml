@@ -1,0 +1,39 @@
+steps:
+  # Paso 1: Construir la imagen Docker del frontend
+  - name: "gcr.io/cloud-builders/docker"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - "docker build \
+        --build-arg VITE_API_URL=$_VITE_API_URL \
+        --build-arg VITE_ENV=$_VITE_ENV \
+        --build-arg API_KEY=$(cat api-key.txt) \
+        -t gcr.io/$PROJECT_ID/nest-frontend ./frontend"
+
+  # Paso 2: Subir la imagen a Container Registry
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "push"
+      - "gcr.io/$PROJECT_ID/nest-frontend"
+
+  # Paso 3: Desplegar en Cloud Run
+  - name: "gcr.io/cloud-builders/gcloud"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - "gcloud run deploy nest-frontend \
+        --image=gcr.io/$PROJECT_ID/nest-frontend \
+        --platform=managed \
+        --region=us-central1 \
+        --allow-unauthenticated \
+        --set-env-vars VITE_API_URL=$_VITE_API_URL,VITE_ENV=$_VITE_ENV,API_KEY=$$API_KEY"
+    secretEnv:
+      - "API_KEY"
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/$PROJECT_NUMBER/secrets/API_KEY/versions/latest
+      env: API_KEY
+
+options:
+  logging: CLOUD_LOGGING_ONLY
