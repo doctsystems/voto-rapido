@@ -16,9 +16,16 @@ async function bootstrap() {
       transform: true,
     }),
   );
-  console.log("process.env.FRONTEND_URL", process.env.FRONTEND_URL);
+  console.log("CORS: FRONTEND_URL configurado como:", process.env.FRONTEND_URL);
   app.enableCors({
-    origin: process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : "*",
+    origin: (origin, callback) => {
+      const allowedOrigins = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : [];
+      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
