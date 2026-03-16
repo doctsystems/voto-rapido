@@ -11,6 +11,7 @@ import { VotesModule } from './modules/votes/votes.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { FixConstraintsService } from './database/fix-constraints.subscriber';
+import { AppController } from './app.controller';
 import databaseConfig from './config/database.config';
 import appConfig from './config/app.config';
 
@@ -39,6 +40,7 @@ import appConfig from './config/app.config';
     AuthModule, UsersModule, PartiesModule, TablesModule,
     SchoolsModule, ElectionTypesModule, VotesModule, ReportsModule, AuditModule,
   ],
+  controllers: [AppController],
   providers: [FixConstraintsService],
 })
 export class AppModule { }
