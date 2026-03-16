@@ -37,9 +37,9 @@ async function bootstrap() {
   await app.listen(port);
 
   logger.log(
-    `🗳️  VotoRápido API corriendo en https://nest-backend-321405220875.us-central1.run.app`,
+    `🗳️  VotoRápido API corriendo en http://localhost:${port}`,
     "Bootstrap",
   );
-  logger.log(`📚 Swagger docs: https://nest-backend-321405220875.us-central1.run.app/api/docs/`, "Bootstrap");
+  logger.log(`📚 Swagger docs: http://localhost:${port}/api/docs`, "Bootstrap");
 }
 bootstrap();
