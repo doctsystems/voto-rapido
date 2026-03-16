@@ -17,7 +17,7 @@ steps:
       --platform=managed \
       --region=us-central1 \
       --allow-unauthenticated \
-      --set-env-vars DB_HOST=$_DB_HOST,DB_USERNAME=$_DB_USERNAME,DB_NAME=$_DB_NAME,DB_PASSWORD=$_DB_PASSWORD,JWT_SECRET=$_JWT_SECRET,DB_SSL=$_DB_SSL,DB_PORT=$_DB_PORT"
+      --set-env-vars DB_HOST=$_DB_HOST,DB_USERNAME=$_DB_USERNAME,DB_NAME=$_DB_NAME,DB_PASSWORD=$_DB_PASSWORD,JWT_SECRET=$_JWT_SECRET,DB_SSL=$_DB_SSL,DB_PORT=$_DB_PORT,FRONTEND_URL=$_FRONTEND_URL"
 
 options:
   logging: CLOUD_LOGGING_ONLY
