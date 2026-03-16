@@ -16,6 +16,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  console.log("process.env.FRONTEND_URL", process.env.FRONTEND_URL);
   app.enableCors({
     origin: process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : "*",
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
