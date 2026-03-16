@@ -20,11 +20,11 @@ steps:
     args:
       - "-c"
       - "gcloud run deploy nest-frontend \
-        --image=gcr.io/$PROJECT_ID/nest-frontend \
-        --platform=managed \
-        --region=us-central1 \
-        --allow-unauthenticated \
-        --set-env-vars VITE_API_URL=$_VITE_API_URL"
+      --image=gcr.io/$PROJECT_ID/nest-frontend \
+      --platform=managed \
+      --region=us-central1 \
+      --allow-unauthenticated \
+      --set-env-vars VITE_API_URL=$_VITE_API_URL"
 
 options:
   logging: CLOUD_LOGGING_ONLY
