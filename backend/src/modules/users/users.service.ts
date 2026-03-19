@@ -231,6 +231,39 @@ export class UsersService {
 
   async remove(id: string, currentUser: any) {
     const user = await this.findOne(id);
+
+    if (currentUser.role === Role.JEFE_CAMPANA) {
+      if (user.party?.id !== currentUser.partyId) {
+        throw new ForbiddenException(
+          "No puede eliminar usuarios de otro partido",
+        );
+      }
+      if (user.role !== Role.JEFE_RECINTO) {
+        throw new ForbiddenException(
+          "Solo puede eliminar jefes de recinto",
+        );
+      }
+    }
+
+    if (currentUser.role === Role.JEFE_RECINTO) {
+      if (user.role !== Role.DELEGADO) {
+        throw new ForbiddenException("Solo puede eliminar delegados");
+      }
+      if (user.party?.id !== currentUser.partyId) {
+        throw new ForbiddenException(
+          "Solo puede eliminar delegados de su partido",
+        );
+      }
+      if (
+        user.table?.school?.id !== currentUser.schoolId &&
+        user.school?.id !== currentUser.schoolId
+      ) {
+        throw new ForbiddenException(
+          "Solo puede eliminar delegados de su recinto",
+        );
+      }
+    }
+
     await this.userRepo.update(id, { deletedBy: currentUser.sub });
     await this.userRepo.softDelete(id);
     this.logger.log(`Usuario eliminado: ${user.username}`);
