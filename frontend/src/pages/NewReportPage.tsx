@@ -38,6 +38,11 @@ export default function NewReportPage() {
   const tableReport = (existingReports as any[]).find(
     (r) => r.table?.id === targetTableId,
   );
+  const reportsByTableId = new Map(
+    (existingReports as any[])
+      .filter((report: any) => report.table?.id)
+      .map((report: any) => [report.table.id, report]),
+  );
   const isVerified = tableReport?.status === "VERIFIED";
   // If it's not verified, we can edit it
   const existingReport = isVerified ? null : tableReport;
@@ -308,7 +313,7 @@ export default function NewReportPage() {
                   {t.totalVoters
                     ? ` · ${t.totalVoters.toLocaleString()} votantes`
                     : ""}
-                  {existingReport ? " ✏️ (tiene reporte)" : ""}
+                  {reportsByTableId.has(t.id) ? " ✏️ (tiene reporte)" : ""}
                 </option>
               ))}
             </select>

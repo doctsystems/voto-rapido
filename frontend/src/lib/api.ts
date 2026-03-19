@@ -1,8 +1,10 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/auth.store';
 
+const apiBaseUrl = import.meta.env.VITE_API_URL || '/api/v1';
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api/v1',
+  baseURL: apiBaseUrl,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -82,7 +84,27 @@ export const votesApi = {
   deleteReport: (id: string) => api.delete(`/votes/reports/${id}`).then(r => r.data),
 };
 
+const getFilenameFromDisposition = (disposition?: string, fallback = 'reporte') => {
+  const match = disposition?.match(/filename\*?=(?:UTF-8''|")?([^\";]+)/i);
+  return match ? decodeURIComponent(match[1].replace(/"/g, '')) : fallback;
+};
+
+const downloadReportFile = async (path: string, fallbackName: string) => {
+  const response = await api.get(path, { responseType: 'blob' });
+  const blobUrl = window.URL.createObjectURL(response.data);
+  const link = document.createElement('a');
+  const disposition = response.headers['content-disposition'];
+  const filename = getFilenameFromDisposition(disposition, fallbackName);
+
+  link.href = blobUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(blobUrl);
+};
+
 export const reportsApi = {
-  exportExcel: () => window.open('/api/v1/reports/export/excel', '_blank'),
-  exportPdf: () => window.open('/api/v1/reports/export/pdf', '_blank'),
+  exportExcel: () => downloadReportFile('/reports/export/excel', 'reporte-votacion.xlsx'),
+  exportPdf: () => downloadReportFile('/reports/export/pdf', 'reporte-votacion.pdf'),
 };

@@ -63,7 +63,7 @@ export default function TablesPage() {
     <CrudPage
       title="Mesas de Votación"
       description="Mesas electorales agrupadas por recinto electoral"
-      queryKey={`tables-${filterSchoolId}`}
+      queryKey={["tables", filterSchoolId]}
       fetchFn={() => {
         if (!filterSchoolId) return Promise.resolve([]);
         return tablesApi.getAll(filterSchoolId);

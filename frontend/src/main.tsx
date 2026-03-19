@@ -14,8 +14,6 @@ const queryClient = new QueryClient({
 // Exponer queryClient globalmente para invalidación desde el store
 (window as any).__REACT_QUERY_CLIENT__ = queryClient;
 
-console.log('VITE_API_URL:', import.meta.env.VITE_API_URL);
-
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
