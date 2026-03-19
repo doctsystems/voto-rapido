@@ -41,7 +41,7 @@ export default function SchoolsPage() {
     <CrudPage
       title="Recintos Electorales"
       description="Gestión de recintos donde se instalan las mesas de votación"
-      queryKey="schools"
+      queryKey={["schools"]}
       fetchFn={() => schoolsApi.getAll()}
       createFn={schoolsApi.create}
       updateFn={schoolsApi.update}

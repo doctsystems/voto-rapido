@@ -25,6 +25,7 @@ export default function ReportsPage() {
   const isAdmin = user?.role === "ADMIN";
   const isJefeCampana = user?.role === "JEFE_CAMPANA";
   const isAdminOrJefe = isAdmin || isJefeCampana;
+  const jefeCampanaPartyId = isJefeCampana ? ((user as any)?.party?.id || "") : "";
   const qc = useQueryClient();
   const [selected, setSelected] = useState<any | null>(null);
   
@@ -32,7 +33,7 @@ export default function ReportsPage() {
     isAdminOrJefe ? "" : ((user as any)?.school?.id || (user as any)?.table?.school?.id || "")
   );
   const [filterParty, setFilterParty] = useState(
-    isAdminOrJefe ? "" : ((user as any)?.party?.id || "")
+    isAdmin ? "" : ((user as any)?.party?.id || "")
   );
 
   const { data: parties = [] } = useQuery({
@@ -68,8 +69,8 @@ export default function ReportsPage() {
   });
 
   const role = user?.role ?? "";
-  const canVerify = role === "JEFE_CAMPANA" || role === "JEFE_RECINTO";
-  const canDelete = role === "JEFE_CAMPANA" || role === "JEFE_RECINTO";
+  const canVerify = role === "JEFE_RECINTO";
+  const canDelete = role === "JEFE_RECINTO";
   const canCreate = role === "DELEGADO" || role === "JEFE_RECINTO";
   const canSubmit = role === "DELEGADO" || role === "JEFE_RECINTO";
 
@@ -103,7 +104,7 @@ export default function ReportsPage() {
       <CrudPage
         title="Reportes de Votación"
         description="Listado de reportes de escrutinio"
-        queryKey={`reports-${filterSchool}-${filterParty}`}
+        queryKey={["reports", filterSchool, filterParty]}
         fetchFn={async () => {
           if (isAdminOrJefe && !filterSchool && !filterParty) return [];
           const raw = await votesApi.getReports(filterSchool || undefined);
@@ -150,10 +151,10 @@ export default function ReportsPage() {
             <select
               value={filterParty}
               onChange={(e) => setFilterParty(e.target.value)}
-              disabled={!isAdminOrJefe}
-              className={`rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full sm:w-auto sm:max-w-xs ${!isAdminOrJefe ? "opacity-75 bg-slate-50 cursor-not-allowed" : ""}`}
+              disabled={!isAdmin || isJefeCampana}
+              className={`rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full sm:w-auto sm:max-w-xs ${!isAdmin || isJefeCampana ? "opacity-75 bg-slate-50 cursor-not-allowed" : ""}`}
             >
-              {isAdminOrJefe && <option value="">Todos los partidos</option>}
+              {isAdmin && <option value="">Todos los partidos</option>}
               {(parties as any[]).map((p: any) => (
                 <option key={p.id} value={p.id}>
                   {p.acronym} — {p.name}
@@ -174,9 +175,12 @@ export default function ReportsPage() {
                 </option>
               ))}
             </select>
-            {isAdminOrJefe && (filterSchool || filterParty) && (
+            {isAdminOrJefe && (filterSchool || (isAdmin && filterParty)) && (
               <button
-                onClick={() => { setFilterSchool(""); setFilterParty(""); }}
+                onClick={() => {
+                  setFilterSchool("");
+                  setFilterParty(isJefeCampana ? jefeCampanaPartyId : "");
+                }}
                 className="text-xs text-body hover:text-meta-1 transition-colors whitespace-nowrap"
               >
                 ✕ Limpiar

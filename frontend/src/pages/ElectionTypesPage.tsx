@@ -6,7 +6,7 @@ export default function ElectionTypesPage() {
     <CrudPage
       title="Tipos de Elección"
       description="Cargos y categorías electorales disponibles en el sistema"
-      queryKey="election-types"
+      queryKey={["election-types"]}
       fetchFn={electionTypesApi.getAll}
       createFn={electionTypesApi.create}
       updateFn={electionTypesApi.update}

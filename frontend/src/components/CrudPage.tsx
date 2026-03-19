@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { QueryKey } from '@tanstack/react-query';
 import { toast } from '../lib/toast';
 
 export interface Field {
@@ -7,17 +8,19 @@ export interface Field {
   label: string;
   type?: 'text' | 'email' | 'password' | 'number' | 'select' | 'color' | 'textarea';
   options?: { value: string; label: string }[];
+  getValue?: (row: any) => any;
   required?: boolean;
   placeholder?: string;
   colSpan?: boolean; // full width in 2-col grid
   disabled?: boolean;
   onChange?: (val: string) => void;
+  hidden?: (form: any) => boolean;
 }
 
 interface CrudPageProps {
   title: string;
   description?: string;
-  queryKey: string;
+  queryKey: QueryKey;
   fetchFn: () => Promise<any[]>;
   createFn: (data: any) => Promise<any>;
   updateFn: (id: string, data: any) => Promise<any>;
@@ -26,6 +29,10 @@ interface CrudPageProps {
   columns: { key: string; label: string; render?: (val: any, row: any) => React.ReactNode }[];
   canDelete?: boolean;
   canCreate?: boolean;
+  canEditRow?: (row: any) => boolean;
+  canDeleteRow?: (row: any) => boolean;
+  onOpenCreate?: () => void;
+  onOpenEdit?: (row: any) => void;
   extraActions?: (row: any, invalidate: () => void) => React.ReactNode;
   defaultValues?: Record<string, any>;
   headerContent?: React.ReactNode;
@@ -37,7 +44,8 @@ interface CrudPageProps {
 export default function CrudPage({
   title, description, queryKey, fetchFn, createFn, updateFn, deleteFn,
   fields, columns, canDelete = true, canCreate = true, extraActions, defaultValues = {},
-  headerContent, headerActions, customEmptyState, hideEdit = false,
+  headerContent, headerActions, customEmptyState, hideEdit = false, canEditRow, canDeleteRow,
+  onOpenCreate, onOpenEdit,
 }: CrudPageProps) {
   const qc = useQueryClient();
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
@@ -49,8 +57,8 @@ export default function CrudPage({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  const { data = [], isLoading } = useQuery({ queryKey: [queryKey], queryFn: fetchFn });
-  const invalidate = () => qc.invalidateQueries({ queryKey: [queryKey] });
+  const { data = [], isLoading } = useQuery({ queryKey, queryFn: fetchFn });
+  const invalidate = () => qc.invalidateQueries({ queryKey });
 
   const createMutation = useMutation({
     mutationFn: createFn,
@@ -68,15 +76,37 @@ export default function CrudPage({
     onError: (e: any) => toast.error(e.response?.data?.message || 'Error al eliminar'),
   });
 
-  const openCreate = () => { setForm({ ...defaultValues }); setModal('create'); };
+  const getInitialFieldValue = (row: any, fieldKey: string) => {
+    const directValue = row[fieldKey];
+    if (directValue && typeof directValue === 'object' && 'id' in directValue) {
+      return directValue.id;
+    }
+    if (directValue !== undefined) {
+      return directValue;
+    }
+
+    if (fieldKey.endsWith('Id')) {
+      const relationKey = fieldKey.slice(0, -2);
+      const relationValue = row[relationKey];
+      if (relationValue && typeof relationValue === 'object' && 'id' in relationValue) {
+        return relationValue.id;
+      }
+    }
+
+    return '';
+  };
+
+  const openCreate = () => {
+    onOpenCreate?.();
+    setForm({ ...defaultValues });
+    setModal('create');
+  };
   const openEdit = (row: any) => {
     const f: any = {};
     fields.forEach(field => {
-      // For relational fields (e.g. partyId → party.id), extract .id
-      const val = row[field.key];
-      if (val && typeof val === 'object' && 'id' in val) f[field.key] = val.id;
-      else f[field.key] = val ?? '';
+      f[field.key] = field.getValue ? field.getValue(row) : getInitialFieldValue(row, field.key);
     });
+    onOpenEdit?.(row);
     setForm(f); setEditing(row); setModal('edit');
   };
   const closeModal = () => { setModal(null); setEditing(null); setForm({}); };
@@ -84,7 +114,7 @@ export default function CrudPage({
   const handleSave = () => {
     const data = { ...form };
     if (modal === 'edit' && data.password === '') delete data.password;
-    for (const f of fields) {
+    for (const f of fields.filter(field => !field.hidden?.(form))) {
       if (f.required && !data[f.key]) return toast.error(`${f.label} es obligatorio`);
     }
 
@@ -112,6 +142,7 @@ export default function CrudPage({
   const paginatedData = filtered.slice(startIndex, endIndex);
 
   const hasGrid = fields.some(f => f.colSpan);
+  const visibleFields = fields.filter(field => !field.hidden?.(form));
 
   return (
     <div>
@@ -178,12 +209,12 @@ export default function CrudPage({
                       <td>
                         <div className="flex items-center justify-center gap-3">
                           {extraActions?.(row, invalidate)}
-                          {!hideEdit && (
+                          {!hideEdit && (canEditRow ? canEditRow(row) : true) && (
                             <button onClick={() => openEdit(row)} className="btn-xs btn-action-primary">
                               Editar
                             </button>
                           )}
-                          {canDelete && (
+                          {canDelete && (canDeleteRow ? canDeleteRow(row) : true) && (
                             <button
                               onClick={() => { if (confirm('¿Eliminar este registro?')) deleteMutation.mutate(row.id); }}
                               className="btn-xs btn-action-danger"
@@ -268,7 +299,7 @@ export default function CrudPage({
             </div>
 
             <div className={`p-6 ${hasGrid ? 'grid grid-cols-2 gap-4' : 'space-y-4'}`}>
-              {fields.map(field => (
+              {visibleFields.map(field => (
                 <div key={field.key} className={hasGrid && field.colSpan ? 'col-span-2' : ''}>
                   <label className="label">
                     {field.label}

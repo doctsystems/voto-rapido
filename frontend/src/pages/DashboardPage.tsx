@@ -15,45 +15,47 @@ import { useAuthStore } from "../store/auth.store";
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
 // ─── Leader Card (ET winner for non-admin) ─────────────────────────────────────
-function LeaderCard({ et }: { et: any }) {
+function LeaderCard({ et }: Readonly<{ et: any }>) {
   const winner = et?.parties?.[0];
   const hasData = winner && winner.votes > 0;
 
   return (
-    console.log(winner.color),
     <div className="rounded-2xl bg-white border border-black/[.06] shadow-[0_2px_16px_rgba(0,0,0,.06)] overflow-hidden flex flex-col">
-      {/* Header */}
       <div
         className={`px-5 py-3 text-white font-semibold text-s tracking-wide flex items-center gap-2 bg-primary`}
       >
         <span>🏅</span>
-        <span className="uppercase tracking-wider text-x opacity-90">{et?.name ?? "—"}</span>
+        <span className="uppercase tracking-wider text-x opacity-90">
+          {et?.name ?? "—"}
+        </span>
       </div>
 
       {/* Body */}
       <div className="flex-1 flex flex-col justify-center p-5">
         {hasData ? (
           <>
-            {/* Party dot + acronym */}
             <div className="flex items-center gap-2 mb-1">
               <span
-                className={`w-3 h-3 rounded-sm flex-shrink-0 bg-${winner.color || "primary"}`}
+                className="w-3 h-3 rounded-sm flex-shrink-0"
+                style={{ backgroundColor: winner.color || "#313161" }}
               />
-              <span className="font-bold text-black text-lg leading-none">{winner.acronym}</span>
+              <span className="font-bold text-black text-lg leading-none">
+                {winner.acronym}
+              </span>
               <span className="ml-auto text-xs font-mono font-semibold text-meta-3 bg-green-50 px-2 py-0.5 rounded-full">
                 {winner.percentage?.toFixed(1)}%
               </span>
             </div>
 
-            {/* Candidate name */}
             {winner.candidateName && (
-              <p className="text-xs text-body truncate mb-2">{winner.candidateName}</p>
+              <p className="text-xs text-body truncate mb-2">
+                {winner.candidateName}
+              </p>
             )}
             {!winner.candidateName && (
               <p className="text-xs text-body/50 mb-2 italic">{winner.name}</p>
             )}
 
-            {/* Vote count */}
             <p className="text-2xl font-bold text-black font-mono">
               {winner.votes.toLocaleString()}
               <span className="text-xs font-normal text-body ml-1">votos</span>
@@ -82,13 +84,13 @@ function StatCard({
   value: string | number;
   sub?: string;
   icon: string;
-  headerColor?: string; // CSS color for header bg, defaults to boxdark
+  headerColor?: string;
 }) {
   return (
     <div className="rounded-2xl bg-white border border-black/[.06] shadow-[0_2px_16px_rgba(0,0,0,.06)] overflow-hidden flex flex-col">
-      {/* Header — igual estilo que ElectionTypeBlock */}
       <div
-        className={`flex items-center gap-2.5 px-5 py-3 text-white bg-${headerColor || "primary"}`}
+        className="flex items-center gap-2.5 px-5 py-3 text-white"
+        style={{ backgroundColor: headerColor || "#313161" }}
       >
         <span className="text-base">{icon}</span>
         <span className="font-semibold text-xs uppercase tracking-wider opacity-90">
@@ -104,9 +106,14 @@ function StatCard({
   );
 }
 
-
 // ─── Status Cards ──────────────────────────────────────────────────────────────
-function StatusCards({ metrics, forceNonAdmin }: { metrics: any; forceNonAdmin?: boolean }) {
+function StatusCards({
+  metrics,
+  forceNonAdmin,
+}: {
+  metrics: any;
+  forceNonAdmin?: boolean;
+}) {
   const { user } = useAuthStore();
 
   // ── No-ADMIN: cards elegantes ──────────────────────────────────────────────
@@ -118,18 +125,26 @@ function StatusCards({ metrics, forceNonAdmin }: { metrics: any; forceNonAdmin?:
 
   const totalReports = metrics?.totalReports ?? 0;
   const totalTables = metrics?.totalTables ?? 0;
-  const pct = totalTables > 0 ? ((totalReports / totalTables) * 100) : 0;
+  const pct = totalTables > 0 ? (totalReports / totalTables) * 100 : 0;
 
   return (
     <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
       {/* Card 1: Líder ET1 */}
-      {et1 ? <LeaderCard et={et1} /> : (
-        <div className="rounded-2xl bg-white border border-black/[.06] shadow p-5 flex items-center justify-center text-body text-s">Sin ET configurado</div>
+      {et1 ? (
+        <LeaderCard et={et1} />
+      ) : (
+        <div className="rounded-2xl bg-white border border-black/[.06] shadow p-5 flex items-center justify-center text-body text-s">
+          Sin ET configurado
+        </div>
       )}
 
       {/* Card 2: Líder ET2 */}
-      {et2 ? <LeaderCard et={et2} /> : (
-        <div className="rounded-2xl bg-white border border-black/[.06] shadow p-5 flex items-center justify-center text-body text-s">—</div>
+      {et2 ? (
+        <LeaderCard et={et2} />
+      ) : (
+        <div className="rounded-2xl bg-white border border-black/[.06] shadow p-5 flex items-center justify-center text-body text-s">
+          —
+        </div>
       )}
 
       {/* Card 3: Total actas/mesas contabilizadas */}
@@ -138,7 +153,6 @@ function StatusCards({ metrics, forceNonAdmin }: { metrics: any; forceNonAdmin?:
         value={totalReports.toLocaleString()}
         sub={`de ${totalTables.toLocaleString()} mesas`}
         icon="🗳️"
-        headerColor="primary"
       />
 
       {/* Card 4: % Cobertura */}
@@ -147,7 +161,6 @@ function StatusCards({ metrics, forceNonAdmin }: { metrics: any; forceNonAdmin?:
         value={`${pct.toFixed(1)}%`}
         sub={`${totalReports} de ${totalTables} mesas`}
         icon="📈"
-        headerColor="primary"
       />
     </div>
   );
@@ -427,7 +440,6 @@ function PartyPanel({ pd, defaultOpen }: { pd: any; defaultOpen: boolean }) {
   );
 }
 
-
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function DashboardPage() {
   const { user } = useAuthStore();
@@ -445,7 +457,7 @@ export default function DashboardPage() {
 
   // Partidos ordenados alfabéticamente por nombre
   const sortedParties = [...byParty].sort((a, b) =>
-    (a.partyName ?? "").localeCompare(b.partyName ?? "", "es")
+    (a.partyName ?? "").localeCompare(b.partyName ?? "", "es"),
   );
 
   // Datos del partido seleccionado
@@ -455,10 +467,10 @@ export default function DashboardPage() {
 
   const partyMetrics = selectedPartyData
     ? {
-      byElectionType: selectedPartyData.byElectionType ?? [],
-      totalReports: selectedPartyData.totalReports ?? 0,
-      totalTables: metrics?.totalTables ?? 0,
-    }
+        byElectionType: selectedPartyData.byElectionType ?? [],
+        totalReports: selectedPartyData.totalReports ?? 0,
+        totalTables: metrics?.totalTables ?? 0,
+      }
     : null;
 
   return (
@@ -470,7 +482,9 @@ export default function DashboardPage() {
           {isAdmin ? (
             /* Selector de partido integrado bajo el título */
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-              <span className="text-body text-sm font-medium">Ver resultados de:</span>
+              <span className="text-body text-sm font-medium">
+                Ver resultados de:
+              </span>
               <select
                 id="party-selector"
                 value={selectedPartyId}
@@ -478,12 +492,18 @@ export default function DashboardPage() {
                 className="select-option rounded-lg bg-white px-3 py-1.5 text-sm text-black shadow-sm focus:outline-none "
                 style={
                   selectedPartyData
-                    ? { borderColor: selectedPartyData.partyColor, borderWidth: 3, borderStyle: 'solid' }
-                    : { borderColor: '#ccc', borderWidth: 1, borderStyle: 'solid' }
+                    ? {
+                        borderColor: selectedPartyData.partyColor,
+                        borderWidth: 3,
+                        borderStyle: "solid",
+                      }
+                    : {
+                        borderColor: "#ccc",
+                        borderWidth: 1,
+                        borderStyle: "solid",
+                      }
                 }
               >
-
-
                 <option value="">— Selecciona un partido —</option>
                 {sortedParties.map((p) => (
                   <option key={p.partyId} value={p.partyId}>
@@ -506,10 +526,16 @@ export default function DashboardPage() {
           )}
         </div>
         <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto">
-          <button onClick={reportsApi.exportExcel} className="btn-secondary btn-sm flex-1 sm:flex-none justify-center">
+          <button
+            onClick={reportsApi.exportExcel}
+            className="btn-secondary btn-sm flex-1 sm:flex-none justify-center"
+          >
             📊 Excel
           </button>
-          <button onClick={reportsApi.exportPdf} className="btn-secondary btn-sm flex-1 sm:flex-none justify-center">
+          <button
+            onClick={reportsApi.exportPdf}
+            className="btn-secondary btn-sm flex-1 sm:flex-none justify-center"
+          >
             📄 PDF
           </button>
         </div>
@@ -517,9 +543,24 @@ export default function DashboardPage() {
 
       {isLoading ? (
         <div className="flex items-center justify-center h-64">
-          <svg className="w-8 h-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          <svg
+            className="w-8 h-8 animate-spin text-primary"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+            />
           </svg>
         </div>
       ) : isAdmin ? (
@@ -533,8 +574,12 @@ export default function DashboardPage() {
           /* Placeholder cuando no hay partido seleccionado */
           <div className="flex flex-col items-center justify-center py-24 text-body rounded-2xl border border-dashed border-stroke bg-white">
             <div className="text-5xl mb-4">📦</div>
-            <p className="font-medium text-black">Selecciona un partido para ver sus resultados</p>
-            <p className="text-sm mt-1">Usa el selector de partido en el encabezado</p>
+            <p className="font-medium text-black">
+              Selecciona un partido para ver sus resultados
+            </p>
+            <p className="text-sm mt-1">
+              Usa el selector de partido en el encabezado
+            </p>
           </div>
         )
       ) : (
@@ -547,5 +592,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-
