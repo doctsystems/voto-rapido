@@ -25,6 +25,29 @@ export class UsersService {
     @InjectRepository(School) private schoolRepo: Repository<School>,
   ) {}
 
+  private async ensureUniqueJefeRecinto(
+    partyId: string,
+    schoolId: string,
+    excludeUserId?: string,
+  ) {
+    const existingJefeRecinto = await this.userRepo.findOne({
+      where: {
+        ...(excludeUserId ? { id: Not(excludeUserId) } : {}),
+        role: Role.JEFE_RECINTO,
+        party: { id: partyId },
+        school: { id: schoolId },
+        isActive: true,
+      },
+      relations: ["party", "school"],
+    });
+
+    if (existingJefeRecinto) {
+      throw new ConflictException(
+        "Ya existe un jefe de recinto activo para este partido en el recinto seleccionado",
+      );
+    }
+  }
+
   async findAll(currentUser: any) {
     const query = this.userRepo
       .createQueryBuilder("user")
@@ -83,6 +106,16 @@ export class UsersService {
           "Debe especificar la mesa (tableId) o recinto (schoolId) del delegado",
         );
       }
+    }
+
+    if (dto.role === Role.JEFE_RECINTO) {
+      if (!dto.schoolId) {
+        throw new ForbiddenException(
+          "Debe asignar un recinto al jefe de recinto",
+        );
+      }
+      dto.tableId = undefined;
+      await this.ensureUniqueJefeRecinto(dto.partyId!, dto.schoolId);
     }
 
     const conditions: any[] = [{ username: dto.username }];
@@ -189,6 +222,25 @@ export class UsersService {
           "No puede cambiar el partido del delegado",
         );
       }
+    }
+
+    const targetRole = dto.role ?? user.role;
+    const targetPartyId = dto.partyId ?? user.party?.id;
+    const targetSchoolId =
+      dto.schoolId !== undefined ? dto.schoolId : user.school?.id;
+
+    if (targetRole === Role.JEFE_RECINTO) {
+      if (!targetSchoolId) {
+        throw new ForbiddenException(
+          "Debe asignar un recinto al jefe de recinto",
+        );
+      }
+      dto.tableId = undefined;
+      await this.ensureUniqueJefeRecinto(
+        targetPartyId!,
+        targetSchoolId,
+        user.id,
+      );
     }
 
     if (dto.partyId)
