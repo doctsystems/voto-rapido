@@ -25,6 +25,29 @@ export class UsersService {
     @InjectRepository(School) private schoolRepo: Repository<School>,
   ) {}
 
+  private async ensureUniqueJefeRecinto(
+    partyId: string,
+    schoolId: string,
+    excludeUserId?: string,
+  ) {
+    const existingJefeRecinto = await this.userRepo.findOne({
+      where: {
+        ...(excludeUserId ? { id: Not(excludeUserId) } : {}),
+        role: Role.JEFE_RECINTO,
+        party: { id: partyId },
+        school: { id: schoolId },
+        isActive: true,
+      },
+      relations: ["party", "school"],
+    });
+
+    if (existingJefeRecinto) {
+      throw new ConflictException(
+        "Ya existe un jefe de recinto activo para este partido en el recinto seleccionado",
+      );
+    }
+  }
+
   async findAll(currentUser: any) {
     const query = this.userRepo
       .createQueryBuilder("user")
@@ -83,6 +106,16 @@ export class UsersService {
           "Debe especificar la mesa (tableId) o recinto (schoolId) del delegado",
         );
       }
+    }
+
+    if (dto.role === Role.JEFE_RECINTO) {
+      if (!dto.schoolId) {
+        throw new ForbiddenException(
+          "Debe asignar un recinto al jefe de recinto",
+        );
+      }
+      dto.tableId = undefined;
+      await this.ensureUniqueJefeRecinto(dto.partyId!, dto.schoolId);
     }
 
     const conditions: any[] = [{ username: dto.username }];
@@ -191,6 +224,25 @@ export class UsersService {
       }
     }
 
+    const targetRole = dto.role ?? user.role;
+    const targetPartyId = dto.partyId ?? user.party?.id;
+    const targetSchoolId =
+      dto.schoolId !== undefined ? dto.schoolId : user.school?.id;
+
+    if (targetRole === Role.JEFE_RECINTO) {
+      if (!targetSchoolId) {
+        throw new ForbiddenException(
+          "Debe asignar un recinto al jefe de recinto",
+        );
+      }
+      dto.tableId = undefined;
+      await this.ensureUniqueJefeRecinto(
+        targetPartyId!,
+        targetSchoolId,
+        user.id,
+      );
+    }
+
     if (dto.partyId)
       user.party = await this.partyRepo.findOne({ where: { id: dto.partyId } });
     if (dto.tableId !== undefined) {
@@ -231,6 +283,39 @@ export class UsersService {
 
   async remove(id: string, currentUser: any) {
     const user = await this.findOne(id);
+
+    if (currentUser.role === Role.JEFE_CAMPANA) {
+      if (user.party?.id !== currentUser.partyId) {
+        throw new ForbiddenException(
+          "No puede eliminar usuarios de otro partido",
+        );
+      }
+      if (user.role !== Role.JEFE_RECINTO) {
+        throw new ForbiddenException(
+          "Solo puede eliminar jefes de recinto",
+        );
+      }
+    }
+
+    if (currentUser.role === Role.JEFE_RECINTO) {
+      if (user.role !== Role.DELEGADO) {
+        throw new ForbiddenException("Solo puede eliminar delegados");
+      }
+      if (user.party?.id !== currentUser.partyId) {
+        throw new ForbiddenException(
+          "Solo puede eliminar delegados de su partido",
+        );
+      }
+      if (
+        user.table?.school?.id !== currentUser.schoolId &&
+        user.school?.id !== currentUser.schoolId
+      ) {
+        throw new ForbiddenException(
+          "Solo puede eliminar delegados de su recinto",
+        );
+      }
+    }
+
     await this.userRepo.update(id, { deletedBy: currentUser.sub });
     await this.userRepo.softDelete(id);
     this.logger.log(`Usuario eliminado: ${user.username}`);
