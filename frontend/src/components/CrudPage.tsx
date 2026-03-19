@@ -8,6 +8,7 @@ export interface Field {
   label: string;
   type?: 'text' | 'email' | 'password' | 'number' | 'select' | 'color' | 'textarea';
   options?: { value: string; label: string }[];
+  getValue?: (row: any) => any;
   required?: boolean;
   placeholder?: string;
   colSpan?: boolean; // full width in 2-col grid
@@ -103,7 +104,7 @@ export default function CrudPage({
   const openEdit = (row: any) => {
     const f: any = {};
     fields.forEach(field => {
-      f[field.key] = getInitialFieldValue(row, field.key);
+      f[field.key] = field.getValue ? field.getValue(row) : getInitialFieldValue(row, field.key);
     });
     onOpenEdit?.(row);
     setForm(f); setEditing(row); setModal('edit');

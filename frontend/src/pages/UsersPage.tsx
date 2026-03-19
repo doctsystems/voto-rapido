@@ -173,6 +173,7 @@ export default function UsersPage() {
       label: "Recinto asignado (Jefe Recinto)",
       type: "select" as const,
       options: schoolOptions,
+      getValue: (row: any) => row.school?.id || row.table?.school?.id || "",
       disabled: schoolDisabled,
       onChange: (val: string) => setSelectedSchoolId(val),
     },
