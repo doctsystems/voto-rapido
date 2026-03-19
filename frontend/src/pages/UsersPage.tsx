@@ -133,6 +133,14 @@ export default function UsersPage() {
 
   const createUser = (data: any) => usersApi.create(sanitizeUserPayload(data));
   const updateUser = (id: string, data: any) => usersApi.update(id, sanitizeUserPayload(data));
+  const resetFormContext = () => {
+    setFormRole(isJefeCampana ? "JEFE_RECINTO" : isJefeRecinto ? "DELEGADO" : "");
+    setSelectedSchoolId("");
+  };
+  const syncFormContextFromRow = (row: any) => {
+    setFormRole(row.role || "");
+    setSelectedSchoolId(row.school?.id || row.table?.school?.id || "");
+  };
 
   const fields = [
     { key: "username", label: "Usuario", required: true },
@@ -280,6 +288,8 @@ export default function UsersPage() {
       canDelete={isAdmin || isJefeCampana || isJefeRecinto}
       canEditRow={canManageRow}
       canDeleteRow={canManageRow}
+      onOpenCreate={resetFormContext}
+      onOpenEdit={syncFormContextFromRow}
       fields={fields}
       defaultValues={defaultValues}
       columns={[

@@ -30,6 +30,8 @@ interface CrudPageProps {
   canCreate?: boolean;
   canEditRow?: (row: any) => boolean;
   canDeleteRow?: (row: any) => boolean;
+  onOpenCreate?: () => void;
+  onOpenEdit?: (row: any) => void;
   extraActions?: (row: any, invalidate: () => void) => React.ReactNode;
   defaultValues?: Record<string, any>;
   headerContent?: React.ReactNode;
@@ -42,6 +44,7 @@ export default function CrudPage({
   title, description, queryKey, fetchFn, createFn, updateFn, deleteFn,
   fields, columns, canDelete = true, canCreate = true, extraActions, defaultValues = {},
   headerContent, headerActions, customEmptyState, hideEdit = false, canEditRow, canDeleteRow,
+  onOpenCreate, onOpenEdit,
 }: CrudPageProps) {
   const qc = useQueryClient();
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
@@ -72,7 +75,11 @@ export default function CrudPage({
     onError: (e: any) => toast.error(e.response?.data?.message || 'Error al eliminar'),
   });
 
-  const openCreate = () => { setForm({ ...defaultValues }); setModal('create'); };
+  const openCreate = () => {
+    onOpenCreate?.();
+    setForm({ ...defaultValues });
+    setModal('create');
+  };
   const openEdit = (row: any) => {
     const f: any = {};
     fields.forEach(field => {
@@ -81,6 +88,7 @@ export default function CrudPage({
       if (val && typeof val === 'object' && 'id' in val) f[field.key] = val.id;
       else f[field.key] = val ?? '';
     });
+    onOpenEdit?.(row);
     setForm(f); setEditing(row); setModal('edit');
   };
   const closeModal = () => { setModal(null); setEditing(null); setForm({}); };
