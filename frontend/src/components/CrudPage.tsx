@@ -75,6 +75,26 @@ export default function CrudPage({
     onError: (e: any) => toast.error(e.response?.data?.message || 'Error al eliminar'),
   });
 
+  const getInitialFieldValue = (row: any, fieldKey: string) => {
+    const directValue = row[fieldKey];
+    if (directValue && typeof directValue === 'object' && 'id' in directValue) {
+      return directValue.id;
+    }
+    if (directValue !== undefined) {
+      return directValue;
+    }
+
+    if (fieldKey.endsWith('Id')) {
+      const relationKey = fieldKey.slice(0, -2);
+      const relationValue = row[relationKey];
+      if (relationValue && typeof relationValue === 'object' && 'id' in relationValue) {
+        return relationValue.id;
+      }
+    }
+
+    return '';
+  };
+
   const openCreate = () => {
     onOpenCreate?.();
     setForm({ ...defaultValues });
@@ -83,10 +103,7 @@ export default function CrudPage({
   const openEdit = (row: any) => {
     const f: any = {};
     fields.forEach(field => {
-      // For relational fields (e.g. partyId → party.id), extract .id
-      const val = row[field.key];
-      if (val && typeof val === 'object' && 'id' in val) f[field.key] = val.id;
-      else f[field.key] = val ?? '';
+      f[field.key] = getInitialFieldValue(row, field.key);
     });
     onOpenEdit?.(row);
     setForm(f); setEditing(row); setModal('edit');
