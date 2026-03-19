@@ -174,6 +174,7 @@ export default function UsersPage() {
       type: "select" as const,
       options: tableOptions,
       disabled: tableDisabled,
+      hidden: () => isJefeCampana || effectiveFormRole !== "DELEGADO",
     },
   ];
 

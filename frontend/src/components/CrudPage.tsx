@@ -13,6 +13,7 @@ export interface Field {
   colSpan?: boolean; // full width in 2-col grid
   disabled?: boolean;
   onChange?: (val: string) => void;
+  hidden?: (form: any) => boolean;
 }
 
 interface CrudPageProps {
@@ -87,7 +88,7 @@ export default function CrudPage({
   const handleSave = () => {
     const data = { ...form };
     if (modal === 'edit' && data.password === '') delete data.password;
-    for (const f of fields) {
+    for (const f of fields.filter(field => !field.hidden?.(form))) {
       if (f.required && !data[f.key]) return toast.error(`${f.label} es obligatorio`);
     }
 
@@ -115,6 +116,7 @@ export default function CrudPage({
   const paginatedData = filtered.slice(startIndex, endIndex);
 
   const hasGrid = fields.some(f => f.colSpan);
+  const visibleFields = fields.filter(field => !field.hidden?.(form));
 
   return (
     <div>
@@ -271,7 +273,7 @@ export default function CrudPage({
             </div>
 
             <div className={`p-6 ${hasGrid ? 'grid grid-cols-2 gap-4' : 'space-y-4'}`}>
-              {fields.map(field => (
+              {visibleFields.map(field => (
                 <div key={field.key} className={hasGrid && field.colSpan ? 'col-span-2' : ''}>
                   <label className="label">
                     {field.label}
