@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { QueryKey } from '@tanstack/react-query';
 import { toast } from '../lib/toast';
 
 export interface Field {
@@ -17,7 +18,7 @@ export interface Field {
 interface CrudPageProps {
   title: string;
   description?: string;
-  queryKey: string;
+  queryKey: QueryKey;
   fetchFn: () => Promise<any[]>;
   createFn: (data: any) => Promise<any>;
   updateFn: (id: string, data: any) => Promise<any>;
@@ -26,6 +27,8 @@ interface CrudPageProps {
   columns: { key: string; label: string; render?: (val: any, row: any) => React.ReactNode }[];
   canDelete?: boolean;
   canCreate?: boolean;
+  canEditRow?: (row: any) => boolean;
+  canDeleteRow?: (row: any) => boolean;
   extraActions?: (row: any, invalidate: () => void) => React.ReactNode;
   defaultValues?: Record<string, any>;
   headerContent?: React.ReactNode;
@@ -37,7 +40,7 @@ interface CrudPageProps {
 export default function CrudPage({
   title, description, queryKey, fetchFn, createFn, updateFn, deleteFn,
   fields, columns, canDelete = true, canCreate = true, extraActions, defaultValues = {},
-  headerContent, headerActions, customEmptyState, hideEdit = false,
+  headerContent, headerActions, customEmptyState, hideEdit = false, canEditRow, canDeleteRow,
 }: CrudPageProps) {
   const qc = useQueryClient();
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
@@ -49,8 +52,8 @@ export default function CrudPage({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  const { data = [], isLoading } = useQuery({ queryKey: [queryKey], queryFn: fetchFn });
-  const invalidate = () => qc.invalidateQueries({ queryKey: [queryKey] });
+  const { data = [], isLoading } = useQuery({ queryKey, queryFn: fetchFn });
+  const invalidate = () => qc.invalidateQueries({ queryKey });
 
   const createMutation = useMutation({
     mutationFn: createFn,
@@ -178,12 +181,12 @@ export default function CrudPage({
                       <td>
                         <div className="flex items-center justify-center gap-3">
                           {extraActions?.(row, invalidate)}
-                          {!hideEdit && (
+                          {!hideEdit && (canEditRow ? canEditRow(row) : true) && (
                             <button onClick={() => openEdit(row)} className="btn-xs btn-action-primary">
                               Editar
                             </button>
                           )}
-                          {canDelete && (
+                          {canDelete && (canDeleteRow ? canDeleteRow(row) : true) && (
                             <button
                               onClick={() => { if (confirm('¿Eliminar este registro?')) deleteMutation.mutate(row.id); }}
                               className="btn-xs btn-action-danger"

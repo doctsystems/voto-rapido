@@ -18,16 +18,25 @@ export default function UsersPage() {
   const isJefeCampana = user?.role === "JEFE_CAMPANA";
   const isJefeRecinto = user?.role === "JEFE_RECINTO";
   const isAdminOrJefe = isAdmin || isJefeCampana;
+  const canManageRow = (row: any) => {
+    if (isAdmin) return true;
+    if (isJefeCampana) return row.role === "JEFE_RECINTO";
+    if (isJefeRecinto) return row.role === "DELEGADO";
+    return false;
+  };
+  const jefeCampanaPartyId = isJefeCampana ? ((user as any)?.party?.id || "") : "";
 
   const [selectedSchoolId, setSelectedSchoolId] = useState<string>("");
-  const [formRole, setFormRole] = useState<string>("");
+  const [formRole, setFormRole] = useState<string>(
+    isJefeCampana ? "JEFE_RECINTO" : isJefeRecinto ? "DELEGADO" : "",
+  );
 
   // Table view filter
   const [filterSchool, setFilterSchool] = useState<string>(
     isAdminOrJefe ? "" : ((user as any)?.school?.id || "")
   );
   const [filterParty, setFilterParty] = useState<string>(
-    isAdminOrJefe ? "" : ((user as any)?.party?.id || "")
+    isAdmin ? "" : ((user as any)?.party?.id || "")
   );
 
   if (user?.role === "DELEGADO") {
@@ -62,10 +71,7 @@ export default function UsersPage() {
       { value: "DELEGADO", label: "Delegado" },
     ]
     : isJefeCampana
-      ? [
-        { value: "JEFE_RECINTO", label: "Jefe de Recinto" },
-        { value: "DELEGADO", label: "Delegado" },
-      ]
+      ? [{ value: "JEFE_RECINTO", label: "Jefe de Recinto" }]
       : [{ value: "DELEGADO", label: "Delegado" }];
 
   // ── Party options: Admin sees all; others locked to their party ─────────────
@@ -100,6 +106,9 @@ export default function UsersPage() {
     label: `${t.tableNumber}${t.school ? " — " + t.school.nombreRecinto : ""}`,
   }));
 
+  const effectiveFormRole =
+    formRole || (isJefeCampana ? "JEFE_RECINTO" : isJefeRecinto ? "DELEGADO" : "");
+
   // ── schoolId disabled rules:
   //   JEFE_RECINTO: always locked to own school
   //   JEFE_CAMPANA: editable only when creating a JEFE_RECINTO; otherwise disabled
@@ -107,8 +116,23 @@ export default function UsersPage() {
   const schoolDisabled = isJefeRecinto
     ? true
     : isJefeCampana
-      ? formRole !== "JEFE_RECINTO"
+      ? effectiveFormRole !== "JEFE_RECINTO"
       : false;
+  const tableDisabled = effectiveFormRole !== "DELEGADO";
+
+  const sanitizeUserPayload = (data: any) => {
+    const normalized = { ...data };
+    if (normalized.role === "JEFE_RECINTO") {
+      normalized.tableId = null;
+    }
+    if (normalized.role === "DELEGADO") {
+      normalized.schoolId = normalized.schoolId || (isJefeRecinto ? (user as any)?.school?.id : null);
+    }
+    return normalized;
+  };
+
+  const createUser = (data: any) => usersApi.create(sanitizeUserPayload(data));
+  const updateUser = (id: string, data: any) => usersApi.update(id, sanitizeUserPayload(data));
 
   const fields = [
     { key: "username", label: "Usuario", required: true },
@@ -121,8 +145,13 @@ export default function UsersPage() {
       label: "Rol",
       type: "select" as const,
       options: roleOptions,
-      disabled: isJefeRecinto, // JEFE_RECINTO always creates DELEGADO
-      onChange: (val: string) => setFormRole(val),
+      disabled: isJefeCampana || isJefeRecinto,
+      onChange: (val: string) => {
+        setFormRole(val);
+        if (val !== "DELEGADO") {
+          setSelectedSchoolId("");
+        }
+      },
     },
     {
       key: "partyId",
@@ -144,6 +173,7 @@ export default function UsersPage() {
       label: "Mesa asignada (Delegado)",
       type: "select" as const,
       options: tableOptions,
+      disabled: tableDisabled,
     },
   ];
 
@@ -154,18 +184,27 @@ export default function UsersPage() {
     defaultValues.partyId = (user as any)?.party?.id;
     defaultValues.schoolId = (user as any)?.school?.id;
   } else if (isJefeCampana) {
+    defaultValues.role = "JEFE_RECINTO";
     defaultValues.partyId = (user as any)?.party?.id;
     // schoolId intentionally not pre-filled so JEFE_CAMPANA can select it when creating JEFE_RECINTO
   }
 
   const fetchUsersFiltered = async () => {
     const allUsers = await usersApi.getAll();
+    const roleScopedUsers = allUsers.filter((u: any) => {
+      if (isAdmin) return true;
+      if (isJefeCampana) return u.role === "JEFE_RECINTO";
+      if (isJefeRecinto) return u.role === "DELEGADO";
+      return false;
+    });
+
     if (!filterSchool && !filterParty) {
       // If Admin/Jefe needs to select at least one filter to see any records, return empty array when none selected
       if (isAdminOrJefe) return [];
-      return allUsers;
+      return roleScopedUsers;
     }
-    return allUsers.filter((u: any) => {
+
+    return roleScopedUsers.filter((u: any) => {
       const uSchoolId = u.school?.id || u.table?.school?.id;
       const matchSchool = filterSchool ? uSchoolId === filterSchool : true;
       const matchParty = filterParty ? u.party?.id === filterParty : true;
@@ -177,7 +216,7 @@ export default function UsersPage() {
     <CrudPage
       title="Usuarios"
       description="Gestión de usuarios del sistema electoral"
-      queryKey={`users-${filterSchool}-${filterParty}`}
+      queryKey={["users", filterSchool, filterParty]}
       fetchFn={fetchUsersFiltered}
       headerContent={
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
@@ -187,10 +226,10 @@ export default function UsersPage() {
           <select
             value={filterParty}
             onChange={(e) => setFilterParty(e.target.value)}
-            disabled={!isAdminOrJefe}
-            className={`rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full sm:w-auto sm:max-w-xs ${!isAdminOrJefe ? "opacity-75 bg-slate-50 cursor-not-allowed" : ""}`}
+            disabled={!isAdmin || isJefeCampana}
+            className={`rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full sm:w-auto sm:max-w-xs ${!isAdmin || isJefeCampana ? "opacity-75 bg-slate-50 cursor-not-allowed" : ""}`}
           >
-            {isAdminOrJefe && <option value="">Todos los partidos</option>}
+            {isAdmin && <option value="">Todos los partidos</option>}
             {(parties as any[]).map((p: any) => (
               <option key={p.id} value={p.id}>
                 {p.acronym} — {p.name}
@@ -211,9 +250,12 @@ export default function UsersPage() {
               </option>
             ))}
           </select>
-          {isAdminOrJefe && (filterSchool || filterParty) && (
+          {isAdminOrJefe && (filterSchool || (isAdmin && filterParty)) && (
             <button
-              onClick={() => { setFilterSchool(""); setFilterParty(""); }}
+              onClick={() => {
+                setFilterSchool("");
+                setFilterParty(isJefeCampana ? jefeCampanaPartyId : "");
+              }}
               className="text-xs text-body hover:text-meta-1 transition-colors whitespace-nowrap"
             >
               ✕ Limpiar
@@ -231,10 +273,12 @@ export default function UsersPage() {
           </div>
         ) : undefined
       }
-      createFn={usersApi.create}
-      updateFn={usersApi.update}
+      createFn={createUser}
+      updateFn={updateUser}
       deleteFn={usersApi.remove}
-      canDelete={user?.role === "ADMIN"}
+      canDelete={isAdmin || isJefeCampana || isJefeRecinto}
+      canEditRow={canManageRow}
+      canDeleteRow={canManageRow}
       fields={fields}
       defaultValues={defaultValues}
       columns={[
