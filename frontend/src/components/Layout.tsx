@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/auth.store";
 import { useQueryClient } from "@tanstack/react-query";
+import AppFooter from "./AppFooter";
 
 const roleLabel: Record<string, string> = {
   ADMIN: "Administrador",
@@ -219,17 +220,7 @@ export default function Layout() {
           </div>
         </main>
 
-        {/* Global Footer */}
-        <footer className="footer min-h-[3.5rem] flex items-center border-t border-stroke bg-white px-8 py-4 sm:py-0">
-          <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-body uppercase tracking-wider font-semibold text-center sm:text-left">
-            <div>
-              Copyright © {new Date().getFullYear()} <span className="text-primary">QuickTally</span>
-            </div>
-            <div>
-              <span className="opacity-70">Desarrollado con ❤️ para la democracia</span>
-            </div>
-          </div>
-        </footer>
+        <AppFooter />
       </div>
     </div>
   );

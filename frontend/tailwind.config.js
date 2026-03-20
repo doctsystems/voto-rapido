@@ -20,7 +20,6 @@ export default {
           900: '#030C35',
         },
         boxdark: '#24303F',
-        'boxdark-2': '#1A222C',
         body: '#64748B',
         bodydark: '#AEB7C0',
         bodydark2: '#8A99AF',

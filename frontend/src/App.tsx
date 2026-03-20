@@ -9,6 +9,7 @@ import TablesPage from './pages/TablesPage';
 import ElectionTypesPage from './pages/ElectionTypesPage';
 import ReportsPage from './pages/ReportsPage';
 import NewReportPage from './pages/NewReportPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import Layout from './components/Layout';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -24,6 +25,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="/" element={
           <ProtectedRoute>
             <Layout />
