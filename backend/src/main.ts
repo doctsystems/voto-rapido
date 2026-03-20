@@ -7,6 +7,8 @@ import { WinstonLogger } from "./common/logger/winston.logger";
 async function bootstrap() {
   const logger = new WinstonLogger();
   const app = await NestFactory.create(AppModule, { logger });
+  const normalizeOrigin = (value?: string) =>
+    value?.trim().replace(/\/$/, "");
 
   app.setGlobalPrefix("api/v1");
   app.useGlobalPipes(
@@ -19,14 +21,24 @@ async function bootstrap() {
   console.log("CORS: FRONTEND_URL configurado como:", process.env.FRONTEND_URL);
   app.enableCors({
     origin: (origin, callback) => {
-      const allowedOrigins = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : [];
-      if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+      const allowedOrigins = process.env.FRONTEND_URL
+        ? process.env.FRONTEND_URL.split(",")
+            .map((entry) => normalizeOrigin(entry))
+            .filter(Boolean)
+        : [];
+      const requestOrigin = normalizeOrigin(origin);
+
+      if (
+        !requestOrigin ||
+        allowedOrigins.length === 0 ||
+        allowedOrigins.includes(requestOrigin)
+      ) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        callback(new Error("Not allowed by CORS"));
       }
     },
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
     credentials: true,
   });
 
