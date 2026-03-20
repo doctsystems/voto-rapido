@@ -5,20 +5,20 @@ import {
   BadRequestException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Like, Repository } from "typeorm";
+import { Brackets, Repository } from "typeorm";
 import { School } from "./school.entity";
 import { IsString, IsOptional, IsNumber } from "class-validator";
 
 export class CreateSchoolDto {
-  @IsString() nombreRecinto: string;
-  @IsOptional() @IsString() nombreAbrev?: string;
-  @IsOptional() @IsString() codigoRecinto?: string;
-  @IsOptional() @IsString() departamento?: string;
-  @IsOptional() @IsString() provincia?: string;
-  @IsOptional() @IsString() municipio?: string;
-  @IsOptional() @IsString() asientoElectoral?: string;
-  @IsOptional() @IsString() localidad?: string;
-  @IsOptional() @IsNumber() circunscripcion?: number;
+  @IsString() name: string;
+  @IsOptional() @IsString() shortName?: string;
+  @IsOptional() @IsNumber() code?: number;
+  @IsOptional() @IsString() department?: string;
+  @IsOptional() @IsString() province?: string;
+  @IsOptional() @IsString() municipality?: string;
+  @IsOptional() @IsString() electoralSeat?: string;
+  @IsOptional() @IsString() locality?: string;
+  @IsOptional() @IsNumber() constituency?: number;
 }
 
 @Injectable()
@@ -28,23 +28,29 @@ export class SchoolsService {
   ) {}
 
   async findAll(search?: string) {
-    const where = search
-      ? [
-          { nombreRecinto: Like(`%${search}%`) },
-          { codigoRecinto: Like(`%${search}%`) },
-          { municipio: Like(`%${search}%`) },
-        ]
-      : undefined;
-    const schools = await this.repo.find({
-      where,
-      relations: ["tables"],
-      order: { nombreRecinto: "ASC" },
-    });
+    const query = this.repo
+      .createQueryBuilder("school")
+      .leftJoinAndSelect("school.tables", "table")
+      .orderBy("school.name", "ASC");
+
+    if (search) {
+      query.andWhere(
+        new Brackets((qb) => {
+          qb.where("school.name ILIKE :search", { search: `%${search}%` })
+            .orWhere("CAST(school.code AS TEXT) ILIKE :search", {
+              search: `%${search}%`,
+            })
+            .orWhere("school.municipality ILIKE :search", { search: `%${search}%` });
+        }),
+      );
+    }
+
+    const schools = await query.getMany();
     
     schools.forEach(school => {
       if (school.tables) {
         school.tables.sort((a, b) => 
-          (a.tableNumber || "").localeCompare(b.tableNumber || "", undefined, { numeric: true, sensitivity: "base" })
+          (a.number || 0) - (b.number || 0)
         );
       }
     });
@@ -61,7 +67,7 @@ export class SchoolsService {
     
     if (school.tables) {
       school.tables.sort((a, b) => 
-        (a.tableNumber || "").localeCompare(b.tableNumber || "", undefined, { numeric: true, sensitivity: "base" })
+        (a.number || 0) - (b.number || 0)
       );
     }
     
@@ -70,7 +76,7 @@ export class SchoolsService {
 
   async create(dto: CreateSchoolDto, actorId: string) {
     const existing = await this.repo.findOne({
-      where: { nombreRecinto: dto.nombreRecinto },
+      where: { name: dto.name },
     });
     if (existing)
       throw new ConflictException("Ya existe un recinto con ese nombre");
@@ -97,20 +103,20 @@ export class SchoolsService {
     }
     await this.repo.update(id, { deletedBy: actorId });
     await this.repo.softDelete(id);
-    return { message: `Recinto "${school.nombreRecinto}" eliminado` };
+    return { message: `School "${school.name}" deleted` };
   }
 
-  async findByMunicipio(municipio: string) {
+  async findByMunicipality(municipality: string) {
     const schools = await this.repo.find({
-      where: { municipio },
+      where: { municipality },
       relations: ["tables"],
-      order: { nombreRecinto: "ASC" },
+      order: { name: "ASC" },
     });
     
     schools.forEach(school => {
       if (school.tables) {
         school.tables.sort((a, b) => 
-          (a.tableNumber || "").localeCompare(b.tableNumber || "", undefined, { numeric: true, sensitivity: "base" })
+          (a.number || 0) - (b.number || 0)
         );
       }
     });

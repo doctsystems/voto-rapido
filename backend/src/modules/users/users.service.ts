@@ -118,10 +118,8 @@ export class UsersService {
       await this.ensureUniqueJefeRecinto(dto.partyId!, dto.schoolId);
     }
 
-    const conditions: any[] = [{ username: dto.username }];
-    if (dto.email) conditions.push({ email: dto.email });
-    const existing = await this.userRepo.findOne({ where: conditions });
-    if (existing) throw new ConflictException("Usuario o email ya existe");
+    const existing = await this.userRepo.findOne({ where: { username: dto.username } });
+    if (existing) throw new ConflictException("Usuario ya existe");
 
     const user = this.userRepo.create({
       ...dto,

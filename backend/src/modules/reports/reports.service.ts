@@ -65,7 +65,7 @@ export class ReportsService {
 
     reports.forEach((r) => {
       summary.addRow({
-        table: r.table?.tableNumber,
+        table: r.table?.number,
         delegate: r.delegate?.fullName,
         party: r.delegate?.party?.name,
         status: r.status,
@@ -82,7 +82,7 @@ export class ReportsService {
       { header: "Mesa", key: "table", width: 15 },
       { header: "Tipo Elección", key: "electionType", width: 20 },
       { header: "Partido", key: "party", width: 25 },
-      { header: "Siglas", key: "acronym", width: 10 },
+      { header: "Orden", key: "ballotOrder", width: 10 },
       { header: "Votos", key: "votes", width: 12 },
     ];
     detail.getRow(1).eachCell((cell) => {
@@ -97,10 +97,10 @@ export class ReportsService {
     reports.forEach((r) => {
       (r.entries || []).forEach((e) => {
         detail.addRow({
-          table: r.table?.tableNumber,
+          table: r.table?.number,
           electionType: e.electionType?.name,
           party: e.party?.name,
-          acronym: e.party?.acronym,
+          ballotOrder: e.party?.ballotOrder,
           votes: e.votes,
         });
       });
@@ -151,7 +151,7 @@ export class ReportsService {
         .fontSize(12)
         .fillColor("#1B4F72")
         .text(
-          `Mesa ${r.table?.tableNumber} - ${r.table?.school?.nombreRecinto ?? ""}`,
+          `Mesa ${r.table?.number} - ${r.table?.school?.name ?? ""}`,
         );
       doc.fontSize(10).fillColor("#333");
       doc.text(
@@ -175,7 +175,7 @@ export class ReportsService {
             .fontSize(9)
             .fillColor("#333")
             .text(
-              `    ${e.party?.acronym} - ${e.party?.name}: ${e.votes} votos`,
+              `    Orden ${e.party?.ballotOrder} - ${e.party?.name}: ${e.votes} votos`,
             );
         });
       });

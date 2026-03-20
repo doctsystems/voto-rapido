@@ -40,7 +40,7 @@ function LeaderCard({ et }: Readonly<{ et: any }>) {
                 style={{ backgroundColor: winner.color || "#313161" }}
               />
               <span className="font-bold text-black text-lg leading-none">
-                {winner.acronym}
+                #{winner.ballotOrder}
               </span>
               <span className="ml-auto text-xs font-mono font-semibold text-meta-3 bg-green-50 px-2 py-0.5 rounded-full">
                 {winner.percentage?.toFixed(1)}%
@@ -255,7 +255,7 @@ function ElectionTypeBlock({
   const winner = et.parties[0];
 
   const barData = {
-    labels: et.parties.map((p: any) => p.acronym),
+    labels: et.parties.map((p: any) => `#${p.ballotOrder}`),
     datasets: [
       {
         label: "Votos válidos",
@@ -291,7 +291,7 @@ function ElectionTypeBlock({
                 style={{ backgroundColor: winner.color }}
               />
               <span className="text-white text-sm font-semibold">
-                {winner.acronym}
+                #{winner.ballotOrder}
               </span>
               <span className="text-white/60 text-xs">
                 {winner.percentage?.toFixed(2)}%
@@ -408,7 +408,7 @@ function PartyPanel({ pd, defaultOpen }: { pd: any; defaultOpen: boolean }) {
           style={{ backgroundColor: pd.partyColor || "#94a3b8" }}
         />
         <div className="flex-1 min-w-0">
-          <span className="font-bold text-black">{pd.partyAcronym}</span>
+          <span className="font-bold text-black">#{pd.partyBallotOrder}</span>
           <span className="text-body text-sm ml-2 hidden sm:inline">
             {pd.partyName}
           </span>
@@ -508,10 +508,10 @@ export default function DashboardPage() {
               >
                 <option value="">— Selecciona un partido —</option>
                 {sortedParties.map((p) => (
-                  <option key={p.partyId} value={p.partyId}>
-                    {p.partyName} ({p.partyAcronym})
-                  </option>
-                ))}
+                <option key={p.partyId} value={p.partyId}>
+                  {p.partyName} (#${p.partyBallotOrder})
+                </option>
+              ))}
               </select>
               {selectedPartyId && (
                 <button

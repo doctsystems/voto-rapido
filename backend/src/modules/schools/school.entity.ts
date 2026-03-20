@@ -4,34 +4,35 @@ import { VotingTable } from "../tables/voting-table.entity";
 
 @Entity("schools")
 export class School extends BaseEntity {
-  /** Nombre completo del recinto electoral */
-  @Column({ unique: true, name: "nombre_recinto" })
-  nombreRecinto: string;
+  @Column({ unique: true, name: "name" })
+  name: string;
 
-  /** Nombre abreviado del recinto */
-  @Column({ nullable: true, name: "nombre_abrev" })
-  nombreAbrev: string;
+  @Column({ nullable: true, name: "short_name" })
+  shortName: string;
 
-  @Column({ name: "codigo_recinto", unique: true, nullable: true })
-  codigoRecinto: string;
+  @Column({ name: "code", unique: true, nullable: true, type: "int" })
+  code: number;
 
-  @Column({ nullable: true })
-  departamento: string;
+  @Column({ name: "total_tables", nullable: true, type: "int" })
+  tableCount: number;
 
-  @Column({ nullable: true })
-  provincia: string;
+  @Column({ nullable: true, name: "department" })
+  department: string;
 
-  @Column({ nullable: true })
-  municipio: string;
+  @Column({ nullable: true, name: "province" })
+  province: string;
 
-  @Column({ nullable: true, name: "asiento_electoral" })
-  asientoElectoral: string;
+  @Column({ nullable: true, name: "municipality" })
+  municipality: string;
 
-  @Column({ nullable: true })
-  localidad: string;
+  @Column({ nullable: true, name: "electoral_seat" })
+  electoralSeat: string;
 
-  @Column({ nullable: true, type: "int" })
-  circunscripcion: number;
+  @Column({ nullable: true, name: "locality" })
+  locality: string;
+
+  @Column({ nullable: true, type: "int", name: "constituency" })
+  constituency: number;
 
   @Column({ default: true, name: "is_active" })
   isActive: boolean;

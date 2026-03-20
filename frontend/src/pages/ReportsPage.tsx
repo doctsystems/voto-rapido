@@ -76,18 +76,18 @@ export default function ReportsPage() {
 
   const columns = [
     {
-      key: "tableNumber",
+      key: "number",
       label: "Mesa",
-      render: (_v: any, row: any) => <span className="font-medium text-black">{row.table?.tableNumber}</span>
+      render: (_v: any, row: any) => <span className="font-medium text-black">{row.table?.number}</span>
     },
     {
       key: "delegate",
       label: "Delegado",
       render: (_v: any, row: any) => (
-        <div>
-          <div className="text-xs font-medium text-black">{row.delegate?.fullName}</div>
+          <div>
+            <div className="text-xs font-medium text-black">{row.delegate?.fullName}</div>
           {row.delegate?.party && (
-            <div className="text-xs text-body">{row.delegate.party.acronym}</div>
+            <div className="text-xs text-body">#{row.delegate.party.ballotOrder}</div>
           )}
         </div>
       )
@@ -157,7 +157,7 @@ export default function ReportsPage() {
               {isAdmin && <option value="">Todos los partidos</option>}
               {(parties as any[]).map((p: any) => (
                 <option key={p.id} value={p.id}>
-                  {p.acronym} — {p.name}
+                  #{p.ballotOrder} — {p.name}
                 </option>
               ))}
             </select>
@@ -170,8 +170,8 @@ export default function ReportsPage() {
               {isAdminOrJefe && <option value="">Todos los recintos</option>}
               {(schools as any[]).map((s: any) => (
                 <option key={s.id} value={s.id}>
-                  {s.codigoRecinto ? `[${s.codigoRecinto}] ` : ""}
-                  {s.nombreRecinto}
+                  {s.code ? `[${s.code}] ` : ""}
+                  {s.name}
                 </option>
               ))}
             </select>
@@ -217,7 +217,7 @@ export default function ReportsPage() {
               <button
                 onClick={() => {
                   toast.confirm(
-                    `¿Eliminar reporte de la mesa ${r.table?.tableNumber}? El delegado podrá crear uno nuevo.`,
+                    `¿Eliminar reporte de la mesa ${r.table?.number}? El delegado podrá crear uno nuevo.`,
                     () => votesApi.deleteReport(r.id).then(() => {
                       toast.success("Reporte eliminado.");
                       invalidate();
@@ -245,13 +245,13 @@ export default function ReportsPage() {
             <div className="px-6 py-4 border-b border-stroke flex items-start justify-between gap-4">
               <div>
                 <h3 className="font-bold text-lg text-black">
-                  Reporte — Mesa {selected.table?.tableNumber}
+                  Reporte — Mesa {selected.table?.number}
                 </h3>
-                {selected.table?.school?.nombreRecinto && (
+                {selected.table?.school?.name && (
                   <p className="text-sm text-body mt-0.5">
-                    📍 {selected.table.school.nombreRecinto}
-                    {selected.table.school.codigoRecinto &&
-                      ` (Cód. ${selected.table.school.codigoRecinto})`}
+                    📍 {selected.table.school.name}
+                    {selected.table.school.code &&
+                      ` (Cód. ${selected.table.school.code})`}
                   </p>
                 )}
                 <p className="text-xs text-body mt-0.5">
@@ -322,7 +322,7 @@ export default function ReportsPage() {
                                 }}
                               />
                               <span className="text-sm text-black font-medium">
-                                {e.party?.acronym}
+                                #{e.party?.ballotOrder}
                               </span>
                               <span className="text-xs text-body hidden sm:inline">
                                 {e.party?.name}
@@ -414,7 +414,7 @@ export default function ReportsPage() {
                   <button
                     onClick={() => {
                       toast.confirm(
-                        `¿Eliminar reporte de la mesa ${selected.table?.tableNumber}? El delegado podrá crear uno nuevo.`,
+                        `¿Eliminar reporte de la mesa ${selected.table?.number}? El delegado podrá crear uno nuevo.`,
                         () => votesApi.deleteReport(selected.id).then(() => {
                            toast.success("Reporte eliminado.");
                            invalidate();
@@ -442,3 +442,4 @@ export default function ReportsPage() {
     </div>
   );
 }
+

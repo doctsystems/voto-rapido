@@ -2,34 +2,34 @@ import CrudPage, { Field } from "../components/CrudPage";
 import { schoolsApi } from "../lib/api";
 
 const DEFAULTS = {
-  departamento: "Tarija",
-  provincia: "Arce",
-  municipio: "Bermejo",
-  asientoElectoral: "Bermejo",
-  localidad: "Bermejo",
-  circunscripcion: 42,
+  department: "Tarija",
+  province: "Arce",
+  municipality: "Bermejo",
+  electoralSeat: "Bermejo",
+  locality: "Bermejo",
+  constituency: 42,
 };
 
 export default function SchoolsPage() {
   const fields: Field[] = [
-    { key: "codigoRecinto", label: "Código Recinto" },
-    { key: "nombreRecinto", label: "Recinto Electoral", required: true, colSpan: true },
-    { key: "nombreAbrev", label: "Nombre Abreviado" },
-    { key: "departamento", label: "Departamento" },
-    { key: "provincia", label: "Provincia" },
-    { key: "municipio", label: "Municipio" },
-    { key: "asientoElectoral", label: "Asiento Electoral" },
-    { key: "localidad", label: "Localidad" },
-    { key: "circunscripcion", label: "Circunscripción", type: "number" },
+    { key: "code", label: "Código", type: "number" },
+    { key: "name", label: "Recinto Electoral", required: true, colSpan: true },
+    { key: "shortName", label: "Nombre Abreviado" },
+    { key: "department", label: "Departamento" },
+    { key: "province", label: "Provincia" },
+    { key: "municipality", label: "Municipio" },
+    { key: "electoralSeat", label: "Asiento Electoral" },
+    { key: "locality", label: "Localidad" },
+    { key: "constituency", label: "Circunscripción", type: "number" },
   ];
 
   const columns = [
     {
-      key: "codigoRecinto",
+      key: "code",
       label: "Código",
       render: (v: any) => <span className="font-medium text-black">{v || "—"}</span>,
     },
-    { key: "nombreRecinto", label: "Recinto Electoral" },
+    { key: "name", label: "Recinto Electoral" },
     {
       key: "tables",
       label: "Mesas",
@@ -52,3 +52,4 @@ export default function SchoolsPage() {
     />
   );
 }
+

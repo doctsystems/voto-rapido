@@ -1,24 +1,24 @@
-import { Entity, Column, OneToMany } from 'typeorm';
-import { BaseEntity } from '../../common/entities/base.entity';
-import { User } from '../users/user.entity';
-import { VoteEntry } from '../votes/vote-entry.entity';
-import { PartyElectionType } from './party-election-type.entity';
+import { Entity, Column, OneToMany } from "typeorm";
+import { BaseEntity } from "../../common/entities/base.entity";
+import { User } from "../users/user.entity";
+import { VoteEntry } from "../votes/vote-entry.entity";
+import { PartyElectionType } from "./party-election-type.entity";
 
-@Entity('parties')
+@Entity("parties")
 export class Party extends BaseEntity {
-  @Column({ unique: true })
+  @Column({ name: "ballot_order", unique: true, type: "int" })
+  ballotOrder: number;
+
+  @Column({ name: "name", unique: true })
   name: string;
 
-  @Column({ unique: true })
+  @Column({ name: "acronym", unique: true })
   acronym: string;
 
   @Column({ nullable: true })
   color: string;
 
-  @Column({ nullable: true })
-  logoUrl: string;
-
-  @Column({ default: true, name: 'is_active' })
+  @Column({ default: true, name: "is_active" })
   isActive: boolean;
 
   @OneToMany(() => User, (user) => user.party)

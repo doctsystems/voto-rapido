@@ -8,23 +8,23 @@ export interface AuthUser {
   id: string;
   username: string;
   fullName: string;
-  email: string;
   role: UserRole;
-  party?: { id: string; name: string; acronym: string; color: string } | null;
+  party?: { id: string; name: string; ballotOrder: number; color: string } | null;
   table?: {
     id: string;
-    tableNumber: string;
+    number: number;
+    code: number;
     totalVoters?: number;
     school?: {
       id: string;
-      nombreRecinto: string;
-      codigoRecinto?: string;
+      name: string;
+      code?: number;
     } | null;
   } | null;
   school?: {
     id: string;
-    nombreRecinto: string;
-    codigoRecinto?: string;
+    name: string;
+    code?: number;
   } | null;
 }
 
@@ -56,3 +56,4 @@ export const useAuthStore = create<AuthState>()(
     { name: "voto-rapido-auth" },
   ),
 );
+

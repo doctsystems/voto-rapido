@@ -78,12 +78,12 @@ export default function UsersPage() {
   const partyOptions = isAdmin
     ? (parties as any[]).map((p) => ({
       value: p.id,
-      label: `${p.acronym} — ${p.name}`,
+      label: `#${p.ballotOrder} — ${p.name}`,
     }))
     : [
       {
         value: (user as any)?.party?.id,
-        label: `${(user as any)?.party?.acronym} — ${(user as any)?.party?.name}`,
+        label: `#${(user as any)?.party?.ballotOrder} — ${(user as any)?.party?.name}`,
       },
     ];
 
@@ -92,18 +92,18 @@ export default function UsersPage() {
     ? [
       {
         value: (user as any)?.school?.id,
-        label: `[${(user as any)?.school?.codigoRecinto || "?"}] ${(user as any)?.school?.nombreRecinto}`,
+        label: `[${(user as any)?.school?.code || "?"}] ${(user as any)?.school?.name}`,
       },
     ]
     : (schools as any[]).map((s) => ({
       value: s.id,
-      label: `[${s.codigoRecinto || "?"}] ${s.nombreRecinto}`,
+      label: `[${s.code || "?"}] ${s.name}`,
     }));
 
   // ── Table options: filtered by selected school (or own school for JEFE_RECINTO)
   const tableOptions = (allTables as any[]).map((t) => ({
     value: t.id,
-    label: `${t.tableNumber}${t.school ? " — " + t.school.nombreRecinto : ""}`,
+    label: `${t.number}${t.school ? " — " + t.school.name : ""}`,
   }));
 
   const effectiveFormRole =
@@ -155,7 +155,6 @@ export default function UsersPage() {
     { key: "username", label: "Usuario", required: true },
     { key: "fullName", label: "Nombre completo", required: true },
     { key: "phone", label: "Teléfono", required: true },
-    { key: "email", label: "Email", type: "email" as const },
     { key: "password", label: "Contraseña", type: "password" as const },
     {
       key: "role",
@@ -251,7 +250,7 @@ export default function UsersPage() {
             {isAdmin && <option value="">Todos los partidos</option>}
             {(parties as any[]).map((p: any) => (
               <option key={p.id} value={p.id}>
-                {p.acronym} — {p.name}
+                #{p.ballotOrder} — {p.name}
               </option>
             ))}
           </select>
@@ -264,8 +263,8 @@ export default function UsersPage() {
             {isAdminOrJefe && <option value="">Todos los recintos</option>}
             {(schools as any[]).map((s: any) => (
               <option key={s.id} value={s.id}>
-                {s.codigoRecinto ? `[${s.codigoRecinto}] ` : ""}
-                {s.nombreRecinto}
+                {s.code ? `[${s.code}] ` : ""}
+                {s.name}
               </option>
             ))}
           </select>
@@ -329,7 +328,7 @@ export default function UsersPage() {
                   className="w-2.5 h-2.5 rounded-md"
                   style={{ backgroundColor: row.party.color }}
                 />
-                <span className="text-sm">{row.party.acronym}</span>
+                <span className="text-sm">#{row.party.ballotOrder}</span>
               </div>
             ) : (
               <span className="text-black text-sm">—</span>
@@ -339,3 +338,4 @@ export default function UsersPage() {
     />
   );
 }
+

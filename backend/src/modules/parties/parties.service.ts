@@ -8,11 +8,11 @@ import { Repository } from "typeorm";
 import { Party } from "./party.entity";
 import { PartyElectionType } from "./party-election-type.entity";
 import { ElectionType } from "../election-types/election-type.entity";
-import { IsString, IsOptional, IsUUID } from "class-validator";
+import { IsString, IsOptional, IsUUID, IsNumber } from "class-validator";
 
 export class CreatePartyDto {
   @IsString() name: string;
-  @IsString() acronym: string;
+  @IsNumber() ballotOrder: number;
   @IsOptional() @IsString() color?: string;
   @IsOptional() @IsString() logoUrl?: string;
 }
@@ -35,7 +35,7 @@ export class PartiesService {
   findAll() {
     return this.repo.find({
       relations: ["electionTypes", "electionTypes.electionType"],
-      order: { name: "ASC" },
+      order: { ballotOrder: "ASC" },
     });
   }
 
@@ -50,9 +50,10 @@ export class PartiesService {
 
   async create(dto: CreatePartyDto, actorId?: string) {
     const existing = await this.repo.findOne({
-      where: [{ name: dto.name }, { acronym: dto.acronym }],
+      where: [{ name: dto.name }, { ballotOrder: dto.ballotOrder }],
     });
-    if (existing) throw new ConflictException("Partido o siglas ya existen");
+    if (existing)
+      throw new ConflictException("Partido o orden de papeleta ya existen");
     return this.repo.save(
       this.repo.create({ ...dto, createdBy: actorId, updatedBy: actorId }),
     );
@@ -121,12 +122,12 @@ export class PartiesService {
     const parties = await this.repo.find({
       where: { isActive: true },
       relations: ["electionTypes", "electionTypes.electionType"],
-      order: { name: "ASC" },
+      order: { ballotOrder: "ASC" },
     });
     return parties.map((p) => ({
       id: p.id,
       name: p.name,
-      acronym: p.acronym,
+      ballotOrder: p.ballotOrder,
       color: p.color,
       electionTypes: (p.electionTypes || [])
         .filter((pet) => pet.isActive && !pet.deletedAt)

@@ -1,20 +1,25 @@
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn, BeforeInsert, BeforeUpdate } from 'typeorm';
-import { Exclude } from 'class-transformer';
-import * as bcrypt from 'bcryptjs';
-import { BaseEntity } from '../../common/entities/base.entity';
-import { Role } from '../../common/enums/role.enum';
-import { Party } from '../parties/party.entity';
-import { VotingTable } from '../tables/voting-table.entity';
-import { School } from '../schools/school.entity';
-import { VoteReport } from '../votes/vote-report.entity';
+import {
+  Entity,
+  Column,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+  BeforeInsert,
+  BeforeUpdate,
+} from "typeorm";
+import { Exclude } from "class-transformer";
+import * as bcrypt from "bcryptjs";
+import { BaseEntity } from "../../common/entities/base.entity";
+import { Role } from "../../common/enums/role.enum";
+import { Party } from "../parties/party.entity";
+import { VotingTable } from "../tables/voting-table.entity";
+import { School } from "../schools/school.entity";
+import { VoteReport } from "../votes/vote-report.entity";
 
-@Entity('users')
+@Entity("users")
 export class User extends BaseEntity {
   @Column({ unique: true })
   username: string;
-
-  @Column({ unique: true, nullable: true })
-  email: string;
 
   @Column({ nullable: true })
   phone: string;
@@ -23,27 +28,31 @@ export class User extends BaseEntity {
   @Exclude()
   password: string;
 
-  @Column({ name: 'full_name' })
+  @Column({ name: "full_name" })
   fullName: string;
 
-  @Column({ type: 'enum', enum: Role, default: Role.DELEGADO })
+  @Column({ type: "enum", enum: Role, default: Role.DELEGADO })
   role: Role;
 
-  @Column({ default: true, name: 'is_active' })
+  @Column({ default: true, name: "is_active" })
   isActive: boolean;
 
-  @ManyToOne(() => Party, (party) => party.users, { nullable: true, eager: false })
-  @JoinColumn({ name: 'party_id' })
+  @ManyToOne(() => Party, (party) => party.users, {
+    nullable: true,
+    eager: false,
+  })
+  @JoinColumn({ name: "party_id" })
   party: Party;
 
-  /** Mesa asignada (aplica a DELEGADO) */
-  @ManyToOne(() => VotingTable, (table) => table.delegates, { nullable: true, eager: false })
-  @JoinColumn({ name: 'table_id' })
+  @ManyToOne(() => VotingTable, (table) => table.delegates, {
+    nullable: true,
+    eager: false,
+  })
+  @JoinColumn({ name: "table_id" })
   table: VotingTable;
 
-  /** Recinto asignado (aplica a JEFE_RECINTO) */
   @ManyToOne(() => School, { nullable: true, eager: false })
-  @JoinColumn({ name: 'school_id' })
+  @JoinColumn({ name: "school_id" })
   school: School;
 
   @OneToMany(() => VoteReport, (report) => report.delegate)
@@ -52,7 +61,7 @@ export class User extends BaseEntity {
   @BeforeInsert()
   @BeforeUpdate()
   async hashPassword() {
-    if (this.password && !this.password.startsWith('$2')) {
+    if (this.password && !this.password.startsWith("$2")) {
       this.password = await bcrypt.hash(this.password, 10);
     }
   }

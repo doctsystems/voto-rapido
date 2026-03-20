@@ -75,7 +75,7 @@ export default function PartiesPage() {
     setModal("create");
   };
   const openEdit = (p: any) => {
-    setForm({ name: p.name, acronym: p.acronym, color: p.color || "" });
+    setForm({ name: p.name, ballotOrder: p.ballotOrder, color: p.color || "" });
     setSelected(p);
     setModal("edit");
   };
@@ -122,12 +122,12 @@ export default function PartiesPage() {
                     className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-display font-bold text-sm"
                     style={{ backgroundColor: party.color || "#1a3a6b" }}
                   >
-                    {party.acronym?.slice(0, 2)}
+                    {party.ballotOrder}
                   </div>
                   <div>
                     <div className="font-semibold text-black">{party.name}</div>
                     <div className="text-xs font-mono text-bodydark">
-                      {party.acronym}
+                      Orden {party.ballotOrder}
                     </div>
                   </div>
                 </div>
@@ -229,7 +229,7 @@ export default function PartiesPage() {
             <div className="p-6 space-y-4">
               {[
                 { key: "name", label: "Nombre del partido" },
-                { key: "acronym", label: "Siglas" },
+                { key: "ballotOrder", label: "Orden en papeleta", type: "number" },
                 { key: "color", label: "Color (hex)", type: "color" },
               ].map((f) => (
                 <div key={f.key}>

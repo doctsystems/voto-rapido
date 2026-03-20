@@ -7,8 +7,8 @@
  * Estrategia:
  *  - Cubre la mitad de los recintos (9 de 18), elegidos al azar pero reproducibles.
  *  - En los recintos con más mesas (≥ 5), genera al menos 5 reportes por recinto.
- *  - Cada reporte lo crea un delegado de cada partido (CDC, PATRIA, PDC, ISA).
- *  - Los votos se generan con distribución simulada realista (CDC lidera).
+ *  - Cada reporte lo crea un delegado de cada uno de los 4 primeros partidos.
+ *  - Los votos se generan con distribución simulada realista.
  *  - Mix de estados: DRAFT, SUBMITTED, VERIFIED para mayor realismo.
  *
  * Uso:
@@ -76,7 +76,7 @@ function rInt(min: number, max: number, seed: number): number {
  *  - Se PERMUTA aleatoriamente el orden de los pesos base por mesa+tipo,
  *    de modo que cualquier partido puede "ganar" en cualquier mesa.
  *  - Se añade un factor de "swing" que concentra votos en 1-2 partidos al azar.
- *  - Los partidos menores (PT, MTS, UNIR, NGP) siempre reciben entre 2-9%.
+ *  - Los partidos menores siempre reciben entre 2-9%.
  */
 function generateVotesForTable(
   parties: Party[],
@@ -102,10 +102,13 @@ function generateVotesForTable(
   const majorBaseWeights = [0.38, 0.28, 0.15, 0.09]; // 4 slots para partidos grandes
   const minorBaseWeights = [0.04, 0.03, 0.02, 0.01]; // 4 slots para partidos chicos
 
-  // Separar partidos: CDC, ISA, PATRIA, PDC = mayores históricos; resto = menores
-  const majorAcronyms = new Set(["CDC", "ISA", "PATRIA", "PDC"]);
-  const majorIndices = parties.map((p, i) => majorAcronyms.has(p.acronym) ? i : -1).filter(i => i >= 0);
-  const minorIndices = parties.map((p, i) => !majorAcronyms.has(p.acronym) ? i : -1).filter(i => i >= 0);
+  // Separar partidos: los primeros 4 por orden de papeleta = mayores; resto = menores
+  const majorIndices = parties
+    .map((p, i) => (p.ballotOrder <= 4 ? i : -1))
+    .filter((i) => i >= 0);
+  const minorIndices = parties
+    .map((p, i) => (p.ballotOrder > 4 ? i : -1))
+    .filter((i) => i >= 0);
 
   // Permutación aleatoria de los pesos dentro de cada grupo (por mesa+tipo)
   function permutedWeights(weights: number[], seed: number): number[] {
@@ -169,26 +172,23 @@ async function seedReports() {
   console.log("✓ Reportes anteriores eliminados");
 
   // Cargar datos base
-  const schools = await schoolRepo.find({ order: { codigoRecinto: "ASC" } });
-  const allParties = await partyRepo.find({ order: { acronym: "ASC" } });
+  const schools = await schoolRepo.find({ order: { code: "ASC" } });
+  const allParties = await partyRepo.find({ order: { ballotOrder: "ASC" } });
   const electionTypes = await etRepo.find({ order: { order: "ASC" } });
   const allTables = await tableRepo.find({
     relations: ["school"],
     where: { isActive: true },
-    order: { tableCode: "ASC" },
+    order: { code: "ASC" },
   });
 
   if (!schools.length || !allParties.length || !electionTypes.length || !allTables.length) {
     throw new Error("Faltan datos base. Ejecuta seed.ts primero.");
   }
 
-  // Solo los primeros 4 partidos tienen delegados (CDC, PATRIA, PDC, ISA)
-  // Ordenamos por acronym: CDC, ISA, PATRIA, PDC  → necesitamos por acronym específico
-  const delegateParties = allParties.filter((p) =>
-    ["CDC", "PATRIA", "PDC", "ISA"].includes(p.acronym)
-  );
-  console.log(`✓ Partidos con delegados: ${delegateParties.map((p) => p.acronym).join(", ")}`);
-  console.log(`✓ Todos los partidos: ${allParties.map((p) => p.acronym).join(", ")}`);
+  // Solo los primeros 4 partidos tienen delegados
+  const delegateParties = allParties.filter((p) => p.ballotOrder <= 4);
+  console.log(`✓ Partidos con delegados: ${delegateParties.map((p) => p.ballotOrder).join(", ")}`);
+  console.log(`✓ Todos los partidos: ${allParties.map((p) => p.ballotOrder).join(", ")}`);
 
 
   // Agrupar mesas por recinto
@@ -253,11 +253,11 @@ async function seedReports() {
 
     // Tomar mesas "al azar" (mezcla reproducible)
     const shuffled = [...tables].sort((a, b) =>
-      rInt(-1, 1, schoolIdx * 100 + a.tableCode) - rInt(-1, 1, schoolIdx * 100 + b.tableCode)
+      rInt(-1, 1, schoolIdx * 100 + a.code) - rInt(-1, 1, schoolIdx * 100 + b.code)
     );
     const selectedTables = shuffled.slice(0, targetTableCount);
 
-    console.log(`\n  🏫 ${school.nombreRecinto} (${tables.length} mesas → ${targetTableCount} cubiertas)`);
+    console.log(`\n  🏫 ${school.name} (${tables.length} mesas → ${targetTableCount} cubiertas)`);
 
     let tableGlobalIdx = schoolIdx * 50;
 
@@ -294,7 +294,7 @@ async function seedReports() {
 
         if (!delegate) {
           console.log(
-            `    ⚠️  Sin delegado: ${delegateParty.acronym} / Mesa ${table.tableNumber} (${school.nombreAbrev})`
+            `    ⚠️  Sin delegado: Partido ${delegateParty.ballotOrder} / Mesa ${table.number} (${school.shortName})`
           );
           continue;
         }
@@ -351,7 +351,7 @@ async function seedReports() {
           nullVotes: 0, // Los nulos/blancos se almacenan en las entries, no en el report
           blankVotes: 0,
           notes: status === ReportStatus.DRAFT
-            ? `Borrador - ${delegateParty.acronym} Mesa ${table.tableNumber}`
+            ? `Borrador - Partido ${delegateParty.ballotOrder} Mesa ${table.number}`
             : null,
           entries,
           createdBy: delegate.id,
@@ -363,7 +363,7 @@ async function seedReports() {
       }
 
       console.log(
-        `    ✓ Mesa ${table.tableNumber.padStart(2)} (${table.totalVoters} votantes) → ${delegateParties.length} reportes (${allParties.length} partidos × ${electionTypes.length} tipos = ${allParties.length * electionTypes.length} entries c/u)`
+        `    ✓ Mesa ${String(table.number).padStart(2, "0")} (${table.totalVoters} votantes) → ${delegateParties.length} reportes (${allParties.length} partidos × ${electionTypes.length} tipos = ${allParties.length * electionTypes.length} entries c/u)`
       );
     }
 
@@ -373,7 +373,7 @@ async function seedReports() {
   console.log(`\n🎉 Seed de reportes completado!`);
   console.log(`   Recintos cubiertos : ${selectedSchoolIds.size} de ${schools.length}`);
   console.log(`   Reportes creados   : ${totalReports}`);
-  console.log(`   Partidos en acta   : ${allParties.length} (${allParties.map((p) => p.acronym).join(", ")})`);
+  console.log(`   Partidos en acta   : ${allParties.length} (${allParties.map((p) => p.ballotOrder).join(", ")})`);
   console.log(`   Tipos de elección  : ${electionTypes.length} (${electionTypes.map((e) => e.name).join(", ")})`);
   console.log(`   Entries por reporte: ${allParties.length} × ${electionTypes.length} = ${allParties.length * electionTypes.length}`);
 
@@ -384,3 +384,4 @@ seedReports().catch((err) => {
   console.error(err);
   process.exit(1);
 });
+

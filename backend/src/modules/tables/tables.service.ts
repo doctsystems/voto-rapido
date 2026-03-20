@@ -7,10 +7,11 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { VotingTable } from "./voting-table.entity";
 import { School } from "../schools/school.entity";
-import { IsString, IsOptional, IsNumber, IsUUID } from "class-validator";
+import { IsOptional, IsNumber, IsUUID } from "class-validator";
 
 export class CreateTableDto {
-  @IsString() tableNumber: string;
+  @IsNumber() number: number;
+  @IsNumber() code: number;
   @IsOptional() @IsNumber() totalVoters?: number;
   @IsUUID() @IsOptional() schoolId?: string;
 }
@@ -33,10 +34,7 @@ export class TablesService {
       const schoolB = b.school_id || "";
       if (schoolA !== schoolB) return schoolA.localeCompare(schoolB);
       
-      return a.tableNumber.localeCompare(b.tableNumber, undefined, {
-        numeric: true,
-        sensitivity: "base",
-      });
+      return a.number - b.number;
     });
   }
 
@@ -62,18 +60,19 @@ export class TablesService {
 
     const existing = await this.repo.findOne({
       where: {
-        tableNumber: dto.tableNumber,
+        number: dto.number,
         ...(school ? { school: { id: school.id } } : {}),
       },
     });
     if (existing) {
       throw new ConflictException(
-        `Ya existe la mesa "${dto.tableNumber}" en el recinto "${school?.nombreRecinto ?? "(sin recinto)"}"`,
+        `Table "${dto.number}" already exists in "${school?.name ?? "(no school)"}"`,
       );
     }
 
     const table = this.repo.create({
-      tableNumber: dto.tableNumber,
+      number: dto.number,
+      code: dto.code,
       totalVoters: dto.totalVoters,
       createdBy: actorId,
       updatedBy: actorId,
@@ -86,7 +85,8 @@ export class TablesService {
   async update(id: string, dto: Partial<CreateTableDto>, actorId?: string) {
     const table = await this.findOne(id);
 
-    if (dto.tableNumber !== undefined) table.tableNumber = dto.tableNumber;
+    if (dto.number !== undefined) table.number = dto.number;
+    if (dto.code !== undefined) table.code = dto.code;
     if (dto.totalVoters !== undefined) table.totalVoters = dto.totalVoters;
 
     if (dto.schoolId !== undefined) {
@@ -107,7 +107,7 @@ export class TablesService {
     const table = await this.findOne(id);
     await this.repo.update(id, { deletedBy: actorId });
     await this.repo.softDelete(id);
-    return { message: `Mesa ${table.tableNumber} eliminada` };
+    return { message: `Table ${table.number} deleted` };
   }
 
   async findBySchool(schoolId: string) {
@@ -117,10 +117,7 @@ export class TablesService {
     });
     
     return tables.sort((a, b) =>
-      a.tableNumber.localeCompare(b.tableNumber, undefined, {
-        numeric: true,
-        sensitivity: "base",
-      })
+      a.number - b.number
     );
   }
 }

@@ -10,7 +10,6 @@ import { ElectionTypesModule } from './modules/election-types/election-types.mod
 import { VotesModule } from './modules/votes/votes.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { AuditModule } from './modules/audit/audit.module';
-import { FixConstraintsService } from './database/fix-constraints.subscriber';
 import { AppController } from './app.controller';
 import databaseConfig from './config/database.config';
 import appConfig from './config/app.config';
@@ -41,6 +40,6 @@ import appConfig from './config/app.config';
     SchoolsModule, ElectionTypesModule, VotesModule, ReportsModule, AuditModule,
   ],
   controllers: [AppController],
-  providers: [FixConstraintsService],
+  providers: [],
 })
 export class AppModule { }

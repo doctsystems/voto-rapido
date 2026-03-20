@@ -191,7 +191,7 @@ export default function NewReportPage() {
         matrix[et.id] = { etName: et.name, order: et.order ?? 0, rows: [] };
       matrix[et.id].rows.push({
         partyId: party.id,
-        partyAcronym: party.acronym,
+        partyBallotOrder: party.ballotOrder,
         partyName: party.name,
         partyColor: party.color,
         candidateName: et.candidateName,
@@ -258,9 +258,9 @@ export default function NewReportPage() {
             <>
               Mesa{" "}
               <span className="font-mono font-bold text-primary">
-                {tableInfo.tableNumber}
+                {tableInfo.number}
               </span>
-              {tableInfo.school && <> — {tableInfo.school.nombreRecinto}</>}
+              {tableInfo.school && <> — {tableInfo.school.name}</>}
               {tableVoters && (
                 <>
                   {" "}
@@ -309,7 +309,7 @@ export default function NewReportPage() {
               <option value="">— Seleccione una mesa —</option>
               {(recintoTables as any[]).map((t: any) => (
                 <option key={t.id} value={t.id}>
-                  Mesa {t.tableNumber}
+                  Mesa {t.number}
                   {t.totalVoters
                     ? ` · ${t.totalVoters.toLocaleString()} votantes`
                     : ""}
@@ -430,7 +430,7 @@ export default function NewReportPage() {
                             }}
                           />
                           <span className="text-sm font-semibold text-black">
-                            {row.partyAcronym}
+                            #{row.partyBallotOrder}
                           </span>
                           <span className="text-xs text-body truncate">
                             {row.candidateName || row.partyName}
@@ -611,3 +611,4 @@ export default function NewReportPage() {
     </div>
   );
 }
+

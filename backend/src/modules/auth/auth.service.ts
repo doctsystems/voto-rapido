@@ -15,7 +15,7 @@ export class AuthService {
 
   async login(username: string, password: string) {
     const user = await this.userRepo.findOne({
-      where: [{ username }, { email: username }],
+      where: { username },
       relations: ["party", "table", "table.school", "school"],
     });
 
@@ -48,12 +48,12 @@ export class AuthService {
         id: user.id,
         username: user.username,
         fullName: user.fullName,
-        email: user.email,
         role: user.role,
         party: user.party
           ? {
               id: user.party.id,
               name: user.party.name,
+              ballotOrder: user.party.ballotOrder,
               acronym: user.party.acronym,
               color: user.party.color,
             }
@@ -61,7 +61,8 @@ export class AuthService {
         table: user.table
           ? {
               id: user.table.id,
-              tableNumber: user.table.tableNumber,
+              number: user.table.number,
+              code: user.table.code,
               totalVoters: user.table.totalVoters ?? null,
               school: user.table.school ?? null,
             }
@@ -69,8 +70,8 @@ export class AuthService {
         school: user.school
           ? {
               id: user.school.id,
-              nombreRecinto: user.school.nombreRecinto,
-              codigoRecinto: user.school.codigoRecinto,
+              name: user.school.name,
+              code: user.school.code,
             }
           : null,
       },

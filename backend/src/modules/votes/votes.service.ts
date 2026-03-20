@@ -81,7 +81,7 @@ function aggregateReports(
       order: number;
       parties: Record<
         string,
-        { name: string; acronym: string; color: string; votes: number; candidateName: string | null }
+        { name: string; ballotOrder: number; color: string; votes: number; candidateName: string | null }
       >;
       nullVotes: number;
       blankVotes: number;
@@ -91,7 +91,7 @@ function aggregateReports(
 
   const globalParty: Record<
     string,
-    { name: string; acronym: string; color: string; total: number }
+    { name: string; ballotOrder: number; color: string; total: number }
   > = {};
 
   for (const report of reports) {
@@ -103,7 +103,7 @@ function aggregateReports(
       if (!globalParty[p.id])
         globalParty[p.id] = {
           name: p.name,
-          acronym: p.acronym,
+          ballotOrder: p.ballotOrder,
           color: p.color,
           total: 0,
         };
@@ -122,7 +122,7 @@ function aggregateReports(
       if (!etMap[et.id].parties[p.id])
         etMap[et.id].parties[p.id] = {
           name: p.name,
-          acronym: p.acronym,
+          ballotOrder: p.ballotOrder,
           color: p.color,
           votes: 0,
           candidateName: candidateMap[`${p.id}:${et.id}`] ?? null,
@@ -178,7 +178,7 @@ function aggregateReports(
         totalVoters: total,
         parties: parties.map((p) => ({
           name: p.name,
-          acronym: p.acronym,
+          ballotOrder: p.ballotOrder,
           color: p.color,
           votes: p.votes,
           candidateName: (p as any).candidateName ?? null,
@@ -303,16 +303,11 @@ export class VotesService {
 
     const reports = await query.getMany();
     return reports.sort((a, b) => {
-      const schoolA = a.table?.school?.nombreRecinto || "";
-      const schoolB = b.table?.school?.nombreRecinto || "";
+      const schoolA = a.table?.school?.name || "";
+      const schoolB = b.table?.school?.name || "";
       if (schoolA !== schoolB) return schoolA.localeCompare(schoolB);
 
-      const tableA = a.table?.tableNumber || "";
-      const tableB = b.table?.tableNumber || "";
-      return tableA.localeCompare(tableB, undefined, {
-        numeric: true,
-        sensitivity: "base",
-      });
+      return (a.table?.number || 0) - (b.table?.number || 0);
     });
   }
 
@@ -472,7 +467,7 @@ export class VotesService {
 
     await this.reportRepo.save(report);
     this.logger.log(
-      `Reporte creado: ${creator.username} mesa ${table.tableNumber}`,
+      `Reporte creado: ${creator.username} mesa ${table.number}`,
     );
     return this.fetchReport(report.id);
   }
@@ -687,7 +682,7 @@ export class VotesService {
       string,
       {
         partyName: string;
-        partyAcronym: string;
+        partyBallotOrder: number;
         partyColor: string;
         reports: VoteReport[];
       }
@@ -698,7 +693,7 @@ export class VotesService {
       if (!byPartyMap[pid])
         byPartyMap[pid] = {
           partyName: report.delegate.party.name,
-          partyAcronym: report.delegate.party.acronym,
+          partyBallotOrder: report.delegate.party.ballotOrder,
           partyColor: report.delegate.party.color,
           reports: [],
         };
@@ -708,7 +703,7 @@ export class VotesService {
     const byParty = Object.entries(byPartyMap).map(([partyId, data]) => ({
       partyId,
       partyName: data.partyName,
-      partyAcronym: data.partyAcronym,
+      partyBallotOrder: data.partyBallotOrder,
       partyColor: data.partyColor,
       ...aggregateReports(data.reports, candidateMap),
     }));

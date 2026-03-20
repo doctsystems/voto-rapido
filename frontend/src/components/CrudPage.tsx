@@ -8,7 +8,6 @@ export interface Field {
   label: string;
   type?:
     | "text"
-    | "email"
     | "password"
     | "number"
     | "select"
@@ -171,6 +170,9 @@ export default function CrudPage({
     for (const f of fields.filter((field) => !field.hidden?.(form))) {
       if (f.required && !data[f.key])
         return toast.error(`${f.label} es obligatorio`);
+      if (f.type === "number" && data[f.key] !== "" && data[f.key] !== undefined) {
+        data[f.key] = Number(data[f.key]);
+      }
     }
 
     // Clean up empty strings for UUID fields to avoid strict backend validation errors

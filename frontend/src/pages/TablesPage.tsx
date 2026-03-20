@@ -13,22 +13,28 @@ export default function TablesPage() {
 
   const schoolOptions = (schools as any[]).map((s: any) => ({
     value: s.id,
-    label: s.codigoRecinto
-      ? `[${s.codigoRecinto}] ${s.nombreRecinto}`
-      : s.nombreRecinto,
+    label: s.code
+      ? `[${s.code}] ${s.name}`
+      : s.name,
   }));
 
   const fields: Field[] = [
-    { key: "tableNumber", label: "Número de Mesa", required: true, placeholder: "Ej: M001", colSpan: true },
+    { key: "number", label: "Número de Mesa", required: true, type: "number", placeholder: "Ej: 1" },
+    { key: "code", label: "Código de Mesa", required: true, type: "number", placeholder: "Ej: 6008791" },
     { key: "schoolId", label: "Recinto Electoral", type: "select", options: schoolOptions },
     { key: "totalVoters", label: "Total votantes habilitados (padrón)", type: "number", placeholder: "Ej: 300" },
   ];
 
   const columns = [
     {
-      key: "tableNumber",
+      key: "number",
       label: "Mesa",
       render: (v: any) => <span className="font-medium text-black">{v}</span>,
+    },
+    {
+      key: "code",
+      label: "Código",
+      render: (v: any) => <span className="font-mono text-black">{v}</span>,
     },
     {
       key: "school",
@@ -36,10 +42,10 @@ export default function TablesPage() {
       render: (v: any) =>
         v ? (
           <div>
-            <div className="text-black">{v.nombreRecinto}</div>
-            {v.codigoRecinto && (
+            <div className="text-black">{v.name}</div>
+            {v.code && (
               <div className="text-xs font-mono text-bodydark">
-                #{v.codigoRecinto}
+                #{v.code}
               </div>
             )}
           </div>
@@ -111,3 +117,4 @@ export default function TablesPage() {
     />
   );
 }
+
