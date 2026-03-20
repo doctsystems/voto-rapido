@@ -39,7 +39,7 @@ export default function LoginPage() {
           {/* Background decoration */}
           <div className="relative z-10 text-center">
             {/* Logo */}
-            <div className="flex h-20  lg:justify-start px-6 lg:px-8">
+            <div className="flex h-20 lg:justify-start px-6 lg:px-8">
               <NavLink to="/" className="flex items-center gap-2">
                 <img
                   src="/images/logo-01.svg"
@@ -48,24 +48,9 @@ export default function LoginPage() {
                 />
               </NavLink>
             </div>
-            <p className="text-bodydark text-lg max-w-sm mx-auto leading-relaxed">
-              Sistema de Conteo Rápido Electoral
-            </p>
-            <div className="mt-12 grid grid-cols-3 gap-6">
-              {[
-                { icon: "🏫", label: "Recintos", value: "Múltiples" },
-                { icon: "👥", label: "Partidos", value: "Todos" },
-                { icon: "📊", label: "En vivo", value: "Real-time" },
-              ].map((s) => (
-                <div key={s.label} className="text-center">
-                  <div className="text-2xl mb-1">{s.icon}</div>
-                  <div className="text-white font-semibold text-sm">
-                    {s.value}
-                  </div>
-                  <div className="text-bodydark text-xs">{s.label}</div>
-                </div>
-              ))}
-            </div>
+            <span className="text-bodydark text-xl ">
+              La verdad en tiempo real.
+            </span>
           </div>
         </div>
 
@@ -73,11 +58,13 @@ export default function LoginPage() {
         <div className="flex flex-1 items-center justify-center bg-whiter px-6 py-12">
           <div className="w-full max-w-md">
             {/* Mobile logo */}
-            <div className="lg:hidden flex items-center gap-3 mb-10">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-                <span className="text-white font-bold text-lg">V</span>
+            <div className="flex justify-center gap-3 mb-10">
+              {/* Logo */}
+              <div className="flex max-w-xs">
+                <NavLink to="/" className="flex items-center gap-2">
+                  <img src="/images/logo.svg" alt="QuickTally" />
+                </NavLink>
               </div>
-              <span className="text-xl font-bold text-black">VotoRápido</span>
             </div>
 
             <div className="mb-8">
@@ -94,7 +81,9 @@ export default function LoginPage() {
                   type="text"
                   autoComplete="username"
                   value={form.username}
-                  onChange={(e) => setForm({ ...form, username: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, username: e.target.value })
+                  }
                   className="input"
                   placeholder="tu.usuario"
                   disabled={loading}
@@ -106,7 +95,9 @@ export default function LoginPage() {
                   type="password"
                   autoComplete="current-password"
                   value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, password: e.target.value })
+                  }
                   className="input"
                   placeholder="••••••••"
                   disabled={loading}
