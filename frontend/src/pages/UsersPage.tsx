@@ -131,8 +131,17 @@ export default function UsersPage() {
     return normalized;
   };
 
+  const sanitizeUpdateUserPayload = (data: any) => {
+    const normalized = sanitizeUserPayload(data);
+    if (isJefeRecinto) {
+      delete normalized.partyId;
+    }
+    return normalized;
+  };
+
   const createUser = (data: any) => usersApi.create(sanitizeUserPayload(data));
-  const updateUser = (id: string, data: any) => usersApi.update(id, sanitizeUserPayload(data));
+  const updateUser = (id: string, data: any) =>
+    usersApi.update(id, sanitizeUpdateUserPayload(data));
   const resetFormContext = () => {
     setFormRole(isJefeCampana ? "JEFE_RECINTO" : isJefeRecinto ? "DELEGADO" : "");
     setSelectedSchoolId("");
