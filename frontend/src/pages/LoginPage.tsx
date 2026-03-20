@@ -48,8 +48,8 @@ export default function LoginPage() {
                 />
               </NavLink>
             </div>
-            <span className="text-bodydark text-xl ">
-              La verdad en tiempo real.
+            <span className="text-bodydark text-sm ">
+              Conteo veraz y transparente, en tiempo real.
             </span>
           </div>
         </div>
@@ -58,16 +58,19 @@ export default function LoginPage() {
         <div className="flex flex-1 items-center justify-center bg-whiter px-6 py-12">
           <div className="w-full max-w-md">
             {/* Mobile logo */}
-            <div className="flex justify-center gap-3 mb-10">
+            <div className="mb-10 flex flex-col items-center gap-3 text-center lg:hidden">
               {/* Logo */}
               <div className="flex max-w-xs">
                 <NavLink to="/" className="flex items-center gap-2">
                   <img src="/images/logo.svg" alt="QuickTally" />
                 </NavLink>
               </div>
+              <span className="max-w-xs text-sm text-body lg:hidden">
+                Conteo veraz y transparente, en tiempo real.
+              </span>
             </div>
 
-            <div className="mb-8">
+            <div className="mb-8 mt-8">
               <h2 className="text-3xl font-bold text-black">Iniciar sesión</h2>
               <p className="text-body mt-2">
                 Ingresa tus credenciales para acceder al sistema
@@ -76,7 +79,7 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label className="label">Usuario o Email</label>
+                <label className="label">Usuario</label>
                 <input
                   type="text"
                   autoComplete="username"

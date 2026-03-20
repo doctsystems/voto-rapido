@@ -117,9 +117,10 @@ export default function Layout() {
                     end={item.to === "/" || item.to === "/reports"}
                     onClick={() => setSidebarOpen(false)}
                     className={({ isActive }) =>
-                      `nav-item ${isActive
-                        ? "bg-primary/20 text-primary"
-                        : "text-gray-600 hover:bg-black/5 hover:text-gray-900"
+                      `nav-item ${
+                        isActive
+                          ? "bg-primary/20 text-primary"
+                          : "text-gray-600 hover:bg-black/5 hover:text-gray-900"
                       }`
                     }
                   >
@@ -200,8 +201,11 @@ export default function Layout() {
 
         {/* Desktop topbar breadcrumb */}
         <header className="hidden lg:flex h-20 shrink-0 items-center justify-between border-b border-stroke bg-white px-8">
-          <div className="text-xl font-bold text-black tracking-wide uppercase">
-            Sistema de Conteo Votos
+          {/* <div className="text-xl font-bold text-black tracking-wide ">
+            Sistema de Conteo Electoral
+          </div> */}
+          <div className="text-2xl font-bold text-primary tracking-wide ">
+            Plataforma de Resultados Electorales
           </div>
           <div className="flex items-center gap-3 text-sm text-body">
             <span className="font-medium text-black">{user?.fullName}</span>

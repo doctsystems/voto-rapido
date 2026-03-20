@@ -28,7 +28,6 @@ export default {
         whiten: '#F1F5F9',
         whiter: '#F5F7FD',
         black: '#1C2434',
-        'black-2': '#010101',
         meta: {
           1: '#DC3545', 2: '#EFF2F7', 3: '#10B981',
           4: '#313D4A', 5: '#259AE6', 6: '#FFBA00',

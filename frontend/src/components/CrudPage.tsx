@@ -1,12 +1,19 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { QueryKey } from '@tanstack/react-query';
-import { toast } from '../lib/toast';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { QueryKey } from "@tanstack/react-query";
+import { toast } from "../lib/toast";
 
 export interface Field {
   key: string;
   label: string;
-  type?: 'text' | 'email' | 'password' | 'number' | 'select' | 'color' | 'textarea';
+  type?:
+    | "text"
+    | "email"
+    | "password"
+    | "number"
+    | "select"
+    | "color"
+    | "textarea";
   options?: { value: string; label: string }[];
   getValue?: (row: any) => any;
   required?: boolean;
@@ -26,7 +33,11 @@ interface CrudPageProps {
   updateFn: (id: string, data: any) => Promise<any>;
   deleteFn: (id: string) => Promise<any>;
   fields: Field[];
-  columns: { key: string; label: string; render?: (val: any, row: any) => React.ReactNode }[];
+  columns: {
+    key: string;
+    label: string;
+    render?: (val: any, row: any) => React.ReactNode;
+  }[];
   canDelete?: boolean;
   canCreate?: boolean;
   canEditRow?: (row: any) => boolean;
@@ -42,16 +53,33 @@ interface CrudPageProps {
 }
 
 export default function CrudPage({
-  title, description, queryKey, fetchFn, createFn, updateFn, deleteFn,
-  fields, columns, canDelete = true, canCreate = true, extraActions, defaultValues = {},
-  headerContent, headerActions, customEmptyState, hideEdit = false, canEditRow, canDeleteRow,
-  onOpenCreate, onOpenEdit,
+  title,
+  description,
+  queryKey,
+  fetchFn,
+  createFn,
+  updateFn,
+  deleteFn,
+  fields,
+  columns,
+  canDelete = true,
+  canCreate = true,
+  extraActions,
+  defaultValues = {},
+  headerContent,
+  headerActions,
+  customEmptyState,
+  hideEdit = false,
+  canEditRow,
+  canDeleteRow,
+  onOpenCreate,
+  onOpenEdit,
 }: CrudPageProps) {
   const qc = useQueryClient();
-  const [modal, setModal] = useState<'create' | 'edit' | null>(null);
+  const [modal, setModal] = useState<"create" | "edit" | null>(null);
   const [editing, setEditing] = useState<any | null>(null);
   const [form, setForm] = useState<any>({});
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
 
   // -- Paginación
   const [currentPage, setCurrentPage] = useState(1);
@@ -62,101 +90,145 @@ export default function CrudPage({
 
   const createMutation = useMutation({
     mutationFn: createFn,
-    onSuccess: () => { toast.success('Registrado exitosamente'); invalidate(); closeModal(); },
-    onError: (e: any) => toast.error(e.response?.data?.message || 'Error al crear'),
+    onSuccess: () => {
+      toast.success("Registrado exitosamente");
+      invalidate();
+      closeModal();
+    },
+    onError: (e: any) =>
+      toast.error(e.response?.data?.message || "Error al crear"),
   });
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: any) => updateFn(id, data),
-    onSuccess: () => { toast.success('Actualizado'); invalidate(); closeModal(); },
-    onError: (e: any) => toast.error(e.response?.data?.message || 'Error al actualizar'),
+    onSuccess: () => {
+      toast.success("Actualizado");
+      invalidate();
+      closeModal();
+    },
+    onError: (e: any) =>
+      toast.error(e.response?.data?.message || "Error al actualizar"),
   });
   const deleteMutation = useMutation({
     mutationFn: deleteFn,
-    onSuccess: () => { toast.success('Eliminado'); invalidate(); },
-    onError: (e: any) => toast.error(e.response?.data?.message || 'Error al eliminar'),
+    onSuccess: () => {
+      toast.success("Eliminado");
+      invalidate();
+    },
+    onError: (e: any) =>
+      toast.error(e.response?.data?.message || "Error al eliminar"),
   });
 
   const getInitialFieldValue = (row: any, fieldKey: string) => {
     const directValue = row[fieldKey];
-    if (directValue && typeof directValue === 'object' && 'id' in directValue) {
+    if (directValue && typeof directValue === "object" && "id" in directValue) {
       return directValue.id;
     }
     if (directValue !== undefined) {
       return directValue;
     }
 
-    if (fieldKey.endsWith('Id')) {
+    if (fieldKey.endsWith("Id")) {
       const relationKey = fieldKey.slice(0, -2);
       const relationValue = row[relationKey];
-      if (relationValue && typeof relationValue === 'object' && 'id' in relationValue) {
+      if (
+        relationValue &&
+        typeof relationValue === "object" &&
+        "id" in relationValue
+      ) {
         return relationValue.id;
       }
     }
 
-    return '';
+    return "";
   };
 
   const openCreate = () => {
     onOpenCreate?.();
     setForm({ ...defaultValues });
-    setModal('create');
+    setModal("create");
   };
   const openEdit = (row: any) => {
     const f: any = {};
-    fields.forEach(field => {
-      f[field.key] = field.getValue ? field.getValue(row) : getInitialFieldValue(row, field.key);
+    fields.forEach((field) => {
+      f[field.key] = field.getValue
+        ? field.getValue(row)
+        : getInitialFieldValue(row, field.key);
     });
     onOpenEdit?.(row);
-    setForm(f); setEditing(row); setModal('edit');
+    setForm(f);
+    setEditing(row);
+    setModal("edit");
   };
-  const closeModal = () => { setModal(null); setEditing(null); setForm({}); };
+  const closeModal = () => {
+    setModal(null);
+    setEditing(null);
+    setForm({});
+  };
 
   const handleSave = () => {
     const data = { ...form };
-    if (modal === 'edit' && data.password === '') delete data.password;
-    for (const f of fields.filter(field => !field.hidden?.(form))) {
-      if (f.required && !data[f.key]) return toast.error(`${f.label} es obligatorio`);
+    if (modal === "edit" && data.password === "") delete data.password;
+    for (const f of fields.filter((field) => !field.hidden?.(form))) {
+      if (f.required && !data[f.key])
+        return toast.error(`${f.label} es obligatorio`);
     }
 
     // Clean up empty strings for UUID fields to avoid strict backend validation errors
-    if (data.partyId === '') data.partyId = null;
-    if (data.schoolId === '') data.schoolId = null;
-    if (data.tableId === '') data.tableId = null;
+    if (data.partyId === "") data.partyId = null;
+    if (data.schoolId === "") data.schoolId = null;
+    if (data.tableId === "") data.tableId = null;
 
-    if (modal === 'create') createMutation.mutate(data);
+    if (modal === "create") createMutation.mutate(data);
     else updateMutation.mutate({ id: editing.id, data });
   };
 
   const filtered = search
-    ? (data as any[]).filter(row =>
-      Object.values(row).some(v =>
-        typeof v === 'string' && v.toLowerCase().includes(search.toLowerCase())
+    ? (data as any[]).filter((row) =>
+        Object.values(row).some(
+          (v) =>
+            typeof v === "string" &&
+            v.toLowerCase().includes(search.toLowerCase()),
+        ),
       )
-    )
     : (data as any[]);
 
   // Paginación Lógica
-  const totalPages = itemsPerPage === 9999 ? 1 : Math.ceil(filtered.length / itemsPerPage);
+  const totalPages =
+    itemsPerPage === 9999 ? 1 : Math.ceil(filtered.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = itemsPerPage === 9999 ? filtered.length : startIndex + itemsPerPage;
+  const endIndex =
+    itemsPerPage === 9999 ? filtered.length : startIndex + itemsPerPage;
   const paginatedData = filtered.slice(startIndex, endIndex);
 
-  const hasGrid = fields.some(f => f.colSpan);
-  const visibleFields = fields.filter(field => !field.hidden?.(form));
+  const hasGrid = fields.some((f) => f.colSpan);
+  const visibleFields = fields.filter((field) => !field.hidden?.(form));
 
   return (
     <div>
       {/* Page header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-black">{title}</h2>
-          {description && <p className="text-sm text-body mt-0.5">{description}</p>}
+          <h2 className="text-xl font-bold text-primary">{title}</h2>
+          {description && (
+            <p className="text-sm text-body mt-0.5">{description}</p>
+          )}
         </div>
         <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
           {headerActions}
           {canCreate && (
-            <button onClick={openCreate} className="btn-primary w-full justify-center sm:w-auto">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M12 4v16m8-8H4" /></svg>
+            <button
+              onClick={openCreate}
+              className="btn-primary w-full justify-center sm:w-auto"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path d="M12 4v16m8-8H4" />
+              </svg>
               Nuevo {title}
             </button>
           )}
@@ -165,63 +237,121 @@ export default function CrudPage({
 
       {headerContent && <div className="mb-4">{headerContent}</div>}
 
-      {customEmptyState ? customEmptyState : (
+      {customEmptyState ? (
+        customEmptyState
+      ) : (
         <div className="card">
           {/* Search + count bar */}
           <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-stroke">
             <div className="relative">
               <input
-                type="text" placeholder={`Buscar en ${title.toLowerCase()}...`}
-                value={search} onChange={e => { setSearch(e.target.value); setCurrentPage(1); }}
+                type="text"
+                placeholder={`Buscar en ${title.toLowerCase()}...`}
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
                 className="input h-9 pl-8 text-xs max-w-xs"
               />
-              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-body" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+              <svg
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-body"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
             </div>
-            <span className="text-xs text-body whitespace-nowrap">{filtered.length} registro(s)</span>
+            <span className="text-xs text-body whitespace-nowrap">
+              {filtered.length} registro(s)
+            </span>
           </div>
 
           {isLoading ? (
             <div className="flex items-center justify-center py-20">
-              <svg className="w-8 h-8 animate-spin text-primary" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+              <svg
+                className="w-8 h-8 animate-spin text-primary"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
             </div>
           ) : filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-body">
-              <svg className="w-12 h-12 text-stroke mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}><path d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
-              <p className="text-sm">Sin registros{search ? ` para "${search}"` : ''}</p>
+              <svg
+                className="w-12 h-12 text-stroke mb-3"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1}
+              >
+                <path d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+              </svg>
+              <p className="text-sm">
+                Sin registros{search ? ` para "${search}"` : ""}
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto w-full">
               <table className="ta-table w-full">
                 <thead>
                   <tr>
-                    {columns.map(col => <th key={col.key + col.label}>{col.label}</th>)}
+                    {columns.map((col) => (
+                      <th key={col.key + col.label}>{col.label}</th>
+                    ))}
                     <th className="text-center">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedData.map((row: any) => (
                     <tr key={row.id}>
-                      {columns.map(col => (
+                      {columns.map((col) => (
                         <td key={col.key + col.label} className="text-black">
-                          {col.render ? col.render(row[col.key], row) : String(row[col.key] ?? '—')}
+                          {col.render
+                            ? col.render(row[col.key], row)
+                            : String(row[col.key] ?? "—")}
                         </td>
                       ))}
                       <td>
                         <div className="flex items-center justify-center gap-3">
                           {extraActions?.(row, invalidate)}
-                          {!hideEdit && (canEditRow ? canEditRow(row) : true) && (
-                            <button onClick={() => openEdit(row)} className="btn-xs btn-action-primary">
-                              Editar
-                            </button>
-                          )}
-                          {canDelete && (canDeleteRow ? canDeleteRow(row) : true) && (
-                            <button
-                              onClick={() => { if (confirm('¿Eliminar este registro?')) deleteMutation.mutate(row.id); }}
-                              className="btn-xs btn-action-danger"
-                            >
-                              Eliminar
-                            </button>
-                          )}
+                          {!hideEdit &&
+                            (canEditRow ? canEditRow(row) : true) && (
+                              <button
+                                onClick={() => openEdit(row)}
+                                className="btn-xs btn-action-primary"
+                              >
+                                Editar
+                              </button>
+                            )}
+                          {canDelete &&
+                            (canDeleteRow ? canDeleteRow(row) : true) && (
+                              <button
+                                onClick={() => {
+                                  if (confirm("¿Eliminar este registro?"))
+                                    deleteMutation.mutate(row.id);
+                                }}
+                                className="btn-xs btn-action-danger"
+                              >
+                                Eliminar
+                              </button>
+                            )}
                         </div>
                       </td>
                     </tr>
@@ -235,9 +365,19 @@ export default function CrudPage({
           {filtered.length > 0 && (
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-4 border-t border-stroke bg-whiter rounded-b-xl">
               <div className="text-sm text-body text-center sm:text-left">
-                Mostrando <span className="font-semibold text-black">{startIndex + 1}</span> al{' '}
-                <span className="font-semibold text-black">{Math.min(endIndex, filtered.length)}</span> de{' '}
-                <span className="font-semibold text-black">{filtered.length}</span> resultados
+                Mostrando{" "}
+                <span className="font-semibold text-black">
+                  {startIndex + 1}
+                </span>{" "}
+                al{" "}
+                <span className="font-semibold text-black">
+                  {Math.min(endIndex, filtered.length)}
+                </span>{" "}
+                de{" "}
+                <span className="font-semibold text-black">
+                  {filtered.length}
+                </span>{" "}
+                resultados
               </div>
 
               <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -261,7 +401,7 @@ export default function CrudPage({
                 {itemsPerPage !== 9999 && totalPages > 1 && (
                   <div className="flex items-center gap-1 mt-2 sm:mt-0">
                     <button
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
                       className="px-3 py-1 rounded text-sm text-body bg-white border border-stroke hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
@@ -271,7 +411,9 @@ export default function CrudPage({
                       {currentPage} / {totalPages}
                     </div>
                     <button
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      onClick={() =>
+                        setCurrentPage((p) => Math.min(totalPages, p + 1))
+                      }
                       disabled={currentPage === totalPages}
                       className="px-3 py-1 rounded text-sm text-body bg-white border border-stroke hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
@@ -287,28 +429,49 @@ export default function CrudPage({
 
       {/* Insert and Edit Modals */}
       {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={e => e.target === e.currentTarget && closeModal()}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={(e) => e.target === e.currentTarget && closeModal()}
+        >
           <div className="bg-white rounded-xl border border-black/[.06] shadow-default w-full max-w-lg max-h-[90vh] overflow-auto">
             <div className="flex items-center justify-between border-b border-stroke px-6 py-4">
               <h3 className="text-lg font-semibold text-black">
-                {modal === 'create' ? `Nuevo ${title}` : `Editar ${title}`}
+                {modal === "create" ? `Nuevo ${title}` : `Editar ${title}`}
               </h3>
-              <button onClick={closeModal} className="text-body hover:text-black">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path d="M6 18L18 6M6 6l12 12" /></svg>
+              <button
+                onClick={closeModal}
+                className="text-body hover:text-black"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
 
-            <div className={`p-6 ${hasGrid ? 'grid grid-cols-2 gap-4' : 'space-y-4'}`}>
-              {visibleFields.map(field => (
-                <div key={field.key} className={hasGrid && field.colSpan ? 'col-span-2' : ''}>
+            <div
+              className={`p-6 ${hasGrid ? "grid grid-cols-2 gap-4" : "space-y-4"}`}
+            >
+              {visibleFields.map((field) => (
+                <div
+                  key={field.key}
+                  className={hasGrid && field.colSpan ? "col-span-2" : ""}
+                >
                   <label className="label">
                     {field.label}
-                    {field.required && <span className="text-meta-1 ml-0.5">*</span>}
+                    {field.required && (
+                      <span className="text-meta-1 ml-0.5">*</span>
+                    )}
                   </label>
-                  {field.type === 'select' ? (
+                  {field.type === "select" ? (
                     <select
-                      value={form[field.key] || ''}
-                      onChange={e => {
+                      value={form[field.key] || ""}
+                      onChange={(e) => {
                         setForm({ ...form, [field.key]: e.target.value });
                         field.onChange?.(e.target.value);
                       }}
@@ -316,40 +479,56 @@ export default function CrudPage({
                       disabled={field.disabled}
                     >
                       <option value="">— Seleccionar —</option>
-                      {field.options?.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      {field.options?.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
                       ))}
                     </select>
-                  ) : field.type === 'color' ? (
+                  ) : field.type === "color" ? (
                     <div className="flex items-center gap-3">
-                      <input type="color"
-                        value={form[field.key] || '#313161'}
-                        onChange={e => setForm({ ...form, [field.key]: e.target.value })}
+                      <input
+                        type="color"
+                        value={form[field.key] || "#313161"}
+                        onChange={(e) =>
+                          setForm({ ...form, [field.key]: e.target.value })
+                        }
                         className="h-10 w-16 cursor-pointer rounded-xl border border-stroke"
                       />
-                      <input type="text"
-                        value={form[field.key] || ''}
-                        onChange={e => setForm({ ...form, [field.key]: e.target.value })}
+                      <input
+                        type="text"
+                        value={form[field.key] || ""}
+                        onChange={(e) =>
+                          setForm({ ...form, [field.key]: e.target.value })
+                        }
                         className="input flex-1"
                         placeholder="#313161"
                       />
                     </div>
-                  ) : field.type === 'textarea' ? (
+                  ) : field.type === "textarea" ? (
                     <textarea
-                      value={form[field.key] || ''}
-                      onChange={e => setForm({ ...form, [field.key]: e.target.value })}
+                      value={form[field.key] || ""}
+                      onChange={(e) =>
+                        setForm({ ...form, [field.key]: e.target.value })
+                      }
                       className="input resize-none"
                       rows={3}
                       placeholder={field.placeholder}
                     />
                   ) : (
                     <input
-                      type={field.type || 'text'}
-                      value={form[field.key] || ''}
-                      onChange={e => setForm({ ...form, [field.key]: e.target.value })}
+                      type={field.type || "text"}
+                      value={form[field.key] || ""}
+                      onChange={(e) =>
+                        setForm({ ...form, [field.key]: e.target.value })
+                      }
                       className="input"
                       disabled={field.disabled}
-                      placeholder={field.type === 'password' && modal === 'edit' ? 'Dejar vacío para no cambiar' : field.placeholder}
+                      placeholder={
+                        field.type === "password" && modal === "edit"
+                          ? "Dejar vacío para no cambiar"
+                          : field.placeholder
+                      }
                     />
                   )}
                 </div>
@@ -357,13 +536,17 @@ export default function CrudPage({
             </div>
 
             <div className="flex items-center justify-end gap-3 border-t border-stroke px-6 py-4">
-              <button onClick={closeModal} className="btn-secondary">Cancelar</button>
+              <button onClick={closeModal} className="btn-secondary">
+                Cancelar
+              </button>
               <button
                 onClick={handleSave}
                 disabled={createMutation.isPending || updateMutation.isPending}
                 className="btn-primary"
               >
-                {createMutation.isPending || updateMutation.isPending ? 'Guardando...' : 'Guardar'}
+                {createMutation.isPending || updateMutation.isPending
+                  ? "Guardando..."
+                  : "Guardar"}
               </button>
             </div>
           </div>

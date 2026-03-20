@@ -96,12 +96,15 @@ export default function PartiesPage() {
     <div>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-black">Partidos Políticos</h1>
+          <h1 className="text-xl font-bold text-primary">Partidos Políticos</h1>
           <p className="text-sm text-body mt-0.5">
             Gestión de partidos y sus tipos de elección asignados
           </p>
         </div>
-        <button onClick={openCreate} className="btn-primary w-full justify-center sm:w-auto">
+        <button
+          onClick={openCreate}
+          className="btn-primary w-full justify-center sm:w-auto"
+        >
           ✚ Nuevo Partido
         </button>
       </div>

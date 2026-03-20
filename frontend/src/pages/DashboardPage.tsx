@@ -478,7 +478,9 @@ export default function DashboardPage() {
       {/* ── Header ── */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between flex-wrap">
         <div className="flex-1 min-w-0">
-          <h2 className="text-2xl font-bold text-black">Dashboard Electoral</h2>
+          <h2 className="text-xl font-bold text-primary">
+            Dashboard Electoral
+          </h2>
           {isAdmin ? (
             /* Selector de partido integrado bajo el título */
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
