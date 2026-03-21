@@ -55,7 +55,7 @@ export const useAuthStore = create<AuthState>()(
         set({ token: null, user: null, isAuthenticated: false });
       },
     }),
-    { name: "voto-rapido-auth" },
+    { name: "quicktally-auth" },
   ),
 );
 

@@ -48,17 +48,17 @@ export function generateInitialPassword(input: InitialPasswordInput): string {
       return `admin.${username || "user"}`;
     case Role.JEFE_CAMPANA:
       if (partyAcronym && partyOrder !== "") {
-        return `jc.${partyAcronym}.${partyOrder}`;
+        return `jc.${partyAcronym}`;
       }
       break;
     case Role.JEFE_RECINTO:
       if (schoolShortName && schoolCode !== "") {
-        return `jr.${schoolShortName}.${schoolCode}`;
+        return `jr.${schoolShortName}`;
       }
       break;
     case Role.DELEGADO:
       if (schoolShortName && tableNumber !== "") {
-        return `del.${schoolShortName}.${tableNumber}`;
+        return `del.${schoolShortName}`;
       }
       break;
   }
@@ -66,10 +66,14 @@ export function generateInitialPassword(input: InitialPasswordInput): string {
   return `user.${username || "temporal"}`;
 }
 
-export async function generateHashedPassword(length: number = 4, saltRounds: number = 10): Promise<string> {
-  const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+";
+export async function generateHashedPassword(
+  length: number = 4,
+  saltRounds: number = 10,
+): Promise<string> {
+  const charset =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+";
   const plain = Array.from(crypto.randomFillSync(new Uint8Array(length)))
-    .map(x => charset[x % charset.length])
+    .map((x) => charset[x % charset.length])
     .join("");
   logger.info(`Contraseña generada: ${plain}`);
   return await bcrypt.hash(plain, saltRounds);
