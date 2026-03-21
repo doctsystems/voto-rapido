@@ -16,24 +16,6 @@ export class School extends BaseEntity {
   @Column({ name: "total_tables", nullable: true, type: "int" })
   tableCount: number;
 
-  @Column({ nullable: true, name: "department" })
-  department: string;
-
-  @Column({ nullable: true, name: "province" })
-  province: string;
-
-  @Column({ nullable: true, name: "municipality" })
-  municipality: string;
-
-  @Column({ nullable: true, name: "electoral_seat" })
-  electoralSeat: string;
-
-  @Column({ nullable: true, name: "locality" })
-  locality: string;
-
-  @Column({ nullable: true, type: "int", name: "constituency" })
-  constituency: number;
-
   @Column({ default: true, name: "is_active" })
   isActive: boolean;
 

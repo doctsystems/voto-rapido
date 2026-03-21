@@ -14,7 +14,6 @@ export class CreatePartyDto {
   @IsString() name: string;
   @IsNumber() ballotOrder: number;
   @IsOptional() @IsString() color?: string;
-  @IsOptional() @IsString() logoUrl?: string;
 }
 
 export class AssignElectionTypeDto {

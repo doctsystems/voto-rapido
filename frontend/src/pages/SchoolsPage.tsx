@@ -1,26 +1,29 @@
 import CrudPage, { Field } from "../components/CrudPage";
 import { schoolsApi } from "../lib/api";
 
-const DEFAULTS = {
-  department: "Tarija",
-  province: "Arce",
-  municipality: "Bermejo",
-  electoralSeat: "Bermejo",
-  locality: "Bermejo",
-  constituency: 42,
-};
-
 export default function SchoolsPage() {
+  const normalizeSchoolPayload = (data: any) => ({
+    ...data,
+    isActive:
+      data.isActive === undefined || data.isActive === null || data.isActive === ""
+        ? undefined
+        : data.isActive === true || data.isActive === "true",
+  });
+
   const fields: Field[] = [
     { key: "code", label: "Código", type: "number" },
     { key: "name", label: "Recinto Electoral", required: true, colSpan: true },
     { key: "shortName", label: "Nombre Abreviado" },
-    { key: "department", label: "Departamento" },
-    { key: "province", label: "Provincia" },
-    { key: "municipality", label: "Municipio" },
-    { key: "electoralSeat", label: "Asiento Electoral" },
-    { key: "locality", label: "Localidad" },
-    { key: "constituency", label: "Circunscripción", type: "number" },
+    { key: "tableCount", label: "Cantidad de Mesas", type: "number" },
+    {
+      key: "isActive",
+      label: "Estado",
+      type: "select",
+      options: [
+        { value: "true", label: "Activo" },
+        { value: "false", label: "Inactivo" },
+      ],
+    },
   ];
 
   const columns = [
@@ -43,12 +46,12 @@ export default function SchoolsPage() {
       description="Gestión de recintos donde se instalan las mesas de votación"
       queryKey={["schools"]}
       fetchFn={() => schoolsApi.getAll()}
-      createFn={schoolsApi.create}
-      updateFn={schoolsApi.update}
+      createFn={(data) => schoolsApi.create(normalizeSchoolPayload(data))}
+      updateFn={(id, data) => schoolsApi.update(id, normalizeSchoolPayload(data))}
       deleteFn={schoolsApi.remove}
       fields={fields}
       columns={columns}
-      defaultValues={DEFAULTS}
+      defaultValues={{ isActive: "true" }}
     />
   );
 }

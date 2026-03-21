@@ -69,6 +69,16 @@ function rInt(min: number, max: number, seed: number): number {
   return Math.round(min + rFloat(seed) * (max - min));
 }
 
+function orderBySeed<T>(items: T[], seed: number, getKey: (item: T, index: number) => number): T[] {
+  return [...items]
+    .map((item, index) => ({
+      item,
+      sortKey: rFloat(seed + getKey(item, index) * 17 + index),
+    }))
+    .sort((a, b) => a.sortKey - b.sortKey)
+    .map(({ item }) => item);
+}
+
 /**
  * Genera votos para todos los partidos para una mesa y tipo de elección dados.
  *
@@ -178,7 +188,7 @@ async function seedReports() {
   const allTables = await tableRepo.find({
     relations: ["school"],
     where: { isActive: true },
-    order: { code: "ASC" },
+    order: { number: "ASC" },
   });
 
   if (!schools.length || !allParties.length || !electionTypes.length || !allTables.length) {
@@ -200,37 +210,45 @@ async function seedReports() {
   }
 
   // ─── Selección de recintos a cubrir ────────────────────────────────────────
-  // Cubrir la mitad de los recintos (9 de 18).
-  // Priorizamos los que tienen más mesas; el resto al azar.
-  // Índices fijos (reproducibles) basados en el seed.ts:
-  //   schools[0] → 15 mesas   (U.E. Guido Villagomez)
-  //   schools[1] → 11 mesas   (U.E. 8 de Septiembre)
-  //   schools[2] → 16 mesas   (U.E. 25 de Mayo)
-  //   schools[3] → 14 mesas   (U.E. Eduardo Avaroa)
-  //   schools[4] → 11 mesas   (U.E. Mscal. Andres De Santa Cruz)
-  //   schools[5] → 17 mesas   (U.E. Octavio Campero Echazu)
-  //   schools[6] → 11 mesas   (U.E. Aulio Araoz)
-  //   schools[7] →  8 mesas   (U.E. Antonio Jose De Sucre)
-  //   schools[8] →  1 mesa    (Carceleta)
-  //   schools[9] →  5 mesas   (U.E. La Esperanza)
-  //  schools[10] →  6 mesas   (U.E. Bolivia)
-  //  schools[11] →  2 mesas   (U.E. Moto Mendez)
-  //  schools[12] →  1 mesa    (U.E. Flor De Oro)
-  //  schools[13] →  2 mesas   (U.E. Arrozales)
-  //  schools[14] →  2 mesas   (U.E. Barredero)
-  //  schools[15] →  4 mesas   (U.E. Colonia Linares)
-  //  schools[16] →  1 mesa    (U.E. Porcelana)
-  //  schools[17] →  2 mesas   (U.E. Campo Grande)
-
-  // Recintos seleccionados (9): los 8 más grades + 1 mediano al azar
+  // Cubrir la mitad de los recintos disponibles.
+  // Priorizamos los que tienen más mesas usando los datos realmente cargados en la DB.
   const selectedSchoolIds = new Set<string>();
+  const rankedSchools = schools
+    .map((school) => ({
+      school,
+      tables: tablesBySchool.get(school.id) ?? [],
+    }))
+    .sort((a, b) => {
+      const countDiff = b.tables.length - a.tables.length;
+      if (countDiff !== 0) return countDiff;
+      return (a.school.code ?? 0) - (b.school.code ?? 0);
+    });
 
-  // Los 8 recintos con más mesas (índices 0-7 del seed)
-  for (let i = 0; i < Math.min(8, schools.length); i++) {
-    selectedSchoolIds.add(schools[i].id);
+  const targetSchoolCount = Math.min(
+    Math.ceil(rankedSchools.length / 2),
+    rankedSchools.length,
+  );
+  const prioritizedCount = Math.min(8, targetSchoolCount);
+
+  for (let i = 0; i < prioritizedCount; i++) {
+    selectedSchoolIds.add(rankedSchools[i].school.id);
   }
-  // Agregar schools[9] (La Esperanza, 5 mesas) como noveno
-  if (schools.length > 9) selectedSchoolIds.add(schools[9].id);
+
+  const remainingToPick = targetSchoolCount - selectedSchoolIds.size;
+  if (remainingToPick > 0) {
+    const remainingSchools = rankedSchools
+      .slice(prioritizedCount)
+      .map(({ school }) => school);
+    const randomizedRemaining = orderBySeed(
+      remainingSchools,
+      20260320,
+      (school) => school.code ?? 0,
+    );
+
+    for (const school of randomizedRemaining.slice(0, remainingToPick)) {
+      selectedSchoolIds.add(school.id);
+    }
+  }
 
   console.log(`\n📋 Recintos seleccionados (${selectedSchoolIds.size}):`);
 
@@ -252,8 +270,10 @@ async function seedReports() {
       : tables.length;
 
     // Tomar mesas "al azar" (mezcla reproducible)
-    const shuffled = [...tables].sort((a, b) =>
-      rInt(-1, 1, schoolIdx * 100 + a.code) - rInt(-1, 1, schoolIdx * 100 + b.code)
+    const shuffled = orderBySeed(
+      tables,
+      schoolIdx * 100 + 7,
+      (table, index) => table.number * 1000 + index,
     );
     const selectedTables = shuffled.slice(0, targetTableCount);
 

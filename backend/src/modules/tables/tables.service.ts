@@ -11,7 +11,6 @@ import { IsOptional, IsNumber, IsUUID } from "class-validator";
 
 export class CreateTableDto {
   @IsNumber() number: number;
-  @IsNumber() code: number;
   @IsOptional() @IsNumber() totalVoters?: number;
   @IsUUID() @IsOptional() schoolId?: string;
 }
@@ -72,7 +71,6 @@ export class TablesService {
 
     const table = this.repo.create({
       number: dto.number,
-      code: dto.code,
       totalVoters: dto.totalVoters,
       createdBy: actorId,
       updatedBy: actorId,
@@ -86,7 +84,6 @@ export class TablesService {
     const table = await this.findOne(id);
 
     if (dto.number !== undefined) table.number = dto.number;
-    if (dto.code !== undefined) table.code = dto.code;
     if (dto.totalVoters !== undefined) table.totalVoters = dto.totalVoters;
 
     if (dto.schoolId !== undefined) {

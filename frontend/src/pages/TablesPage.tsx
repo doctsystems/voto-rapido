@@ -20,7 +20,6 @@ export default function TablesPage() {
 
   const fields: Field[] = [
     { key: "number", label: "Número de Mesa", required: true, type: "number", placeholder: "Ej: 1" },
-    { key: "code", label: "Código de Mesa", required: true, type: "number", placeholder: "Ej: 6008791" },
     { key: "schoolId", label: "Recinto Electoral", type: "select", options: schoolOptions },
     { key: "totalVoters", label: "Total votantes habilitados (padrón)", type: "number", placeholder: "Ej: 300" },
   ];
@@ -30,11 +29,6 @@ export default function TablesPage() {
       key: "number",
       label: "Mesa",
       render: (v: any) => <span className="font-medium text-black">{v}</span>,
-    },
-    {
-      key: "code",
-      label: "Código",
-      render: (v: any) => <span className="font-mono text-black">{v}</span>,
     },
     {
       key: "school",

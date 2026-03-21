@@ -11,7 +11,7 @@ export class AuthService {
   constructor(
     @InjectRepository(User) private readonly userRepo: Repository<User>,
     private readonly jwtService: JwtService,
-  ) {}
+  ) { }
 
   async login(username: string, password: string) {
     const user = await this.userRepo.findOne({
@@ -51,28 +51,27 @@ export class AuthService {
         role: user.role,
         party: user.party
           ? {
-              id: user.party.id,
-              name: user.party.name,
-              ballotOrder: user.party.ballotOrder,
-              acronym: user.party.acronym,
-              color: user.party.color,
-            }
+            id: user.party.id,
+            name: user.party.name,
+            ballotOrder: user.party.ballotOrder,
+            acronym: user.party.acronym,
+            color: user.party.color,
+          }
           : null,
         table: user.table
           ? {
-              id: user.table.id,
-              number: user.table.number,
-              code: user.table.code,
-              totalVoters: user.table.totalVoters ?? null,
-              school: user.table.school ?? null,
-            }
+            id: user.table.id,
+            number: user.table.number,
+            totalVoters: user.table.totalVoters ?? null,
+            school: user.table.school ?? null,
+          }
           : null,
         school: user.school
           ? {
-              id: user.school.id,
-              name: user.school.name,
-              code: user.school.code,
-            }
+            id: user.school.id,
+            name: user.school.name,
+            code: user.school.code,
+          }
           : null,
       },
     };

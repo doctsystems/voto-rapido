@@ -7,18 +7,14 @@ import {
 import { InjectRepository } from "@nestjs/typeorm";
 import { Brackets, Repository } from "typeorm";
 import { School } from "./school.entity";
-import { IsString, IsOptional, IsNumber } from "class-validator";
+import { IsString, IsOptional, IsNumber, IsBoolean } from "class-validator";
 
 export class CreateSchoolDto {
   @IsString() name: string;
   @IsOptional() @IsString() shortName?: string;
   @IsOptional() @IsNumber() code?: number;
-  @IsOptional() @IsString() department?: string;
-  @IsOptional() @IsString() province?: string;
-  @IsOptional() @IsString() municipality?: string;
-  @IsOptional() @IsString() electoralSeat?: string;
-  @IsOptional() @IsString() locality?: string;
-  @IsOptional() @IsNumber() constituency?: number;
+  @IsOptional() @IsNumber() tableCount?: number;
+  @IsOptional() @IsBoolean() isActive?: boolean;
 }
 
 @Injectable()
@@ -39,8 +35,7 @@ export class SchoolsService {
           qb.where("school.name ILIKE :search", { search: `%${search}%` })
             .orWhere("CAST(school.code AS TEXT) ILIKE :search", {
               search: `%${search}%`,
-            })
-            .orWhere("school.municipality ILIKE :search", { search: `%${search}%` });
+            });
         }),
       );
     }
@@ -106,21 +101,4 @@ export class SchoolsService {
     return { message: `School "${school.name}" deleted` };
   }
 
-  async findByMunicipality(municipality: string) {
-    const schools = await this.repo.find({
-      where: { municipality },
-      relations: ["tables"],
-      order: { name: "ASC" },
-    });
-    
-    schools.forEach(school => {
-      if (school.tables) {
-        school.tables.sort((a, b) => 
-          (a.number || 0) - (b.number || 0)
-        );
-      }
-    });
-    
-    return schools;
-  }
 }

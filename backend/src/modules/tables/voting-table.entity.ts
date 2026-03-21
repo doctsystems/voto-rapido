@@ -17,9 +17,6 @@ import { School } from "../schools/school.entity";
 })
 @Entity("voting_tables")
 export class VotingTable extends BaseEntity {
-  @Column({ name: "code", type: "int" })
-  code: number;
-
   @Column({ name: "number", type: "int" })
   number: number;
 

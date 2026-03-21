@@ -13,7 +13,6 @@ export interface AuthUser {
   table?: {
     id: string;
     number: number;
-    code: number;
     totalVoters?: number;
     school?: {
       id: string;
