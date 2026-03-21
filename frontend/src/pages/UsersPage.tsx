@@ -155,7 +155,6 @@ export default function UsersPage() {
     { key: "username", label: "Usuario", required: true },
     { key: "fullName", label: "Nombre completo", required: true },
     { key: "phone", label: "Teléfono", required: true },
-    { key: "password", label: "Contraseña", type: "password" as const },
     {
       key: "role",
       label: "Rol",
@@ -233,7 +232,7 @@ export default function UsersPage() {
   return (
     <CrudPage
       title="Usuarios"
-      description="Gestión de usuarios del sistema electoral"
+      description="Gestión de usuarios del sistema electoral. La contraseña inicial se genera automáticamente y se pedirá cambio en el primer ingreso."
       queryKey={["users", filterSchool, filterParty]}
       fetchFn={fetchUsersFiltered}
       headerContent={

@@ -37,6 +37,9 @@ export class User extends BaseEntity {
   @Column({ default: true, name: "is_active" })
   isActive: boolean;
 
+  @Column({ default: false, name: "must_change_password" })
+  mustChangePassword: boolean;
+
   @ManyToOne(() => Party, (party) => party.users, {
     nullable: true,
     eager: false,

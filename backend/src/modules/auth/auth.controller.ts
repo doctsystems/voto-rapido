@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, MinLength } from 'class-validator';
 
 class LoginDto {
   @IsString()
@@ -14,6 +14,17 @@ class LoginDto {
   @IsString()
   @IsNotEmpty()
   password: string;
+}
+
+class ChangePasswordDto {
+  @IsString()
+  @IsNotEmpty()
+  currentPassword: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(6)
+  newPassword: string;
 }
 
 @ApiTags('auth')
@@ -34,5 +45,20 @@ export class AuthController {
   @ApiOperation({ summary: 'Obtener perfil del usuario autenticado' })
   async getProfile(@CurrentUser('sub') userId: string) {
     return this.authService.getProfile(userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cambiar la contraseña del usuario autenticado' })
+  async changePassword(
+    @CurrentUser('sub') userId: string,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(
+      userId,
+      dto.currentPassword,
+      dto.newPassword,
+    );
   }
 }

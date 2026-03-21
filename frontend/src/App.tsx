@@ -10,21 +10,40 @@ import ElectionTypesPage from './pages/ElectionTypesPage';
 import ReportsPage from './pages/ReportsPage';
 import NewReportPage from './pages/NewReportPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
 import Layout from './components/Layout';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user?.mustChangePassword) return <Navigate to="/change-password" replace />;
   return <>{children}</>;
 }
 
 export default function App() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />} />
+        <Route
+          path="/login"
+          element={
+            isAuthenticated
+              ? <Navigate to={user?.mustChangePassword ? "/change-password" : "/"} replace />
+              : <LoginPage />
+          }
+        />
+        <Route
+          path="/change-password"
+          element={
+            !isAuthenticated
+              ? <Navigate to="/login" replace />
+              : user?.mustChangePassword
+                ? <ChangePasswordPage />
+                : <Navigate to="/" replace />
+          }
+        />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="/" element={
           <ProtectedRoute>

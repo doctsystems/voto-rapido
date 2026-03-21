@@ -4,7 +4,7 @@ import { Role } from '../../../common/enums/role.enum';
 export class CreateUserDto {
   @IsString() username: string;
   @IsString() phone: string;
-  @IsString() password: string;
+  @IsOptional() @IsString() password?: string;
   @IsString() fullName: string;
   @IsOptional() @IsEnum(Role) role?: Role;
   @IsOptional() @IsUUID() partyId?: string;

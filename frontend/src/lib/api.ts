@@ -8,6 +8,10 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+type AuthAwareRequestConfig = {
+  skipAuthRedirect?: boolean;
+  url?: string;
+};
 
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token;
@@ -18,12 +22,14 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    const requestUrl = String(err.config?.url || "");
-    const isLoginRequest = requestUrl.includes("/auth/login");
+    const config = (err.config || {}) as AuthAwareRequestConfig;
+    const skipAuthRedirect = config.skipAuthRedirect === true;
 
-    if (err.response?.status === 401 && !isLoginRequest) {
+    if (err.response?.status === 401 && !skipAuthRedirect) {
       useAuthStore.getState().logout();
-      window.location.href = '/login';
+      if (window.location.pathname !== '/login') {
+        window.location.assign('/login');
+      }
     }
     return Promise.reject(err);
   },
@@ -31,8 +37,10 @@ api.interceptors.response.use(
 
 export const authApi = {
   login: (username: string, password: string) =>
-    api.post('/auth/login', { username, password }).then(r => r.data),
+    api.post('/auth/login', { username, password }, { skipAuthRedirect: true } as any).then(r => r.data),
   profile: () => api.get('/auth/profile').then(r => r.data),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api.post('/auth/change-password', { currentPassword, newPassword }).then(r => r.data),
 };
 
 export const usersApi = {

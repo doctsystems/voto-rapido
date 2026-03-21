@@ -13,6 +13,7 @@ import { VotingTable } from "../tables/voting-table.entity";
 import { School } from "../schools/school.entity";
 import { Role } from "../../common/enums/role.enum";
 import { CreateUserDto, UpdateUserDto } from "./dto/create-user.dto";
+import { generateInitialPassword } from "../../common/utils/pass.generator";
 
 @Injectable()
 export class UsersService {
@@ -166,11 +167,27 @@ export class UsersService {
       user.school = school;
     }
 
+    const initialPassword =
+      dto.password ||
+      generateInitialPassword({
+        role: dto.role ?? user.role,
+        username: user.username,
+        party: user.party,
+        school: user.school,
+        table: user.table,
+      });
+    user.password = initialPassword;
+    user.mustChangePassword = true;
+
     await this.userRepo.save(user);
     this.logger.log(
       `Usuario creado: ${user.username} por ${currentUser.username}`,
     );
-    return this.findOne(user.id);
+    return {
+      ...(await this.findOne(user.id)),
+      initialPassword,
+      message: `Usuario creado. Contraseña inicial: ${initialPassword}`,
+    };
   }
 
   async update(id: string, dto: UpdateUserDto, currentUser: any) {

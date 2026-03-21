@@ -9,6 +9,7 @@ export interface AuthUser {
   username: string;
   fullName: string;
   role: UserRole;
+  mustChangePassword?: boolean;
   party?: { id: string; name: string; ballotOrder: number; color: string } | null;
   table?: {
     id: string;
@@ -32,6 +33,7 @@ interface AuthState {
   user: AuthUser | null;
   isAuthenticated: boolean;
   setAuth: (token: string, user: AuthUser) => void;
+  updateUser: (user: AuthUser) => void;
   logout: () => void;
 }
 
@@ -46,6 +48,7 @@ export const useAuthStore = create<AuthState>()(
         clearAllQueries();
         set({ token, user, isAuthenticated: true });
       },
+      updateUser: (user) => set((state) => ({ ...state, user })),
       logout: () => {
         // Limpiar cache completamente al hacer logout
         clearAllQueries();

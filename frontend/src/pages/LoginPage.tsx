@@ -11,11 +11,16 @@ export default function LoginPage() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState({ username: "", password: "" });
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.username || !form.password)
+    if (!form.username || !form.password) {
+      setErrorMessage("Completa todos los campos");
       return toast.error("Completa todos los campos");
+    }
+
+    setErrorMessage("");
     setLoading(true);
     try {
       const data = await authApi.login(form.username, form.password);
@@ -23,9 +28,11 @@ export default function LoginPage() {
       // Invalidar queries específicas después del login
       queryClient.invalidateQueries({ queryKey: ["users"] });
       queryClient.invalidateQueries({ queryKey: ["metrics"] });
-      navigate("/");
+      navigate(data.user?.mustChangePassword ? "/change-password" : "/");
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Credenciales incorrectas");
+      const message = err.response?.data?.message || "Credenciales incorrectas";
+      setErrorMessage(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -84,9 +91,10 @@ export default function LoginPage() {
                   type="text"
                   autoComplete="username"
                   value={form.username}
-                  onChange={(e) =>
-                    setForm({ ...form, username: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setErrorMessage("");
+                    setForm({ ...form, username: e.target.value });
+                  }}
                   className="input"
                   placeholder="tu.usuario"
                   disabled={loading}
@@ -98,14 +106,20 @@ export default function LoginPage() {
                   type="password"
                   autoComplete="current-password"
                   value={form.password}
-                  onChange={(e) =>
-                    setForm({ ...form, password: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setErrorMessage("");
+                    setForm({ ...form, password: e.target.value });
+                  }}
                   className="input"
                   placeholder="••••••••"
                   disabled={loading}
                 />
               </div>
+              {errorMessage && (
+                <div className="rounded-xl border border-meta-1/20 bg-meta-1/5 px-4 py-3 text-sm text-meta-1">
+                  {errorMessage}
+                </div>
+              )}
               <button
                 type="submit"
                 disabled={loading}

@@ -89,8 +89,11 @@ export default function CrudPage({
 
   const createMutation = useMutation({
     mutationFn: createFn,
-    onSuccess: () => {
-      toast.success("Registrado exitosamente");
+    onSuccess: (result: any) => {
+      toast.success(result?.message || "Registrado exitosamente");
+      if (result?.initialPassword) {
+        toast.info(`Contraseña inicial: ${result.initialPassword}`);
+      }
       invalidate();
       closeModal();
     },

@@ -14,7 +14,7 @@ import { Role } from "../common/enums/role.enum";
 import * as dotenv from "dotenv";
 import { join } from "node:path";
 import { logger } from "../common/logger/winston.logger";
-import { generateHashedPassword } from "../common/utils/pass.generator";
+import { generateInitialPassword } from "../common/utils/pass.generator";
 
 dotenv.config({ path: join(__dirname, "../../.env") });
 
@@ -333,9 +333,10 @@ async function seed() {
     userRepo.create({
       username: "admin",
       phone: "72900865",
-      password: await bcrypt.hash("Cl4v3Adm1n", 10),
+      password: generateInitialPassword({ role: Role.ADMIN, username: "admin" }),
       fullName: "Administrador del Sistema",
       role: Role.ADMIN,
+      mustChangePassword: true,
     }),
   );
   logger.info("✅ Admin creado");
@@ -345,12 +346,16 @@ async function seed() {
     await userRepo.save(
       userRepo.create({
         username: `jc_${p.acronym.toLowerCase()}`,
-        //password: await bcrypt.hash(`jc.${p.acronym.toLowerCase()}.${p.ballotOrder}`, 10), // jc.isa.3
-        password: await generateHashedPassword(4, 10),
+        password: generateInitialPassword({
+          role: Role.JEFE_CAMPANA,
+          username: `jc_${p.acronym.toLowerCase()}`,
+          party: p,
+        }),
         phone: `600000${p.ballotOrder}`,
         fullName: `Jefe de Campaña - ${p.acronym}`,
         role: Role.JEFE_CAMPANA,
         party: p,
+        mustChangePassword: true,
       }),
     );
   }
@@ -363,13 +368,17 @@ async function seed() {
         await userRepo.save(
           userRepo.create({
             username: `jr_${p.acronym.toLowerCase()}_${s.shortName.toLowerCase()}`,
-            //password: await bcrypt.hash(`jr.${s.shortName.toLowerCase()}.${s.code}`, 10), // jr.ueoce.14
-            password: await generateHashedPassword(4, 10),
+            password: generateInitialPassword({
+              role: Role.JEFE_RECINTO,
+              username: `jr_${p.acronym.toLowerCase()}_${s.shortName.toLowerCase()}`,
+              school: s,
+            }),
             phone: `601010${s.code}`,
             fullName: `Jefe de Recinto - ${s.shortName} - ${p.acronym}`,
             role: Role.JEFE_RECINTO,
             party: p,
             school: s,
+            mustChangePassword: true,
           }),
         );
       }
@@ -384,13 +393,17 @@ async function seed() {
         await userRepo.save(
           userRepo.create({
             username: `del_${p.acronym.toLowerCase()}_${t.school.shortName.toLowerCase()}_${t.number}`,
-            //password: await bcrypt.hash(`del.${t.school.shortName.toLowerCase()}.${t.number}`, 10), // del.isa.1
-            password: await generateHashedPassword(4, 10),
+            password: generateInitialPassword({
+              role: Role.DELEGADO,
+              username: `del_${p.acronym.toLowerCase()}_${t.school.shortName.toLowerCase()}_${t.number}`,
+              table: t,
+            }),
             phone: `602020${t.number}`,
             fullName: `Delegado - ${t.school.shortName} - Mesa ${t.number}`,
             role: Role.DELEGADO,
             party: p,
             table: t,
+            mustChangePassword: true,
           }),
         );
       }
