@@ -155,7 +155,10 @@ export default function LoginPage() {
             </form>
 
             <p className="mt-8 text-center text-xs text-body">
-              Elecciones Municipales y Departamentales - Bermejo, Tarija 2026
+              Elecciones Municipales y Departamentales
+            </p>
+            <p className="mt-1 text-center text-xs text-body">
+              Bermejo, Tarija 2026
             </p>
           </div>
         </div>
