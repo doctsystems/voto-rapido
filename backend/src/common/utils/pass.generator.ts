@@ -63,7 +63,7 @@ export function generateInitialPassword(input: InitialPasswordInput): string {
       break;
   }
 
-  return `user.${username || "temporal"}`;
+  return `user.${partyAcronym || "temporal"}`;
 }
 
 export async function generateHashedPassword(

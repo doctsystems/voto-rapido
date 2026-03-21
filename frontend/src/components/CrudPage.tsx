@@ -41,6 +41,8 @@ interface CrudPageProps {
   canCreate?: boolean;
   canEditRow?: (row: any) => boolean;
   canDeleteRow?: (row: any) => boolean;
+  disableEditRow?: (row: any) => boolean;
+  disableDeleteRow?: (row: any) => boolean;
   onOpenCreate?: () => void;
   onOpenEdit?: (row: any) => void;
   extraActions?: (row: any, invalidate: () => void) => React.ReactNode;
@@ -71,6 +73,8 @@ export default function CrudPage({
   hideEdit = false,
   canEditRow,
   canDeleteRow,
+  disableEditRow,
+  disableDeleteRow,
   onOpenCreate,
   onOpenEdit,
 }: CrudPageProps) {
@@ -340,7 +344,8 @@ export default function CrudPage({
                             (canEditRow ? canEditRow(row) : true) && (
                               <button
                                 onClick={() => openEdit(row)}
-                                className="btn-xs btn-action-primary"
+                                disabled={disableEditRow?.(row)}
+                                className="btn-xs btn-action-primary disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 Editar
                               </button>
@@ -352,7 +357,8 @@ export default function CrudPage({
                                   if (confirm("¿Eliminar este registro?"))
                                     deleteMutation.mutate(row.id);
                                 }}
-                                className="btn-xs btn-action-danger"
+                                disabled={disableDeleteRow?.(row)}
+                                className="btn-xs btn-action-danger disabled:opacity-50 disabled:cursor-not-allowed"
                               >
                                 Eliminar
                               </button>

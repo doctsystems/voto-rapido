@@ -18,13 +18,16 @@ export default function UsersPage() {
   const isJefeCampana = user?.role === "JEFE_CAMPANA";
   const isJefeRecinto = user?.role === "JEFE_RECINTO";
   const isAdminOrJefe = isAdmin || isJefeCampana;
+  const isPressUserRow = (row: any) => row.party?.acronym === "PRENSA";
   const canManageRow = (row: any) => {
     if (isAdmin) return true;
     if (isJefeCampana) return row.role === "JEFE_RECINTO";
     if (isJefeRecinto) return row.role === "DELEGADO";
     return false;
   };
-  const jefeCampanaPartyId = isJefeCampana ? ((user as any)?.party?.id || "") : "";
+  const jefeCampanaPartyId = isJefeCampana
+    ? (user as any)?.party?.id || ""
+    : "";
 
   const [selectedSchoolId, setSelectedSchoolId] = useState<string>("");
   const [formRole, setFormRole] = useState<string>(
@@ -33,10 +36,10 @@ export default function UsersPage() {
 
   // Table view filter
   const [filterSchool, setFilterSchool] = useState<string>(
-    isAdminOrJefe ? "" : ((user as any)?.school?.id || "")
+    isAdminOrJefe ? "" : (user as any)?.school?.id || "",
   );
   const [filterParty, setFilterParty] = useState<string>(
-    isAdmin ? "" : ((user as any)?.party?.id || "")
+    isAdmin ? "" : (user as any)?.party?.id || "",
   );
 
   if (user?.role === "DELEGADO") {
@@ -47,6 +50,8 @@ export default function UsersPage() {
     queryKey: ["parties"],
     queryFn: partiesApi.getAll,
   });
+  const pressParty = (parties as any[]).find((p) => p.acronym === "PRENSA");
+  const pressPartyId = pressParty?.id || "";
   const sortedParties = [...(parties as any[])].sort(
     (a, b) =>
       (a.ballotOrder ?? Number.MAX_SAFE_INTEGER) -
@@ -70,11 +75,11 @@ export default function UsersPage() {
   // ── Role options by actor role ──────────────────────────────────────────────
   const roleOptions = isAdmin
     ? [
-      { value: "ADMIN", label: "Administrador" },
-      { value: "JEFE_CAMPANA", label: "Jefe de Campaña" },
-      { value: "JEFE_RECINTO", label: "Jefe de Recinto" },
-      { value: "DELEGADO", label: "Delegado" },
-    ]
+        { value: "ADMIN", label: "Administrador" },
+        { value: "JEFE_CAMPANA", label: "Jefe de Campaña" },
+        { value: "JEFE_RECINTO", label: "Jefe de Recinto" },
+        { value: "DELEGADO", label: "Delegado" },
+      ]
     : isJefeCampana
       ? [{ value: "JEFE_RECINTO", label: "Jefe de Recinto" }]
       : [{ value: "DELEGADO", label: "Delegado" }];
@@ -82,28 +87,28 @@ export default function UsersPage() {
   // ── Party options: Admin sees all; others locked to their party ─────────────
   const partyOptions = isAdmin
     ? sortedParties.map((p) => ({
-      value: p.id,
-      label: `${p.acronym} - ${p.name}`,
-    }))
+        value: p.id,
+        label: `${p.acronym} - ${p.name}`,
+      }))
     : [
-      {
-        value: (user as any)?.party?.id,
-        label: `${(user as any)?.party?.acronym} - ${(user as any)?.party?.name}`,
-      },
-    ];
+        {
+          value: (user as any)?.party?.id,
+          label: `${(user as any)?.party?.acronym} - ${(user as any)?.party?.name}`,
+        },
+      ];
 
   // ── School options: JEFE_RECINTO locked to own school; others see all ───────
   const schoolOptions = isJefeRecinto
     ? [
-      {
-        value: (user as any)?.school?.id,
-        label: `[${(user as any)?.school?.code || "?"}] ${(user as any)?.school?.name}`,
-      },
-    ]
+        {
+          value: (user as any)?.school?.id,
+          label: `[${(user as any)?.school?.code || "?"}] ${(user as any)?.school?.name}`,
+        },
+      ]
     : (schools as any[]).map((s) => ({
-      value: s.id,
-      label: `[${s.code || "?"}] ${s.name}`,
-    }));
+        value: s.id,
+        label: `[${s.code || "?"}] ${s.name}`,
+      }));
 
   // ── Table options: filtered by selected school (or own school for JEFE_RECINTO)
   const tableOptions = (allTables as any[]).map((t) => ({
@@ -112,7 +117,11 @@ export default function UsersPage() {
   }));
 
   const effectiveFormRole =
-    formRole || (isJefeCampana ? "JEFE_RECINTO" : isJefeRecinto ? "DELEGADO" : "");
+    formRole ||
+    (isJefeCampana ? "JEFE_RECINTO" : isJefeRecinto ? "DELEGADO" : "");
+  const isPressContext =
+    (user as any)?.party?.acronym === "PRENSA" ||
+    (isAdmin && filterParty === pressPartyId);
 
   // ── schoolId disabled rules:
   //   JEFE_RECINTO: always locked to own school
@@ -131,7 +140,9 @@ export default function UsersPage() {
       normalized.tableId = null;
     }
     if (normalized.role === "DELEGADO") {
-      normalized.schoolId = normalized.schoolId || (isJefeRecinto ? (user as any)?.school?.id : null);
+      normalized.schoolId =
+        normalized.schoolId ||
+        (isJefeRecinto ? (user as any)?.school?.id : null);
     }
     return normalized;
   };
@@ -148,7 +159,9 @@ export default function UsersPage() {
   const updateUser = (id: string, data: any) =>
     usersApi.update(id, sanitizeUpdateUserPayload(data));
   const resetFormContext = () => {
-    setFormRole(isJefeCampana ? "JEFE_RECINTO" : isJefeRecinto ? "DELEGADO" : "");
+    setFormRole(
+      isJefeCampana ? "JEFE_RECINTO" : isJefeRecinto ? "DELEGADO" : "",
+    );
     setSelectedSchoolId("");
   };
   const syncFormContextFromRow = (row: any) => {
@@ -237,13 +250,15 @@ export default function UsersPage() {
   return (
     <CrudPage
       title="Usuarios"
-      description="Gestión de usuarios del sistema electoral. La contraseña inicial se genera automáticamente y se pedirá cambio en el primer ingreso."
+      description="Gestión de usuarios del sistema electoral."
       queryKey={["users", filterSchool, filterParty]}
       fetchFn={fetchUsersFiltered}
       headerContent={
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
           {isAdminOrJefe && (
-            <span className="text-body text-sm font-medium">Ver usuarios de:</span>
+            <span className="text-body text-sm font-medium">
+              Ver usuarios de:
+            </span>
           )}
           <select
             value={filterParty}
@@ -298,48 +313,65 @@ export default function UsersPage() {
       createFn={createUser}
       updateFn={updateUser}
       deleteFn={usersApi.remove}
+      canCreate={!isPressContext}
       canDelete={isAdmin || isJefeCampana || isJefeRecinto}
       canEditRow={canManageRow}
       canDeleteRow={canManageRow}
+      disableEditRow={isPressUserRow}
+      disableDeleteRow={isPressUserRow}
       onOpenCreate={resetFormContext}
       onOpenEdit={syncFormContextFromRow}
       fields={fields}
       defaultValues={defaultValues}
-      columns={[
-        {
-          key: "username",
-          label: "Usuario",
-          render: (v: string) => (
-            <span className="font-medium text-black">{v}</span>
-          )
-        },
-        { key: "fullName", label: "Nombre" },
-        {
-          key: "role",
-          label: "Rol",
-          render: (v: string) => {
-            const r = roleBadge[v] || { label: v, cls: "bg-meta-2 text-black" };
-            return <span className={`badge ${r.cls} whitespace-nowrap`}>{r.label}</span>;
-          },
-        },
-        ...(isAdmin ? [{
-          key: "party",
-          label: "Partido",
-          render: (_: any, row: any) =>
-            row.party ? (
-              <div className="flex items-center gap-1.5">
-                <div
-                  className="w-2.5 h-2.5 rounded-md"
-                  style={{ backgroundColor: row.party.color }}
-                />
-                <span className="text-sm">#{row.party.ballotOrder}</span>
-              </div>
-            ) : (
-              <span className="text-black text-sm">—</span>
+      columns={
+        [
+          {
+            key: "username",
+            label: "Usuario",
+            render: (v: string) => (
+              <span className="font-medium text-black">{v}</span>
             ),
-        }] : []),
-      ].filter(Boolean) as any[]}
+          },
+          { key: "fullName", label: "Nombre" },
+          {
+            key: "role",
+            label: "Rol",
+            render: (v: string) => {
+              const r = roleBadge[v] || {
+                label: v,
+                cls: "bg-meta-2 text-black",
+              };
+              return (
+                <span className={`badge ${r.cls} whitespace-nowrap`}>
+                  {r.label}
+                </span>
+              );
+            },
+          },
+          ...(isAdmin
+            ? [
+                {
+                  key: "party",
+                  label: "Partido",
+                  render: (_: any, row: any) =>
+                    row.party ? (
+                      <div className="flex items-center gap-1.5">
+                        <div
+                          className="w-2.5 h-2.5 rounded-md"
+                          style={{ backgroundColor: row.party.color }}
+                        />
+                        <span className="text-sm">
+                          #{row.party.ballotOrder}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-black text-sm">—</span>
+                    ),
+                },
+              ]
+            : []),
+        ].filter(Boolean) as any[]
+      }
     />
   );
 }
-

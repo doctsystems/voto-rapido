@@ -9,7 +9,9 @@
     "start:prod": "node dist/main",
     "migration:run": "typeorm migration:run -d src/database/data-source.ts",
     "seed": "ts-node src/database/seed.ts",
-    "seed:reports": "ts-node src/database/seed-reports.ts"
+    "seed:reports": "ts-node src/database/seed-reports.ts",
+    "seed:prensa": "ts-node src/database/seed-prensa.ts",
+    "seed:prensa:reports": "ts-node src/database/seed-prensa-reports.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
