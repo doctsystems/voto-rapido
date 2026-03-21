@@ -81,7 +81,7 @@ function aggregateReports(
       order: number;
       parties: Record<
         string,
-        { name: string; ballotOrder: number; color: string; votes: number; candidateName: string | null }
+        { name: string; acronym: string; ballotOrder: number; color: string; votes: number; candidateName: string | null }
       >;
       nullVotes: number;
       blankVotes: number;
@@ -91,7 +91,7 @@ function aggregateReports(
 
   const globalParty: Record<
     string,
-    { name: string; ballotOrder: number; color: string; total: number }
+    { name: string; acronym: string; ballotOrder: number; color: string; total: number }
   > = {};
 
   for (const report of reports) {
@@ -103,6 +103,7 @@ function aggregateReports(
       if (!globalParty[p.id])
         globalParty[p.id] = {
           name: p.name,
+          acronym: p.acronym,
           ballotOrder: p.ballotOrder,
           color: p.color,
           total: 0,
@@ -122,6 +123,7 @@ function aggregateReports(
       if (!etMap[et.id].parties[p.id])
         etMap[et.id].parties[p.id] = {
           name: p.name,
+          acronym: p.acronym,
           ballotOrder: p.ballotOrder,
           color: p.color,
           votes: 0,
@@ -178,6 +180,7 @@ function aggregateReports(
         totalVoters: total,
         parties: parties.map((p) => ({
           name: p.name,
+          acronym: p.acronym,
           ballotOrder: p.ballotOrder,
           color: p.color,
           votes: p.votes,

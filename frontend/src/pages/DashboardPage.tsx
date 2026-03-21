@@ -9,7 +9,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { votesApi, reportsApi } from "../lib/api";
+import { votesApi, reportsApi, partiesApi } from "../lib/api";
 import { useAuthStore } from "../store/auth.store";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
@@ -40,7 +40,7 @@ function LeaderCard({ et }: Readonly<{ et: any }>) {
                 style={{ backgroundColor: winner.color || "#313161" }}
               />
               <span className="font-bold text-black text-lg leading-none">
-                #{winner.ballotOrder}
+                {winner.acronym || winner.name}
               </span>
               <span className="ml-auto text-xs font-mono font-semibold text-meta-3 bg-green-50 px-2 py-0.5 rounded-full">
                 {winner.percentage?.toFixed(1)}%
@@ -106,6 +106,35 @@ function StatCard({
   );
 }
 
+function EmptyMetricCard({
+  label,
+  message,
+  icon,
+  headerColor,
+}: {
+  label: string;
+  message: string;
+  icon: string;
+  headerColor?: string;
+}) {
+  return (
+    <div className="rounded-2xl bg-white border border-black/[.06] shadow-[0_2px_16px_rgba(0,0,0,.06)] overflow-hidden flex flex-col">
+      <div
+        className="flex items-center gap-2.5 px-5 py-3 text-white"
+        style={{ backgroundColor: headerColor || "#313161" }}
+      >
+        <span className="text-base">{icon}</span>
+        <span className="font-semibold text-xs uppercase tracking-wider opacity-90">
+          {label}
+        </span>
+      </div>
+      <div className="flex-1 flex items-center justify-center px-5 py-8">
+        <p className="text-sm font-medium text-body">{message}</p>
+      </div>
+    </div>
+  );
+}
+
 // ─── Status Cards ──────────────────────────────────────────────────────────────
 function StatusCards({
   metrics,
@@ -133,18 +162,14 @@ function StatusCards({
       {et1 ? (
         <LeaderCard et={et1} />
       ) : (
-        <div className="rounded-2xl bg-white border border-black/[.06] shadow p-5 flex items-center justify-center text-body text-s">
-          Sin ET configurado
-        </div>
+        <EmptyMetricCard label="GOBERNADOR" message="Sin datos" icon="🏅" />
       )}
 
       {/* Card 2: Líder ET2 */}
       {et2 ? (
         <LeaderCard et={et2} />
       ) : (
-        <div className="rounded-2xl bg-white border border-black/[.06] shadow p-5 flex items-center justify-center text-body text-s">
-          —
-        </div>
+        <EmptyMetricCard label="ALCALDE" message="Sin datos" icon="🏅" />
       )}
 
       {/* Card 3: Total actas/mesas contabilizadas */}
@@ -255,7 +280,7 @@ function ElectionTypeBlock({
   const winner = et.parties[0];
 
   const barData = {
-    labels: et.parties.map((p: any) => `#${p.ballotOrder}`),
+    labels: et.parties.map((p: any) => p.acronym || p.name),
     datasets: [
       {
         label: "Votos válidos",
@@ -263,6 +288,10 @@ function ElectionTypeBlock({
         backgroundColor: et.parties.map((p: any) => p.color || "#313161"),
         borderRadius: 5,
         borderSkipped: false,
+        barThickness: 15,
+        maxBarThickness: 15,
+        categoryPercentage: 0.82,
+        barPercentage: 0.92,
       },
     ],
   };
@@ -291,7 +320,7 @@ function ElectionTypeBlock({
                 style={{ backgroundColor: winner.color }}
               />
               <span className="text-white text-sm font-semibold">
-                #{winner.ballotOrder}
+                {winner.acronym || winner.name}
               </span>
               <span className="text-white/60 text-xs">
                 {winner.percentage?.toFixed(2)}%
@@ -313,7 +342,7 @@ function ElectionTypeBlock({
             <p className="text-xs font-semibold text-body uppercase tracking-wider mb-3">
               Votos válidos por partido
             </p>
-            <div style={{ height: 200 }}>
+            <div style={{ height: 220 }}>
               <Bar
                 data={barData}
                 options={{
@@ -331,7 +360,15 @@ function ElectionTypeBlock({
                   },
                   scales: {
                     x: { beginAtZero: true, grid: { color: "#f1f5f9" } },
-                    y: { grid: { display: false } },
+                    y: {
+                      grid: { display: false },
+                      ticks: {
+                        autoSkip: false,
+                        font: {
+                          size: 11,
+                        },
+                      },
+                    },
                   },
                 }}
               />
@@ -352,7 +389,15 @@ function ElectionTypeBlock({
 }
 
 // ─── Results Panel (Jefe / Delegado view) ─────────────────────────────────────
-function ResultsPanel({ metrics }: { metrics: any }) {
+function ResultsPanel({
+  metrics,
+  emptyTitle = "Sin datos aun",
+  emptyDescription = "Los delegados deben ingresar reportes",
+}: {
+  metrics: any;
+  emptyTitle?: string;
+  emptyDescription?: string;
+}) {
   const byET: any[] = metrics?.byElectionType ?? [];
   const [allOpen, setAllOpen] = useState(true);
 
@@ -360,8 +405,8 @@ function ResultsPanel({ metrics }: { metrics: any }) {
     return (
       <div className="card flex flex-col items-center justify-center py-20 text-body">
         <div className="text-5xl mb-4">📦</div>
-        <p className="font-medium">Sin datos aún</p>
-        <p className="text-sm mt-1">Los delegados deben ingresar reportes</p>
+        <p className="font-medium">{emptyTitle}</p>
+        <p className="text-sm mt-1">{emptyDescription}</p>
       </div>
     );
   }
@@ -450,25 +495,35 @@ export default function DashboardPage() {
     queryFn: () => votesApi.getMetrics(),
     refetchInterval: 30_000,
   });
+  const { data: parties = [], isLoading: isLoadingParties } = useQuery({
+    queryKey: ["parties"],
+    queryFn: partiesApi.getAll,
+    enabled: isAdmin,
+  });
 
   // Solo admin necesita el selector de partido
   const [selectedPartyId, setSelectedPartyId] = useState<string>("");
   const byParty: any[] = metrics?.byParty ?? [];
 
-  // Partidos ordenados alfabéticamente por nombre
-  const sortedParties = [...byParty].sort((a, b) =>
-    (a.partyName ?? "").localeCompare(b.partyName ?? "", "es"),
+  // Partidos ordenados por orden de papeleta
+  const sortedParties = [...(parties as any[])].sort(
+    (a, b) =>
+      (a.ballotOrder ?? Number.MAX_SAFE_INTEGER) -
+      (b.ballotOrder ?? Number.MAX_SAFE_INTEGER),
   );
 
   // Datos del partido seleccionado
+  const selectedParty = selectedPartyId
+    ? (parties as any[]).find((p) => p.id === selectedPartyId)
+    : null;
   const selectedPartyData = selectedPartyId
     ? byParty.find((p) => p.partyId === selectedPartyId)
     : null;
 
-  const partyMetrics = selectedPartyData
+  const partyMetrics = selectedParty
     ? {
-        byElectionType: selectedPartyData.byElectionType ?? [],
-        totalReports: selectedPartyData.totalReports ?? 0,
+        byElectionType: selectedPartyData?.byElectionType ?? [],
+        totalReports: selectedPartyData?.totalReports ?? 0,
         totalTables: metrics?.totalTables ?? 0,
       }
     : null;
@@ -493,9 +548,10 @@ export default function DashboardPage() {
                 onChange={(e) => setSelectedPartyId(e.target.value)}
                 className="select-option rounded-lg bg-white px-3 py-1.5 text-sm text-black shadow-sm focus:outline-none "
                 style={
-                  selectedPartyData
+                  selectedParty
                     ? {
-                        borderColor: selectedPartyData.partyColor,
+                        borderColor:
+                          selectedPartyData?.partyColor || selectedParty.color,
                         borderWidth: 3,
                         borderStyle: "solid",
                       }
@@ -508,10 +564,10 @@ export default function DashboardPage() {
               >
                 <option value="">— Selecciona un partido —</option>
                 {sortedParties.map((p) => (
-                <option key={p.partyId} value={p.partyId}>
-                  {p.partyName} (#${p.partyBallotOrder})
-                </option>
-              ))}
+                  <option key={p.id} value={p.id}>
+                    {p.acronym} - {p.name}
+                  </option>
+                ))}
               </select>
               {selectedPartyId && (
                 <button
@@ -543,7 +599,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {isLoading ? (
+      {isLoading || (isAdmin && isLoadingParties) ? (
         <div className="flex items-center justify-center h-64">
           <svg
             className="w-8 h-8 animate-spin text-primary"
@@ -567,10 +623,14 @@ export default function DashboardPage() {
         </div>
       ) : isAdmin ? (
         /* ── Admin: muestra siempre las cards + gráficas del partido elegido ── */
-        selectedPartyData && partyMetrics ? (
+        selectedParty && partyMetrics ? (
           <>
             <StatusCards metrics={partyMetrics} forceNonAdmin />
-            <ResultsPanel metrics={partyMetrics} />
+            <ResultsPanel
+              metrics={partyMetrics}
+              emptyTitle="Sin reportes de este partido"
+              emptyDescription="Aun no hay registros para el partido seleccionado"
+            />
           </>
         ) : (
           /* Placeholder cuando no hay partido seleccionado */

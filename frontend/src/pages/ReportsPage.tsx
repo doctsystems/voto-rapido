@@ -40,6 +40,11 @@ export default function ReportsPage() {
     queryKey: ["parties"],
     queryFn: partiesApi.getAll,
   });
+  const sortedParties = [...(parties as any[])].sort(
+    (a, b) =>
+      (a.ballotOrder ?? Number.MAX_SAFE_INTEGER) -
+      (b.ballotOrder ?? Number.MAX_SAFE_INTEGER),
+  );
   
   const { data: schools = [] } = useQuery({
     queryKey: ["schools"],
@@ -155,9 +160,9 @@ export default function ReportsPage() {
               className={`rounded-xl border border-stroke bg-white px-3 py-2 text-sm text-black outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all w-full sm:w-auto sm:max-w-xs ${!isAdmin || isJefeCampana ? "opacity-75 bg-slate-50 cursor-not-allowed" : ""}`}
             >
               {isAdmin && <option value="">Todos los partidos</option>}
-              {(parties as any[]).map((p: any) => (
+              {sortedParties.map((p: any) => (
                 <option key={p.id} value={p.id}>
-                  #{p.ballotOrder} — {p.name}
+                  {p.acronym} - {p.name}
                 </option>
               ))}
             </select>

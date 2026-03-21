@@ -5,9 +5,10 @@
  * Requiere haber ejecutado `seed.ts` primero (necesita partidos, mesas y usuarios).
  *
  * Estrategia:
- *  - Cubre la mitad de los recintos (9 de 18), elegidos al azar pero reproducibles.
- *  - En los recintos con más mesas (≥ 5), genera al menos 5 reportes por recinto.
- *  - Cada reporte lo crea un delegado de cada uno de los 4 primeros partidos.
+ *  - Cubre 5 recintos elegibles, elegidos al azar pero reproducibles.
+ *  - Solo toma recintos con al menos 5 mesas activas.
+ *  - Genera exactamente 5 mesas por recinto.
+ *  - Cada reporte lo crea un delegado de los partidos 3, 4, 5 y 7.
  *  - Los votos se generan con distribución simulada realista.
  *  - Mix de estados: DRAFT, SUBMITTED, VERIFIED para mayor realismo.
  *
@@ -94,7 +95,7 @@ function generateVotesForTable(
   tableIdx: number,
   etIdx: number,
 ): { partyVotes: number[]; nullVotes: number; blankVotes: number } {
-  const n = parties.length; // 8 partidos
+  const n = parties.length;
 
   // — Participación electoral: 68–94% del padrón —
   const turnoutPct = (rInt(68, 94, tableIdx * 13 + etIdx * 7 + 1)) / 100;
@@ -107,17 +108,17 @@ function generateVotesForTable(
   const blankVotes = Math.floor(emitidos * blankPct);
   const validVotesTotal = emitidos - nullVotes - blankVotes;
 
-  // — Pesos base para los 4 partidos principales y 4 menores —
+  // — Pesos base para los 4 partidos principales y el resto —
   // Sumas: majors ~0.90, minors ~0.10 (los menores siempre son pequeños)
   const majorBaseWeights = [0.38, 0.28, 0.15, 0.09]; // 4 slots para partidos grandes
-  const minorBaseWeights = [0.04, 0.03, 0.02, 0.01]; // 4 slots para partidos chicos
+  const minorBaseWeights = [0.04, 0.03, 0.02, 0.01];
 
-  // Separar partidos: los primeros 4 por orden de papeleta = mayores; resto = menores
+  // Separar partidos: ballotOrder 3,4,5,7 = mayores; resto = menores
   const majorIndices = parties
-    .map((p, i) => (p.ballotOrder <= 4 ? i : -1))
+    .map((p, i) => ([3, 4, 5, 7].includes(p.ballotOrder) ? i : -1))
     .filter((i) => i >= 0);
   const minorIndices = parties
-    .map((p, i) => (p.ballotOrder > 4 ? i : -1))
+    .map((p, i) => ([3, 4, 5, 7].includes(p.ballotOrder) ? -1 : i))
     .filter((i) => i >= 0);
 
   // Permutación aleatoria de los pesos dentro de cada grupo (por mesa+tipo)
@@ -161,6 +162,70 @@ function generateVotesForTable(
   return { partyVotes, nullVotes, blankVotes };
 }
 
+function varyVotesForDelegateReport(
+  baseVotes: { partyVotes: number[]; nullVotes: number; blankVotes: number },
+  parties: Party[],
+  delegateParty: Party,
+  tableIdx: number,
+  etIdx: number,
+  delegateIdx: number,
+): { partyVotes: number[]; nullVotes: number; blankVotes: number } {
+  const partyVotes = [...baseVotes.partyVotes];
+  let nullVotes = baseVotes.nullVotes;
+  let blankVotes = baseVotes.blankVotes;
+
+  const delegatePartyIndex = parties.findIndex((p) => p.id === delegateParty.id);
+  if (delegatePartyIndex < 0) {
+    return { partyVotes, nullVotes, blankVotes };
+  }
+
+  // Ventaja leve hacia el partido del delegado, sin abrir brechas grandes.
+  const boost = rInt(1, 4, tableIdx * 71 + etIdx * 17 + delegateIdx * 13 + delegateParty.ballotOrder);
+  let transferable = boost;
+
+  for (let offset = 1; offset < parties.length && transferable > 0; offset++) {
+    const donorIndex = (delegatePartyIndex + offset) % parties.length;
+    const available = Math.max(0, partyVotes[donorIndex] - 1);
+    if (available === 0) continue;
+
+    const take = Math.min(
+      available,
+      rInt(0, Math.min(transferable, 2), tableIdx * 101 + etIdx * 29 + delegateIdx * 19 + offset),
+    );
+    partyVotes[donorIndex] -= take;
+    transferable -= take;
+  }
+  partyVotes[delegatePartyIndex] += boost - transferable;
+
+  // Error humano leve: algunos reportes pueden mover 1-3 votos entre partidos.
+  const swaps = rInt(0, 2, tableIdx * 59 + etIdx * 23 + delegateIdx * 31);
+  for (let step = 0; step < swaps; step++) {
+    const from = rInt(0, parties.length - 1, tableIdx * 131 + etIdx * 37 + delegateIdx * 41 + step);
+    const to = rInt(0, parties.length - 1, tableIdx * 149 + etIdx * 43 + delegateIdx * 47 + step);
+    if (from === to) continue;
+    if (partyVotes[from] <= 0) continue;
+
+    const moved = Math.min(
+      partyVotes[from],
+      rInt(1, 2, tableIdx * 163 + etIdx * 53 + delegateIdx * 61 + step),
+    );
+    partyVotes[from] -= moved;
+    partyVotes[to] += moved;
+  }
+
+  // Nulos y blancos también pueden variar levemente entre reportes.
+  nullVotes = Math.max(
+    0,
+    nullVotes + rInt(-1, 1, tableIdx * 173 + etIdx * 67 + delegateIdx * 73),
+  );
+  blankVotes = Math.max(
+    0,
+    blankVotes + rInt(-1, 1, tableIdx * 181 + etIdx * 79 + delegateIdx * 83),
+  );
+
+  return { partyVotes, nullVotes, blankVotes };
+}
+
 // ─── Seed principal ────────────────────────────────────────────────────────────
 
 async function seedReports() {
@@ -195,10 +260,19 @@ async function seedReports() {
     throw new Error("Faltan datos base. Ejecuta seed.ts primero.");
   }
 
-  // Solo los primeros 4 partidos tienen delegados
-  const delegateParties = allParties.filter((p) => p.ballotOrder <= 4);
+  // Solo estos partidos tienen delegados en el seed principal
+  const delegateBallotOrders = [3, 4, 5, 7];
+  const delegateParties = allParties.filter((p) =>
+    delegateBallotOrders.includes(p.ballotOrder),
+  );
   console.log(`✓ Partidos con delegados: ${delegateParties.map((p) => p.ballotOrder).join(", ")}`);
   console.log(`✓ Todos los partidos: ${allParties.map((p) => p.ballotOrder).join(", ")}`);
+
+  if (delegateParties.length !== delegateBallotOrders.length) {
+    throw new Error(
+      `No se encontraron todos los partidos esperados para delegados: ${delegateBallotOrders.join(", ")}`,
+    );
+  }
 
 
   // Agrupar mesas por recinto
@@ -210,47 +284,34 @@ async function seedReports() {
   }
 
   // ─── Selección de recintos a cubrir ────────────────────────────────────────
-  // Cubrir la mitad de los recintos disponibles.
-  // Priorizamos los que tienen más mesas usando los datos realmente cargados en la DB.
-  const selectedSchoolIds = new Set<string>();
-  const rankedSchools = schools
+  // Elegimos exactamente 5 recintos con al menos 5 mesas activas.
+  const eligibleSchools = schools
     .map((school) => ({
       school,
       tables: tablesBySchool.get(school.id) ?? [],
     }))
-    .sort((a, b) => {
-      const countDiff = b.tables.length - a.tables.length;
-      if (countDiff !== 0) return countDiff;
-      return (a.school.code ?? 0) - (b.school.code ?? 0);
-    });
+    .filter(({ tables }) => tables.length >= 5);
 
-  const targetSchoolCount = Math.min(
-    Math.ceil(rankedSchools.length / 2),
-    rankedSchools.length,
-  );
-  const prioritizedCount = Math.min(8, targetSchoolCount);
-
-  for (let i = 0; i < prioritizedCount; i++) {
-    selectedSchoolIds.add(rankedSchools[i].school.id);
-  }
-
-  const remainingToPick = targetSchoolCount - selectedSchoolIds.size;
-  if (remainingToPick > 0) {
-    const remainingSchools = rankedSchools
-      .slice(prioritizedCount)
-      .map(({ school }) => school);
-    const randomizedRemaining = orderBySeed(
-      remainingSchools,
-      20260320,
-      (school) => school.code ?? 0,
+  if (eligibleSchools.length < 5) {
+    throw new Error(
+      `No hay suficientes recintos con al menos 5 mesas. Encontrados: ${eligibleSchools.length}`,
     );
-
-    for (const school of randomizedRemaining.slice(0, remainingToPick)) {
-      selectedSchoolIds.add(school.id);
-    }
   }
+
+  const selectedSchools = orderBySeed(
+    eligibleSchools,
+    20260321,
+    ({ school }, index) => (school.code ?? 0) * 100 + index,
+  ).slice(0, 5);
+
+  const selectedSchoolIds = new Set(
+    selectedSchools.map(({ school }) => school.id),
+  );
 
   console.log(`\n📋 Recintos seleccionados (${selectedSchoolIds.size}):`);
+  for (const { school, tables } of selectedSchools) {
+    console.log(`   - [${school.code}] ${school.name} (${tables.length} mesas activas)`);
+  }
 
   // ─── Por cada recinto seleccionado ─────────────────────────────────────────
   let totalReports = 0;
@@ -262,22 +323,15 @@ async function seedReports() {
     const tables = tablesBySchool.get(school.id) ?? [];
     if (!tables.length) continue;
 
-    // Para recintos grandes (≥5 mesas), cubrir al menos 5 mesas.
-    // Para recintos menores, cubrir todas.
-    const minTables = tables.length >= 5 ? 5 : tables.length;
-    const targetTableCount = tables.length >= 5
-      ? Math.min(tables.length, minTables + rInt(0, Math.min(3, tables.length - minTables), schoolIdx))
-      : tables.length;
-
-    // Tomar mesas "al azar" (mezcla reproducible)
+    // Tomar exactamente 5 mesas "al azar" (mezcla reproducible)
     const shuffled = orderBySeed(
       tables,
       schoolIdx * 100 + 7,
       (table, index) => table.number * 1000 + index,
     );
-    const selectedTables = shuffled.slice(0, targetTableCount);
+    const selectedTables = shuffled.slice(0, 5);
 
-    console.log(`\n  🏫 ${school.name} (${tables.length} mesas → ${targetTableCount} cubiertas)`);
+    console.log(`\n  🏫 ${school.name} (${tables.length} mesas → 5 cubiertas)`);
 
     let tableGlobalIdx = schoolIdx * 50;
 
@@ -326,7 +380,15 @@ async function seedReports() {
 
         for (let etIdx = 0; etIdx < electionTypes.length; etIdx++) {
           const et = electionTypes[etIdx];
-          const { partyVotes, nullVotes, blankVotes } = tableVotesByElectionType.get(et.id)!;
+          const baseVotes = tableVotesByElectionType.get(et.id)!;
+          const { partyVotes, nullVotes, blankVotes } = varyVotesForDelegateReport(
+            baseVotes,
+            allParties,
+            delegateParty,
+            tableGlobalIdx,
+            etIdx,
+            pIdx,
+          );
 
           // Una entry por cada partido (los 8) para este tipo de elección
           for (let apIdx = 0; apIdx < allParties.length; apIdx++) {
@@ -393,6 +455,7 @@ async function seedReports() {
   console.log(`\n🎉 Seed de reportes completado!`);
   console.log(`   Recintos cubiertos : ${selectedSchoolIds.size} de ${schools.length}`);
   console.log(`   Reportes creados   : ${totalReports}`);
+  console.log(`   Reportes esperados : ${selectedSchoolIds.size * 5 * delegateParties.length}`);
   console.log(`   Partidos en acta   : ${allParties.length} (${allParties.map((p) => p.ballotOrder).join(", ")})`);
   console.log(`   Tipos de elección  : ${electionTypes.length} (${electionTypes.map((e) => e.name).join(", ")})`);
   console.log(`   Entries por reporte: ${allParties.length} × ${electionTypes.length} = ${allParties.length * electionTypes.length}`);
